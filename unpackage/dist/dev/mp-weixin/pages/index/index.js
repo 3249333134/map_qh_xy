@@ -1,7 +1,13 @@
 "use strict";
 const common_vendor = require("../../common/vendor.js");
 const pages_index_constants_layoutConfig = require("./constants/layoutConfig.js");
+const MapBackground = () => "./components/MapBackground.js";
+const ContentArea = () => "./components/ContentArea.js";
 const _sfc_main = {
+  components: {
+    MapBackground,
+    ContentArea
+  },
   data() {
     return {
       // 地图配置
@@ -39,18 +45,6 @@ const _sfc_main = {
     // 计算地图高度
     mapHeight() {
       return this.screenHeight - this.contentHeight;
-    },
-    // 计算瀑布流容器高度
-    waterfallHeight() {
-      return this.contentHeight - this.searchBoxHeight - (this.showCategoryTabs ? 80 : 0);
-    },
-    // 是否显示分类标签
-    showCategoryTabs() {
-      return this.contentHeight > this.minContentHeight;
-    },
-    // 是否显示瀑布流
-    showWaterfall() {
-      return this.contentHeight > this.minContentHeight;
     },
     // 最小内容高度（只显示搜索框）
     minContentHeight() {
@@ -194,51 +188,35 @@ const _sfc_main = {
     }
   }
 };
+if (!Array) {
+  const _component_map_background = common_vendor.resolveComponent("map-background");
+  const _component_content_area = common_vendor.resolveComponent("content-area");
+  (_component_map_background + _component_content_area)();
+}
 function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
-  return common_vendor.e({
-    a: $options.mapHeight + "px",
-    b: $data.mapConfig.latitude,
-    c: $data.mapConfig.longitude,
-    d: $data.mapConfig.markers,
-    e: common_vendor.o((...args) => $options.onSearchInput && $options.onSearchInput(...args)),
-    f: $options.showCategoryTabs
-  }, $options.showCategoryTabs ? {
-    g: common_vendor.f($data.categories, (category, k0, i0) => {
-      return {
-        a: common_vendor.t(category.name),
-        b: category.id,
-        c: common_vendor.n({
-          active: category.id === $data.activeCategory
-        }),
-        d: common_vendor.o(($event) => $options.handleCategoryChange(category.id), category.id)
-      };
+  return {
+    a: common_vendor.p({
+      height: $options.mapHeight,
+      config: $data.mapConfig
+    }),
+    b: common_vendor.o($options.handleDragStart),
+    c: common_vendor.o($options.handleDrag),
+    d: common_vendor.o($options.handleDragEnd),
+    e: common_vendor.o($options.handleWaterfallScroll),
+    f: common_vendor.o($options.handleCategoryChange),
+    g: common_vendor.o($options.onSearchInput),
+    h: common_vendor.o($options.loadMoreItems),
+    i: common_vendor.p({
+      height: $data.contentHeight,
+      ["search-box-height"]: $data.searchBoxHeight,
+      ["min-content-height"]: $options.minContentHeight,
+      categories: $data.categories,
+      ["active-category"]: $data.activeCategory,
+      ["left-column-heights"]: $data.leftColumnHeights,
+      ["right-column-heights"]: $data.rightColumnHeights,
+      ["is-loading"]: $data.isLoading
     })
-  } : {}, {
-    h: common_vendor.o((...args) => $options.handleDragStart && $options.handleDragStart(...args)),
-    i: common_vendor.o((...args) => $options.handleDrag && $options.handleDrag(...args)),
-    j: common_vendor.o((...args) => $options.handleDragEnd && $options.handleDragEnd(...args)),
-    k: $options.showWaterfall
-  }, $options.showWaterfall ? common_vendor.e({
-    l: common_vendor.f($data.leftColumnHeights, (height, index, i0) => {
-      return {
-        a: "left" + index,
-        b: height + "rpx"
-      };
-    }),
-    m: common_vendor.f($data.rightColumnHeights, (height, index, i0) => {
-      return {
-        a: "right" + index,
-        b: height + "rpx"
-      };
-    }),
-    n: $data.isLoading
-  }, $data.isLoading ? {} : {}, {
-    o: $options.waterfallHeight + "px",
-    p: common_vendor.o((...args) => $options.handleWaterfallScroll && $options.handleWaterfallScroll(...args)),
-    q: common_vendor.o((...args) => $options.loadMoreItems && $options.loadMoreItems(...args))
-  }) : {}, {
-    r: $data.contentHeight + "px"
-  });
+  };
 }
 const MiniProgramPage = /* @__PURE__ */ common_vendor._export_sfc(_sfc_main, [["render", _sfc_render]]);
 wx.createPage(MiniProgramPage);

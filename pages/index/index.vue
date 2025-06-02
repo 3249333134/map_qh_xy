@@ -1,101 +1,44 @@
 <template>
   <view class="container">
     <!-- 地图区域 -->    
-    <map class="map" 
-      :style="{ height: mapHeight + 'px' }" 
-      :latitude="mapConfig.latitude" 
-      :longitude="mapConfig.longitude" 
-      :markers="mapConfig.markers">
-    </map>
+    <map-background 
+      :height="mapHeight"
+      :config="mapConfig"
+    />
     
     <!-- 可滑动区域 -->
-    <view class="content-area" :style="{ height: contentHeight + 'px' }">
-      <!-- 拖动条和搜索框 -->
-      <view class="fixed-content"
-            @touchstart.stop="handleDragStart"
-            @touchmove.stop="handleDrag"
-            @touchend.stop="handleDragEnd">
-        <view class="drag-handle">
-          <view class="drag-bar"></view>
-        </view>
-        
-        <!-- 搜索框 -->
-        <view class="search-box">
-          <view class="search-input">
-            <text class="iconfont icon-search"></text>
-            <input type="text" placeholder="搜索目的地、景点、攻略" @input="onSearchInput" />
-          </view>
-        </view>
-        
-        <!-- 分类标签 -->
-        <scroll-view v-if="showCategoryTabs" class="category-tabs" scroll-x>
-          <text 
-            v-for="category in categories" 
-            :key="category.id"
-            :class="['tab', { active: category.id === activeCategory }]"
-            @tap="handleCategoryChange(category.id)">
-            {{ category.name }}
-          </text>
-        </scroll-view>
-      </view>
-      
-      <!-- 瀑布流卡片列表 -->
-      <scroll-view 
-        v-if="showWaterfall"
-        class="waterfall-container" 
-        :style="{ height: waterfallHeight + 'px' }"
-        scroll-y
-        @scroll="handleWaterfallScroll"
-        @scrolltolower="loadMoreItems">
-        <view class="waterfall">
-          <view class="waterfall-column">
-            <view 
-              v-for="(height, index) in leftColumnHeights" 
-              :key="'left' + index"
-              class="card"
-              :style="{ '--card-height': height + 'rpx' }">
-              <!-- 卡片内容 -->
-              <view class="card-media"></view>
-              <view class="card-content">
-                <view class="card-title"></view>
-                <view class="card-author"></view>
-                <view class="card-footer">
-                  <view class="card-stats"></view>
-                  <view class="card-location"></view>
-                </view>
-              </view>
-            </view>
-          </view>
-          <view class="waterfall-column">
-            <view 
-              v-for="(height, index) in rightColumnHeights" 
-              :key="'right' + index"
-              class="card"
-              :style="{ '--card-height': height + 'rpx' }">
-              <!-- 卡片内容 -->
-              <view class="card-media"></view>
-              <view class="card-content">
-                <view class="card-title"></view>
-                <view class="card-author"></view>
-                <view class="card-footer">
-                  <view class="card-stats"></view>
-                  <view class="card-location"></view>
-                </view>
-              </view>
-            </view>
-          </view>
-        </view>
-        <view v-if="isLoading" class="loading">加载中...</view>
-      </scroll-view>
-    </view>
+    <content-area 
+      :height="contentHeight"
+      :search-box-height="searchBoxHeight"
+      :min-content-height="minContentHeight"
+      :categories="categories"
+      :active-category="activeCategory"
+      :left-column-heights="leftColumnHeights"
+      :right-column-heights="rightColumnHeights"
+      :is-loading="isLoading"
+      @drag-start="handleDragStart"
+      @drag="handleDrag"
+      @drag-end="handleDragEnd"
+      @waterfall-scroll="handleWaterfallScroll"
+      @category-change="handleCategoryChange"
+      @search-input="onSearchInput"
+      @load-more="loadMoreItems"
+    />
   </view>
 </template>
 
 <script>
 // 导入工具函数和常量
 import { LAYOUT_CONFIG } from './constants/layoutConfig.js'
+// 导入组件
+import MapBackground from './components/MapBackground.vue'
+import ContentArea from './components/ContentArea.vue'
 
 export default {
+  components: {
+    MapBackground,
+    ContentArea
+  },
   data() {
     return {
       // 地图配置
@@ -139,21 +82,6 @@ export default {
     // 计算地图高度
     mapHeight() {
       return this.screenHeight - this.contentHeight
-    },
-    
-    // 计算瀑布流容器高度
-    waterfallHeight() {
-      return this.contentHeight - this.searchBoxHeight - (this.showCategoryTabs ? 80 : 0)
-    },
-    
-    // 是否显示分类标签
-    showCategoryTabs() {
-      return this.contentHeight > this.minContentHeight
-    },
-    
-    // 是否显示瀑布流
-    showWaterfall() {
-      return this.contentHeight > this.minContentHeight
     },
     
     // 最小内容高度（只显示搜索框）
@@ -364,181 +292,5 @@ export default {
   width: 100%;
   overflow: hidden;
   background-color: #f0f0f0;
-}
-
-/* 地图样式 */
-.map {
-  width: 100%;
-  transition: height 0.3s ease;
-}
-
-/* 内容区域样式 */
-.content-area {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  background-color: #f0f0f0;
-  border-radius: 20px 20px 0 0;
-  transition: height 0.3s ease;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-height: 0;
-  box-shadow: 0 -3px 10px rgba(0,0,0,0.1);
-}
-
-/* 固定内容区域 */
-.fixed-content {
-  background-color: #fff;
-  z-index: 10;
-  border-radius: 20px 20px 0 0;
-}
-
-/* 拖动条样式 */
-.drag-handle {
-  height: 40rpx;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.drag-bar {
-  width: 60rpx;
-  height: 6rpx;
-  background: #ddd;
-  border-radius: 3rpx;
-}
-
-/* 搜索框样式 */
-.search-box {
-  padding: 20rpx;
-}
-
-.search-input {
-  background-color: #f5f5f5;
-  border-radius: 30rpx;
-  padding: 15rpx 30rpx;
-  display: flex;
-  align-items: center;
-}
-
-.iconfont.icon-search {
-  margin-right: 10rpx;
-  font-size: 28rpx;
-  color: #999;
-}
-
-.search-input input {
-  flex: 1;
-  height: 40rpx;
-  font-size: 28rpx;
-  color: #333;
-  width: 100%;
-}
-
-/* 分类标签样式 */
-.category-tabs {
-  white-space: nowrap;
-  padding: 0 20rpx 20rpx;
-  transition: opacity 0.3s ease;
-}
-
-.tab {
-  display: inline-block;
-  padding: 10rpx 30rpx;
-  margin-right: 20rpx;
-  border-radius: 30rpx;
-  background-color: #f5f5f5;
-  font-size: 28rpx;
-}
-
-.tab.active {
-  background-color: #ffcc00;
-  color: #fff;
-}
-
-/* 瀑布流样式 */
-.waterfall-container {
-  flex: 1;
-  overflow-y: scroll;
-  -webkit-overflow-scrolling: touch;
-  transition: opacity 0.3s ease;
-  background-color: #f0f0f0;
-}
-
-.waterfall {
-  padding: 20rpx;
-  padding-bottom: 100rpx;
-  display: flex;
-  justify-content: space-between;
-  background-color: #f0f0f0;
-}
-
-.waterfall-column {
-  width: 48%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* 卡片样式 */
-.card {
-  margin-bottom: 20rpx;
-  border-radius: 12rpx;
-  background-color: #fff;
-  overflow: hidden;
-  box-shadow: 0 2rpx 10rpx rgba(0,0,0,0.1);
-}
-
-.card-media {
-  background-color: #a0c4ff;
-  height: var(--card-height, 200rpx);
-  width: 100%;
-}
-
-.card-content {
-  padding: 16rpx;
-}
-
-.card-title {
-  height: 40rpx;
-  background-color: #ffadad;
-  margin-bottom: 12rpx;
-  border-radius: 4rpx;
-}
-
-.card-author {
-  height: 30rpx;
-  background-color: #caffbf;
-  margin-bottom: 12rpx;
-  border-radius: 4rpx;
-  width: 60%;
-}
-
-.card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.card-stats {
-  height: 30rpx;
-  width: 40%;
-  background-color: #d3d3d3;
-  border-radius: 4rpx;
-}
-
-.card-location {
-  height: 30rpx;
-  width: 30%;
-  background-color: #fdffb6;
-  border-radius: 4rpx;
-}
-
-.loading {
-  text-align: center;
-  padding: 20rpx 0;
-  color: #999;
-  font-size: 24rpx;
 }
 </style>
