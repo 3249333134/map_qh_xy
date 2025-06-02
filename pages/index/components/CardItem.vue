@@ -5,11 +5,11 @@
     <!-- 卡片内容 -->
     <view class="card-media"></view>
     <view class="card-content">
-      <view class="card-title"></view>
-      <view class="card-author"></view>
+      <view class="card-title">{{ cardTitle }}</view>
+      <view class="card-author">{{ cardAuthor }}</view>
       <view class="card-footer">
-        <view class="card-stats"></view>
-        <view class="card-location"></view>
+        <view class="card-location">{{ locationText }}</view>
+        <view class="card-stats">{{ cardStats }}</view>
       </view>
     </view>
   </view>
@@ -30,6 +30,31 @@ export default {
     index: {
       type: Number,
       required: true
+    },
+    cardData: {
+      type: Object,
+      default: null
+    }
+  },
+  computed: {
+    cardTitle() {
+      return this.cardData ? this.cardData.title : '标题占位符'
+    },
+    cardAuthor() {
+      return this.cardData ? this.cardData.author : '作者占位符'
+    },
+    cardStats() {
+      if (this.cardData && this.cardData.likes) {
+        return `${this.cardData.likes} 赞`
+      }
+      return '0 赞'
+    },
+    locationText() {
+      if (this.cardData && this.cardData.location && this.cardData.location.coordinates) {
+        const [lng, lat] = this.cardData.location.coordinates
+        return `${lat.toFixed(2)}, ${lng.toFixed(2)}`
+      }
+      return '未知位置'
     }
   }
 }
@@ -56,18 +81,19 @@ export default {
 }
 
 .card-title {
-  height: 40rpx;
-  background-color: #ffadad;
+  font-size: 28rpx;
+  font-weight: bold;
   margin-bottom: 12rpx;
-  border-radius: 4rpx;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .card-author {
-  height: 30rpx;
-  background-color: #caffbf;
+  font-size: 24rpx;
+  color: #666;
   margin-bottom: 12rpx;
-  border-radius: 4rpx;
-  width: 60%;
 }
 
 .card-footer {
@@ -77,16 +103,12 @@ export default {
 }
 
 .card-stats {
-  height: 30rpx;
-  width: 40%;
-  background-color: #d3d3d3;
-  border-radius: 4rpx;
+  font-size: 24rpx;
+  color: #999;
 }
 
 .card-location {
-  height: 30rpx;
-  width: 30%;
-  background-color: #fdffb6;
-  border-radius: 4rpx;
+  font-size: 24rpx;
+  color: #999;
 }
 </style>
