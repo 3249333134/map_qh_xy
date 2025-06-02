@@ -1,0 +1,24 @@
+
+/* 全局样式 */
+page {
+  background-color: #f0f0f0;
+}
+
+/*每个页面公共css */
+.uni-tabbar__item {
+  color: #7A7E83;
+}
+.uni-tabbar__item.uni-tabbar__item--selected {
+  color: #ffd700;
+  font-weight: bold;
+}
+.uni-tabbar__item-text {
+  font-size: 28rpx;
+  line-height: 1.8;
+  transform: scale(0.9);
+}
+.uni-tabbar__item--selected .uni-tabbar__item-text {
+  transform: scale(1);
+  transition: transform 0.2s ease;
+}
+page{--status-bar-height:25px;--top-window-height:0px;--window-top:0px;--window-bottom:0px;--window-left:0px;--window-right:0px;--window-magin:0px}[data-c-h="true"]{display: none !important;}
