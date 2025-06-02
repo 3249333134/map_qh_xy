@@ -38,7 +38,15 @@ const _sfc_main = {
       // 瀑布流数据
       leftColumnHeights: [],
       rightColumnHeights: [],
-      isLoading: false
+      isLoading: false,
+      // MongoDB数据
+      mapPoints: [],
+      leftColumnData: [],
+      rightColumnData: [],
+      // 添加分页相关数据
+      currentPage: 1,
+      pageSize: 10,
+      hasMoreData: true
     };
   },
   computed: {
@@ -57,7 +65,7 @@ const _sfc_main = {
   },
   onReady() {
     this.initLayout();
-    this.generateRandomHeights();
+    this.fetchMapData();
   },
   methods: {
     // 初始化布局
@@ -66,6 +74,133 @@ const _sfc_main = {
       this.screenHeight = systemInfo.windowHeight;
       this.contentHeight = this.screenHeight * pages_index_constants_layoutConfig.LAYOUT_CONFIG.INITIAL_CONTENT_RATIO;
       this.searchBoxHeight = 80;
+    },
+    // 从MongoDB获取数据
+    // 从MongoDB获取数据
+    fetchMapData() {
+      this.isLoading = true;
+      common_vendor.index.request({
+        url: "http://47.115.220.98:3000/api/map-data",
+        method: "GET",
+        data: {
+          page: 1,
+          // 始终获取第一页
+          pageSize: 100
+          // 限制为100条数据
+        },
+        success: (res) => {
+          if (res.statusCode === 200 && res.data) {
+            const filteredData = this.filterDataByDistance(res.data, 100);
+            this.mapPoints = filteredData;
+            this.distributeDataToColumns();
+            this.updateMapMarkers();
+          } else {
+            common_vendor.index.__f__("error", "at pages/index/index.vue:152", "获取数据失败:", res);
+            this.generateRandomData();
+          }
+        },
+        fail: (err) => {
+          common_vendor.index.__f__("error", "at pages/index/index.vue:157", "请求失败:", err);
+          this.generateRandomData();
+        },
+        complete: () => {
+          this.isLoading = false;
+        }
+      });
+    },
+    // 添加一个方法，根据距离过滤数据
+    filterDataByDistance(data, maxCount) {
+      if (!data || data.length === 0)
+        return [];
+      const pointsWithDistance = data.map((point) => {
+        const distance = this.calculateDistance(
+          this.mapConfig.latitude,
+          this.mapConfig.longitude,
+          point.location.coordinates[1],
+          point.location.coordinates[0]
+        );
+        return { ...point, distance };
+      });
+      pointsWithDistance.sort((a, b) => a.distance - b.distance);
+      return pointsWithDistance.slice(0, maxCount);
+    },
+    // 计算两点之间的距离（使用Haversine公式）
+    calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3;
+      const dLat = this.deg2rad(lat2 - lat1);
+      const dLon = this.deg2rad(lon2 - lon1);
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(this.deg2rad(lat1)) * Math.cos(this.deg2rad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c;
+      return distance;
+    },
+    deg2rad(deg) {
+      return deg * (Math.PI / 180);
+    },
+    // 将数据分配到左右两列
+    distributeDataToColumns() {
+      if (!this.mapPoints || this.mapPoints.length === 0) {
+        return;
+      }
+      this.leftColumnData = [];
+      this.rightColumnData = [];
+      this.leftColumnHeights = [];
+      this.rightColumnHeights = [];
+      const maxItemsPerColumn = 10;
+      const totalItems = Math.min(this.mapPoints.length, maxItemsPerColumn * 2);
+      for (let index = 0; index < totalItems; index++) {
+        const point = this.mapPoints[index];
+        if (index % 2 === 0 && this.leftColumnData.length < maxItemsPerColumn) {
+          this.leftColumnData.push(point);
+          this.leftColumnHeights.push(Math.floor(Math.random() * (300 - 150 + 1)) + 150);
+        } else if (this.rightColumnData.length < maxItemsPerColumn) {
+          this.rightColumnData.push(point);
+          this.rightColumnHeights.push(Math.floor(Math.random() * (300 - 150 + 1)) + 150);
+        }
+      }
+    },
+    data() {
+      return {
+        // 其他数据...
+        markerIcon: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAABYUlEQVR4nO2WTU7DMBCFn1MWLFjAgiVwAXpAuQFIlQBxCm7AFVBvAKdAIIEQl+AG3IBFJdh0gdjAJKpjOXE6tuNIeNJIkezzm/GMx07TlFJKCTgGboEp8AK8Am/ANzADHoEBcAKsNQYFjoA7/3FRfAD3wEkdyB7w5AP9AkNgF9gGVoCWf7YJdIBz4AT48nMegH3gIIQsA8bAErj0L1+PmNcCzv28JXBVFboLvPuAgyqgOYCBn/8GdIvAu8DCTx5UBcwBDX3OBbBTBL31k0YxkDmgkc+7zYMe+kmPdUBzQGOf+5QFPfeTbuqEZkBvs6Cz/4AWgU6KQP/jqkeBTouKqwx0XgV6HgOdVYGeRkGBTQNHLQp0JxYa7eoYaK8KtB8LHRSBDmOggxjosAg0z1UPgfZioP0i0H4MtFcG2jNwVKKgHQNHLQraMXDUoqAdA0fNwFGLgnYMHLUoaMfAUfsF9Qx5K6QhOhIAAAAASUVORK5CYII="
+      };
+    },
+    // 更新地图标记点
+    updateMapMarkers() {
+      if (!this.mapPoints || this.mapPoints.length === 0) {
+        return;
+      }
+      const markers = this.mapPoints.map((point, index) => {
+        return {
+          id: index,
+          latitude: point.location.coordinates[1],
+          longitude: point.location.coordinates[0],
+          // 使用Base64编码的图片
+          iconPath: this.markerIcon,
+          width: 30,
+          height: 30,
+          callout: {
+            content: point.title,
+            color: "#000000",
+            fontSize: 12,
+            borderRadius: 4,
+            padding: 5,
+            display: "BYCLICK"
+          }
+        };
+      });
+      this.mapConfig.markers = markers;
+      if (markers.length > 0) {
+        this.mapConfig.latitude = markers[0].latitude;
+        this.mapConfig.longitude = markers[0].longitude;
+      }
+    },
+    // 生成随机数据（作为备用方案）
+    // 修改 generateRandomData 函数
+    generateRandomData() {
+      const maxRandomItems = 10;
+      this.leftColumnHeights = this.generateRandomHeightsArray(maxRandomItems);
+      this.rightColumnHeights = this.generateRandomHeightsArray(maxRandomItems);
     },
     // 生成随机高度数据
     generateRandomHeights() {
@@ -185,6 +320,15 @@ const _sfc_main = {
         this.rightColumnHeights = [...this.rightColumnHeights, ...newRightItems];
         this.isLoading = false;
       }, 500);
+    },
+    // 获取卡片数据
+    getCardData(columnType, index) {
+      if (columnType === "left" && this.leftColumnData[index]) {
+        return this.leftColumnData[index];
+      } else if (columnType === "right" && this.rightColumnData[index]) {
+        return this.rightColumnData[index];
+      }
+      return null;
     }
   }
 };
@@ -214,6 +358,8 @@ function _sfc_render(_ctx, _cache, $props, $setup, $data, $options) {
       ["active-category"]: $data.activeCategory,
       ["left-column-heights"]: $data.leftColumnHeights,
       ["right-column-heights"]: $data.rightColumnHeights,
+      ["left-column-data"]: $data.leftColumnData,
+      ["right-column-data"]: $data.rightColumnData,
       ["is-loading"]: $data.isLoading
     })
   };

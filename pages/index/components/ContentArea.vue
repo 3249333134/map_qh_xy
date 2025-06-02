@@ -45,6 +45,7 @@
             :height="height"
             column-type="left"
             :index="index"
+            :card-data="getCardData('left', index)"
           />
         </view>
         <view class="waterfall-column">
@@ -54,6 +55,7 @@
             :height="height"
             column-type="right"
             :index="index"
+            :card-data="getCardData('right', index)"
           />
         </view>
       </view>
@@ -98,6 +100,15 @@ export default {
     rightColumnHeights: {
       type: Array,
       required: true
+    },
+    // 添加这两个 props 来接收数据
+    leftColumnData: {
+      type: Array,
+      default: () => []
+    },
+    rightColumnData: {
+      type: Array,
+      default: () => []
     },
     isLoading: {
       type: Boolean,
@@ -154,6 +165,33 @@ export default {
     // 加载更多内容
     loadMoreItems() {
       this.$emit('load-more')
+    },
+    
+    // 获取卡片数据
+    // 在 ContentArea.vue 中修改 props
+    props: {
+      // ... 其他 props
+      leftColumnData: {
+        type: Array,
+        required: true
+      },
+      rightColumnData: {
+        type: Array,
+        required: true
+      }
+    },
+    
+    // 修改 getCardData 方法
+    // 删除 inject: ['getCardData'] 行
+    
+    // getCardData 方法保持不变
+    getCardData(columnType, index) {
+      if (columnType === 'left' && this.leftColumnData && this.leftColumnData[index]) {
+        return this.leftColumnData[index]
+      } else if (columnType === 'right' && this.rightColumnData && this.rightColumnData[index]) {
+        return this.rightColumnData[index]
+      }
+      return null
     }
   }
 }
