@@ -128,34 +128,50 @@ export default {
     },
     
     // 从MongoDB获取数据
-    // 从MongoDB获取数据
     fetchMapData() {
-      this.isLoading = true
+      this.isLoading = true;
       
-      // 使用较小的pageSize
+      // 构建API请求参数
+      const params = {
+        page: this.currentPage,
+        pageSize: this.pageSize,
+        lat: this.mapConfig.latitude,
+        lng: this.mapConfig.longitude,
+        radius: 5000 // 5公里范围内的点
+      };
+      
+      // 如果有分类筛选
+      if (this.activeCategory !== 'all') {
+        params.category = this.activeCategory;
+      }
+      
       uni.request({
-        url: 'http://47.115.220.98:3000/api/map-data',
+        url: 'http://localhost:3000/api/map-data', // 修改为您的后端地址
         method: 'GET',
-        data: {
-          page: 1,  // 始终获取第一页
-          pageSize: 100  // 限制为100条数据
-        },
+        data: params,
         success: (res) => {
           if (res.statusCode === 200 && res.data) {
-            // 在前端过滤数据，只保留距离初始坐标较近的点
-            const filteredData = this.filterDataByDistance(res.data, 100);
-            this.mapPoints = filteredData;
+            // 后端已经处理了距离筛选，直接使用返回的数据
+            const newData = res.data.data;
+            
+            // 更新分页信息
+            this.hasMoreData = this.currentPage < res.data.pagination.totalPages;
+            
+            // 如果是第一页，替换数据；否则追加数据
+            if (this.currentPage === 1) {
+              this.mapPoints = newData;
+            } else {
+              this.mapPoints = [...this.mapPoints, ...newData];
+            }
             
             this.distributeDataToColumns();
             this.updateMapMarkers();
           } else {
             console.error('获取数据失败:', res);
-            this.generateRandomData();
           }
         },
         fail: (err) => {
           console.error('请求失败:', err);
-          this.generateRandomData();
         },
         complete: () => {
           this.isLoading = false;

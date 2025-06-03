@@ -76,32 +76,41 @@ const _sfc_main = {
       this.searchBoxHeight = 80;
     },
     // 从MongoDB获取数据
-    // 从MongoDB获取数据
     fetchMapData() {
       this.isLoading = true;
+      const params = {
+        page: this.currentPage,
+        pageSize: this.pageSize,
+        lat: this.mapConfig.latitude,
+        lng: this.mapConfig.longitude,
+        radius: 5e3
+        // 5公里范围内的点
+      };
+      if (this.activeCategory !== "all") {
+        params.category = this.activeCategory;
+      }
       common_vendor.index.request({
-        url: "http://47.115.220.98:3000/api/map-data",
+        url: "http://localhost:3000/api/map-data",
+        // 修改为您的后端地址
         method: "GET",
-        data: {
-          page: 1,
-          // 始终获取第一页
-          pageSize: 100
-          // 限制为100条数据
-        },
+        data: params,
         success: (res) => {
           if (res.statusCode === 200 && res.data) {
-            const filteredData = this.filterDataByDistance(res.data, 100);
-            this.mapPoints = filteredData;
+            const newData = res.data.data;
+            this.hasMoreData = this.currentPage < res.data.pagination.totalPages;
+            if (this.currentPage === 1) {
+              this.mapPoints = newData;
+            } else {
+              this.mapPoints = [...this.mapPoints, ...newData];
+            }
             this.distributeDataToColumns();
             this.updateMapMarkers();
           } else {
-            common_vendor.index.__f__("error", "at pages/index/index.vue:152", "获取数据失败:", res);
-            this.generateRandomData();
+            common_vendor.index.__f__("error", "at pages/index/index.vue:170", "获取数据失败:", res);
           }
         },
         fail: (err) => {
-          common_vendor.index.__f__("error", "at pages/index/index.vue:157", "请求失败:", err);
-          this.generateRandomData();
+          common_vendor.index.__f__("error", "at pages/index/index.vue:174", "请求失败:", err);
         },
         complete: () => {
           this.isLoading = false;
