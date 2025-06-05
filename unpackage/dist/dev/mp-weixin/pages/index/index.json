@@ -1,8 +1,0 @@
-{
-  "navigationBarTitleText": "首页",
-  "navigationStyle": "custom",
-  "usingComponents": {
-    "map-background": "./components/MapBackground",
-    "content-area": "./components/ContentArea"
-  }
-}

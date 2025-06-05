@@ -1,0 +1,12 @@
+{
+  "name": "map_q",
+  "version": "1.0.0",
+  "description": "地图前端项目",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
