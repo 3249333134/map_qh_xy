@@ -59,7 +59,7 @@
         <view class="cards-column">
           <card-item 
             v-for="(item, index) in leftColumnData" 
-            :key="'left-' + item._id"
+            :key="'left-' + (item._id || '') + '-' + index"
             :index="index"
             :card-data="item"
             :height="getColumnItemHeight('left', index)"
@@ -72,7 +72,7 @@
         <view class="cards-column">
           <card-item 
             v-for="(item, index) in rightColumnData" 
-            :key="'right-' + item._id"
+            :key="'right-' + (item._id || '') + '-' + index"
             :index="leftColumnData.length + index"
             :card-data="item"
             :height="getColumnItemHeight('right', index)"
@@ -403,11 +403,15 @@ export default {
 .cards-grid {
   display: flex;
   padding: 10px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .cards-column {
-  flex: 1;
+  flex: 0 0 50%; /* 修改为固定宽度 */
   padding: 0 5px;
+  width: 50%; /* 确保每列宽度为50% */
+  box-sizing: border-box;
 }
 
 /* 加载更多样式 */

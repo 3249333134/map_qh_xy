@@ -134,14 +134,20 @@ export default {
       const params = {
         page: this.currentPage,
         pageSize: this.pageSize,
-        lat: this.mapConfig.latitude,
-        lng: this.mapConfig.longitude,
-        radius: 5000 // 5公里范围内的点
+        lat: 30.572815, // 成都中心点纬度
+        lng: 104.066801, // 成都中心点经度
+        radius: 5000000 // 修改为5000公里，确保能覆盖示例数据点
       };
       
       // 如果有分类筛选
       if (this.activeCategory !== 'all') {
-        params.category = this.activeCategory;
+        // 映射前端分类ID到后端分类名称
+        const categoryMap = {
+          'hot': '热门资源',
+          'exhibition': '展会活动',
+          'personal': '个人活动'
+        };
+        params.category = categoryMap[this.activeCategory] || this.activeCategory;
       }
       
       uni.request({
@@ -154,8 +160,21 @@ export default {
                               (Array.isArray(res.data) ? res.data : []);
           
           if (res.statusCode === 200 && responseData && responseData.length > 0) {
-            // 使用处理后的数据
-            const newData = responseData;
+            // 处理数据，确保字段名称一致
+            const newData = responseData.map(item => ({
+              ...item,
+              _id: item._id || item.id || `id_${Date.now()}_${Math.random()}`,
+              name: item.name || item.title || `地点 ${Math.floor(Math.random() * 1000)}`,
+              author: item.author || '未知作者',
+              // 其他字段映射...
+            }));
+            
+            // 如果是第一页，替换数据；否则追加数据
+            if (this.currentPage === 1) {
+              this.mapPoints = newData;
+            } else {
+              this.mapPoints = [...this.mapPoints, ...newData];
+            }
             
             // 安全地更新分页信息
             const pagination = res.data && res.data.pagination ? res.data.pagination : {};
@@ -283,11 +302,11 @@ export default {
       
       this.mapConfig.markers = markers
       
-      // 如果有数据，将地图中心设置为第一个点的位置
-      if (markers.length > 0) {
-        this.mapConfig.latitude = markers[0].latitude
-        this.mapConfig.longitude = markers[0].longitude
-      }
+      // 删除以下代码，不再自动将地图中心设置为第一个点的位置
+      // if (markers.length > 0) {
+      //   this.mapConfig.latitude = markers[0].latitude
+      //   this.mapConfig.longitude = markers[0].longitude
+      // }
     },
     
     // 处理拖拽开始
