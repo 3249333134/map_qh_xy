@@ -52,7 +52,7 @@
       @scrolltolower="onLoadMore"
       @scroll="onScroll"
       :scroll-top="scrollTop"
-      :scroll-with-animation="true"
+      :scroll-with-animation="scrollWithAnimation"
     >
       <view class="cards-grid">
         <!-- 左列卡片 -->
@@ -136,6 +136,7 @@ export default {
       default: true
     }
   },
+  // 在 data 中初始化为 false
   data() {
     return {
       leftColumnHeights: {},
@@ -143,8 +144,16 @@ export default {
       scrollTop: 0,
       isScrollLocked: false,
       // 为每个分类保存滚动位置
-      categoryScrollPositions: {}
+      categoryScrollPositions: {},
+      scrollWithAnimation: true,
+      // 添加一个对象来跟踪哪些分类已经被访问过
+      visitedCategories: {}
     }
+  },
+  created() {
+    // 假设默认分类是'all'，将其标记为已访问
+    this.visitedCategories['all'] = true;
+    this.categoryScrollPositions['all'] = 0; // 确保'all'分类初始在顶部
   },
   watch: {
     // 监听数据变化，更新卡片高度缓存
@@ -158,17 +167,31 @@ export default {
       deep: true
     },
     // 监听分类变化，恢复该分类的滚动位置
-    activeCategory(newCategory, oldCategory) {
-      // 保存上一个分类的滚动位置
-      if (oldCategory) {
-        this.categoryScrollPositions[oldCategory] = this.getCurrentScrollPosition()
-      }
-      
-      // 延迟执行，确保DOM已更新
+    activeCategory(newCategory, oldCategory) { // 添加 oldCategory 参数
+      // 1. 保存旧分类的滚动位置 (如果需要更精确，可以在 onScroll 中实时保存)
+      //    在 onScroll 中已经有了: this.categoryScrollPositions[this.activeCategory] = scrollTop;
+      //    所以这里可以不重复保存，或者作为一种补充
+      // if (oldCategory) {
+      //   this.categoryScrollPositions[oldCategory] = this.scrollTop; // 保存的是切换前的scrollTop
+      // }
+
+      this.scrollWithAnimation = false;
       this.$nextTick(() => {
-        // 恢复当前分类的滚动位置，如果没有则设为0
-        this.scrollTop = this.categoryScrollPositions[newCategory] || 0
-      })
+        if (!this.visitedCategories[newCategory]) {
+          // 首次访问新分类
+          this.scrollTop = 0;
+          this.visitedCategories[newCategory] = true;
+          // 可选: 同时将此新分类的初始滚动位置记录为0
+          this.categoryScrollPositions[newCategory] = 0; 
+        } else {
+          // 非首次访问，恢复保存的滚动位置
+          this.scrollTop = this.categoryScrollPositions[newCategory] || 0;
+        }
+        
+        setTimeout(() => {
+          this.scrollWithAnimation = true;
+        }, 50); // 稍微缩短延迟，看是否改善体验
+      });
     }
   },
   methods: {
@@ -180,11 +203,21 @@ export default {
     
     // 分类切换事件
     onCategoryChange(categoryId) {
-      // 保存当前分类的滚动位置
-      this.categoryScrollPositions[this.activeCategory] = this.getCurrentScrollPosition()
-      
-      // 触发分类切换事件
-      this.$emit('category-change', categoryId)
+      // 使用当前实际滚动位置，而不是 this.scrollTop
+      const currentScrollView = uni.createSelectorQuery().in(this).select('.cards-container');
+      currentScrollView.scrollOffset(data => {
+        // 保存当前分类的实际滚动位置
+        this.categoryScrollPositions[this.activeCategory] = data.scrollTop;
+        
+        // 触发分类切换事件前检查是否是首次访问新分类
+        if (!this.visitedCategories[categoryId]) {
+          // 如果是首次访问，不使用当前的滚动位置
+          this.visitedCategories[categoryId] = true;
+        }
+        
+        // 触发分类切换事件
+        this.$emit('category-change', categoryId);
+      }).exec();
     },
     
     // 拖拽事件处理
@@ -196,11 +229,6 @@ export default {
     },
     onDragEnd(e) {
       this.$emit('drag-end', e)
-    },
-    
-    // 分类切换事件
-    onCategoryChange(categoryId) {
-      this.$emit('category-change', categoryId)
     },
     
     // 搜索输入事件
@@ -302,7 +330,19 @@ export default {
     getRandomHeight() {
       // 生成180-280之间的随机高度
       return Math.floor(Math.random() * (280 - 180 + 1)) + 180
-    }
+    },
+    
+    // 滚动事件处理
+    onScroll(e) {
+      // 获取当前滚动位置
+      const scrollTop = e.detail.scrollTop;
+      // 实时保存当前激活分类的滚动位置
+      if (this.activeCategory) { // 确保 activeCategory 有值
+        this.categoryScrollPositions[this.activeCategory] = scrollTop;
+      }
+      // 注意：这里不要直接设置 this.scrollTop = scrollTop;
+      // scrollTop 的变化应该由 watch.activeCategory 控制，以避免冲突
+    },
   },
   computed: {
     // 将数据分为左右两列
