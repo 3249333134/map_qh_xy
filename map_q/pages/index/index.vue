@@ -4,6 +4,7 @@
     <map-background 
       :height="mapHeight"
       :config="mapConfig"
+      @refresh-location="getUserLocation"
     />
     
     <!-- 可滑动区域 -->
@@ -82,8 +83,16 @@ export default {
       categoryData: {},
       categoryPages: {},
       
-      // 地图标记图标
-      markerIcon: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAYAAAA7MK6iAAAACXBIWXMAAAsTAAALEwEAmpwYAAABYUlEQVR4nO2WTU7DMBCFn1MWLFjAgiVwAXpAuQFIlQBxCm7AFVBvAKdAIIEQl+AG3IBFJdh0gdjAJKpjOXE6tuNIeNJIkezzm/GMx07TlFJKCTgGboEp8AK8Am/ANzADHoEBcAKsNQYFjoA7/3FRfAD3wEkdyB7w5AP9AkNgF9gGVoCWf7YJdIBz4AT48nMegH3gIIQsA8bAErj0L1+PmNcCzv28JXBVFboLvPuAgyqgOYCBn/8GdIvAu8DCTx5UBcwBDX3OBbBTBL31k0YxkDmgkc+7zYMe+kmPdUBzQGOf+5QFPfeTbuqEZkBvs6Cz/4AWgU6KQP/jqkeBTouKqwx0XgV6HgOdVYGeRkGBTQNHLQp0JxYa7eoYaK8KtB8LHRSBDmOggxjosAg0z1UPgfZioP0i0H4MtFcG2jNwVKKgHQNHLQraMXDUoqAdA0fNwFGLgnYMHLUoaMfAUfsF9Qx5K6QhOhIAAAAASUVORK5CYII='
+      // 地图标记图标 - 使用静态图片
+      markerIcon: '/static/marker-triangle.png', // 使用静态图片文件
+      
+      // 不同分类的标记图标
+      markerIcons: {
+        'all': '/static/marker-triangle-green.png',
+        'hot': '/static/marker-triangle-red.png', 
+        'exhibition': '/static/marker-triangle-blue.png',
+        'personal': '/static/marker-triangle-orange.png'
+      }
     }
   },
   
@@ -105,14 +114,17 @@ export default {
   },
   
   onReady() {
-    this.initLayout()
-    this.fetchMapData()
+    // 优先获取用户位置，再初始化其他功能
+    this.getUserLocation().then(() => {
+      this.initLayout();
+    });
   },
   
   methods: {
     // 初始化布局
     initLayout() {
-      const systemInfo = uni.getSystemInfoSync()
+      // 使用推荐的新API替换已弃用的uni.getSystemInfoSync
+      const systemInfo = uni.getWindowInfo()
       this.screenHeight = systemInfo.windowHeight
       
       // 设置初始内容高度
@@ -122,7 +134,7 @@ export default {
       this.searchBoxHeight = 50
     },
     
-    // 从MongoDB获取数据
+    // 从MongoDB获取数据 (修改后的方法)
     fetchMapData() {
       this.isLoading = true;
       
@@ -130,13 +142,13 @@ export default {
       if (!this.categoryData) this.categoryData = {};
       if (!this.categoryPages) this.categoryPages = {};
       
-      // 构建API请求参数
+      // 构建API请求参数，使用当前地图中心点（用户位置或默认位置）
       const params = {
         page: this.currentPage,
         pageSize: this.pageSize,
-        lat: 30.572815, // 成都中心点纬度
-        lng: 104.066801, // 成都中心点经度
-        radius: 5000000 // 修改为5000公里，确保能覆盖示例数据点
+        lat: this.mapConfig.latitude, // 使用地图当前纬度
+        lng: this.mapConfig.longitude, // 使用地图当前经度
+        radius: 5000 // 5公里范围内的点
       };
       
       // 如果有分类筛选
@@ -214,7 +226,7 @@ export default {
       });
     },
     
-    // 添加测试数据
+    // 添加测试数据 (修改后的方法)
     addTestData() {
       // 如果是第一页，重置数据；否则保留现有数据
       if (this.currentPage === 1) {
@@ -256,7 +268,10 @@ export default {
           description: `这是一个${prefix}测试描述 ${index + 1}`,
           location: {
             type: 'Point',
-            coordinates: [104.066801 + (Math.random() * 0.1 - 0.05), 30.572815 + (Math.random() * 0.1 - 0.05)]
+            coordinates: [
+              this.mapConfig.longitude + (Math.random() * 0.02 - 0.01), // 使用当前经度
+              this.mapConfig.latitude + (Math.random() * 0.02 - 0.01)   // 使用当前纬度
+            ]
           }
         })
       }
@@ -273,11 +288,40 @@ export default {
         this.updateMapMarkers();
       });
     },
+    // },
+    // const colors = {
+    // 'hot': '#FF6B6B',      // 红色 - 热门
+    // 'exhibition': '#4ECDC4', // 青色 - 展会
+    // 'personal': '#45B7D1',   // 蓝色 - 个人
+    // 'all': '#96CEB4'         // 绿色 - 全部
+    // };
+    // const color = colors[category] || colors['all'];
+    // 
+    // return 'data:image/svg+xml;base64,' + btoa(`
+    // <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+    // <polygon points="12,2 22,20 2,20" fill="${color}" stroke="#fff" stroke-width="2"/>
+    // </svg>
+    // `);
+    // },
+    
+    // 添加正确的方法
+    // 根据分类获取标记图标
+    getMarkerIconByCategory(category) {
+    // 使用相对路径，确保图片能正确加载
+    const iconMap = {
+    'all': '/static/marker.png',
+    'hot': '/static/marker.png', // ke yi不同的图标
+    'exhibition': '/static/marker.png',
+    'personal': '/static/marker.png'
+    };
+    return iconMap[category] || '/static/marker.png';
+    },
     
     // 更新地图标记点
     updateMapMarkers() {
       if (!this.mapPoints || this.mapPoints.length === 0) {
-        return
+        this.mapConfig.markers = [];
+        return;
       }
       
       const markers = this.mapPoints.map((point, index) => {
@@ -285,12 +329,17 @@ export default {
           id: index,
           latitude: point.location.coordinates[1],
           longitude: point.location.coordinates[0],
-          // 使用Base64编码的图片
-          iconPath: this.markerIcon,
-          width: 30,
-          height: 30,
+          // 根据当前分类使用不同颜色的三角形图标
+          iconPath: this.getMarkerIconByCategory(this.activeCategory),
+          width: 24,
+          height: 24,
+          customData: {
+            pointId: point._id,
+            name: point.name,
+            index: index
+          },
           callout: {
-            content: point.title,
+            content: point.name,
             color: '#000000',
             fontSize: 12,
             borderRadius: 4,
@@ -298,15 +347,10 @@ export default {
             display: 'BYCLICK'
           }
         }
-      })
+      });
       
-      this.mapConfig.markers = markers
-      
-      // 删除以下代码，不再自动将地图中心设置为第一个点的位置
-      // if (markers.length > 0) {
-      //   this.mapConfig.latitude = markers[0].latitude
-      //   this.mapConfig.longitude = markers[0].longitude
-      // }
+      this.mapConfig.markers = markers;
+      console.log(`已更新 ${markers.length} 个三角形标记点`);
     },
     
     // 处理拖拽开始
@@ -422,12 +466,57 @@ export default {
     
     // 处理卡片点击
     handleCardTap(index) {
-      console.log('卡片点击:', index)
-      // 这里可以添加导航到详情页的逻辑
-      uni.showToast({
-        title: `点击了卡片 ${index + 1}`,
-        icon: 'none'
-      })
+      console.log('卡片点击:', index);
+      
+      if (this.mapPoints[index] && this.mapPoints[index].location) {
+        const point = this.mapPoints[index];
+        const coordinates = point.location.coordinates;
+        
+        // 将地图中心移动到对应的标记点
+        this.mapConfig.latitude = coordinates[1];
+        this.mapConfig.longitude = coordinates[0];
+        
+        // 显示提示信息
+        uni.showToast({
+          title: `定位到: ${point.name}`,
+          icon: 'none',
+          duration: 2000
+        });
+        
+        // 可选：触发地图标记的callout显示
+        this.$nextTick(() => {
+          // 这里可以添加额外的地图交互逻辑
+          console.log(`地图已定位到: ${point.name}`);
+        });
+      }
+    },
+    
+    // 获取用户位置
+    async getUserLocation() {
+      try {
+        const res = await uni.getLocation({ 
+          type: 'wgs84',
+          isHighAccuracy: true // 启用高精度定位
+        });
+        
+        // 更新地图中心点
+        this.mapConfig.latitude = res.latitude;
+        this.mapConfig.longitude = res.longitude;
+        
+        console.log('定位成功:', res.latitude, res.longitude);
+        
+        // 获取周边数据
+        await this.fetchMapData();
+        
+        return res;
+      } catch (error) {
+        console.error('定位失败，使用默认位置:', error);
+        // 使用成都市中心作为默认位置
+        this.mapConfig.latitude = 30.572269;
+        this.mapConfig.longitude = 104.066541;
+        this.fetchMapData();
+        throw error;
+      }
     }
   }
 }
