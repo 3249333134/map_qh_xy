@@ -20,6 +20,24 @@ distributeDataToColumns() {
   }
 }
 
+// 如果是加载更多，追加数据；否则替换数据
+if (isLoadMore) {
+  // 检查是否有重复数据
+  const existingIds = new Set(this.mapPoints.map(p => p._id));
+  const uniqueNewData = newData.filter(item => !existingIds.has(item._id));
+  
+  if (uniqueNewData.length > 0) {
+    this.mapPoints = [...this.mapPoints, ...uniqueNewData];
+    console.log(`边界查询加载更多成功，新增 ${uniqueNewData.length} 个点位`);
+  } else {
+    console.log('没有新的点位数据，可能已到达末尾');
+    // 如果没有新数据，强制设置hasMoreData为false
+    this.hasMoreData = false;
+  }
+} else {
+  this.mapPoints = newData;
+  console.log(`边界查询成功，获取到 ${newData.length} 个点位`);
+}
 <!-- 在 content-area 组件中添加 :has-more-data 属性 -->
 <content-area 
   :height="contentHeight"

@@ -131,5 +131,36 @@ const chengduData = [
   }
 ];
 
-// 将成都数据添加到示例数据中
-sampleData.push(...chengduData);
+// 在init-db.js中添加更多成都区域的测试数据
+const moreChengduData = [];
+
+// 在成都市中心周围生成随机点位
+for (let i = 0; i < 50; i++) {
+  // 成都市中心坐标约为 [104.066801, 30.572815]
+  const centerLng = 104.066801;
+  const centerLat = 30.572815;
+  
+  // 在中心点周围随机生成点位，范围约为5公里
+  const randomLng = centerLng + (Math.random() - 0.5) * 0.1; // 约5公里范围
+  const randomLat = centerLat + (Math.random() - 0.5) * 0.1; // 约5公里范围
+  
+  // 随机选择分类
+  const categories = ['热门资源', '展会活动', '个人活动'];
+  const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+  
+  moreChengduData.push({
+    title: `成都随机点位 ${i+1}`, 
+    author: `用户${Math.floor(Math.random() * 1000)}`, 
+    location: { 
+      type: 'Point', 
+      coordinates: [randomLng, randomLat]
+    }, 
+    likes: Math.floor(Math.random() * 500), 
+    category: randomCategory,
+    address: `四川省成都市随机地址 ${i+1}`,
+    description: `这是一个随机生成的测试点位 ${i+1}`
+  });
+}
+
+// 将更多成都数据添加到示例数据中
+sampleData.push(...moreChengduData);

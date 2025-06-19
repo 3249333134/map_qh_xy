@@ -142,7 +142,8 @@ export default {
       rightColumnHeights: {},
       scrollTop: 0,
       isScrollLocked: false,
-      categoryScrollPositions: {} // 新增：保存每个分类的滚动位置
+      categoryScrollPositions: {}, // 保存每个分类的滚动位置
+      loadMoreTimer: null // 添加防抖定时器
     }
   },
   computed: {
@@ -237,11 +238,20 @@ export default {
     
     // 加载更多事件
     onLoadMore() {
-      if (!this.isLoading && !this.isScrollLocked) {
-        this.$emit('load-more')
-        // 锁定滚动，防止重复触发
-        this.lockScroll()
+      // 清除之前的定时器
+      if (this.loadMoreTimer) {
+        clearTimeout(this.loadMoreTimer);
       }
+      
+      // 使用防抖定时器，避免频繁触发
+      this.loadMoreTimer = setTimeout(() => {
+        if (!this.isLoading && this.hasMoreData) {
+          console.log('触发加载更多事件');
+          this.$emit('load-more');
+        } else {
+          console.log('跳过加载更多: isLoading =', this.isLoading, 'hasMoreData =', this.hasMoreData);
+        }
+      }, 300);
     },
     
     // 临时锁定滚动，防止重复加载
@@ -258,25 +268,26 @@ export default {
     },
     
     // 为新卡片生成高度
+    // 为新卡片生成高度
     generateHeightsForNewItems() {
-      // 添加安全检查，确保 leftColumnData 和 rightColumnData 存在
-      if (this.leftColumnData && this.leftColumnData.length > 0) {
-        // 为左列新卡片生成高度
-        this.leftColumnData.forEach((_, index) => {
-          if (!this.leftColumnHeights[index]) {
-            this.leftColumnHeights[index] = this.getRandomHeight()
-          }
-        })
-      }
-      
-      if (this.rightColumnData && this.rightColumnData.length > 0) {
-        // 为右列新卡片生成高度
-        this.rightColumnData.forEach((_, index) => {
-          if (!this.rightColumnHeights[index]) {
-            this.rightColumnHeights[index] = this.getRandomHeight()
-          }
-        })
-      }
+    // 添加安全检查，确保 leftColumnData 和 rightColumnData 存在
+    if (this.leftColumnData && this.leftColumnData.length > 0) {
+    // 为左列新卡片生成高度
+    this.leftColumnData.forEach((_, index) => {
+    if (!this.leftColumnHeights[index]) {
+    this.leftColumnHeights[index] = this.getRandomHeight()
+    }
+    })
+    }
+    
+    if (this.rightColumnData && this.rightColumnData.length > 0) {
+    // 为右列新卡片生成高度
+    this.rightColumnData.forEach((_, index) => {
+    if (!this.rightColumnHeights[index]) {
+    this.rightColumnHeights[index] = this.getRandomHeight()
+    }
+    })
+    }
     },
     
     // 获取指定列和索引的卡片高度

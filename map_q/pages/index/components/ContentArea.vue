@@ -147,7 +147,9 @@ export default {
       categoryScrollPositions: {},
       scrollWithAnimation: true,
       // 添加一个对象来跟踪哪些分类已经被访问过
-      visitedCategories: {}
+      visitedCategories: {},
+      // 添加加载更多的防抖定时器
+      loadMoreTimer: null
     }
   },
   created() {
@@ -237,20 +239,20 @@ export default {
     },
     
     // 加载更多事件
+    // 优化加载更多事件
     onLoadMore() {
-      if (!this.isLoading && !this.isScrollLocked && this.hasMoreData) {
-        this.$emit('load-more')
-        // 锁定滚动，防止重复触发，但缩短锁定时间
-        this.lockScroll()
-      }
-    },
+    // 只检查是否正在加载和是否有更多数据
+    if (!this.isLoading && this.hasMoreData) {
+    // 添加防抖，避免频繁触发
+    if (this.loadMoreTimer) {
+    clearTimeout(this.loadMoreTimer);
+    }
     
-    // 临时锁定滚动，防止重复加载
-    lockScroll() {
-      this.isScrollLocked = true
-      setTimeout(() => {
-        this.isScrollLocked = false
-      }, 500) // 将锁定时间从1000毫秒减少到500毫秒，提高响应速度
+    this.loadMoreTimer = setTimeout(() => {
+    console.log('触发加载更多事件');
+    this.$emit('load-more');
+    }, 300);
+    }
     },
     
     // 卡片点击事件
@@ -340,8 +342,56 @@ export default {
       if (this.activeCategory) { // 确保 activeCategory 有值
         this.categoryScrollPositions[this.activeCategory] = scrollTop;
       }
+      
+      // 检测可视区域内的卡片
+      this.checkVisibleCards(scrollTop);
       // 注意：这里不要直接设置 this.scrollTop = scrollTop;
       // scrollTop 的变化应该由 watch.activeCategory 控制，以避免冲突
+    },
+    
+    // 检测可视区域内的卡片
+    checkVisibleCards(scrollTop) {
+      // 获取可视区域的高度
+      const visibleHeight = this.height - this.searchBoxHeight - 50; // 减去搜索框和分类选项卡的高度
+      const visibleBottom = scrollTop + visibleHeight;
+      
+      // 创建一个数组来存储可视区域内的卡片索引
+      const visibleCardIndices = [];
+      
+      // 检查左列卡片
+      let currentTop = 0;
+      this.leftColumnData.forEach((item, index) => {
+        const cardHeight = this.getColumnItemHeight('left', index);
+        const cardBottom = currentTop + cardHeight;
+        
+        // 如果卡片在可视区域内
+        if ((currentTop >= scrollTop && currentTop <= visibleBottom) || 
+            (cardBottom >= scrollTop && cardBottom <= visibleBottom) ||
+            (currentTop <= scrollTop && cardBottom >= visibleBottom)) {
+          visibleCardIndices.push(index * 2); // 左列卡片在原始数据中的索引是 index * 2
+        }
+        
+        currentTop += cardHeight + 20; // 加上卡片间距
+      });
+      
+      // 检查右列卡片
+      currentTop = 0;
+      this.rightColumnData.forEach((item, index) => {
+        const cardHeight = this.getColumnItemHeight('right', index);
+        const cardBottom = currentTop + cardHeight;
+        
+        // 如果卡片在可视区域内
+        if ((currentTop >= scrollTop && currentTop <= visibleBottom) || 
+            (cardBottom >= scrollTop && cardBottom <= visibleBottom) ||
+            (currentTop <= scrollTop && cardBottom >= visibleBottom)) {
+          visibleCardIndices.push(index * 2 + 1); // 右列卡片在原始数据中的索引是 index * 2 + 1
+        }
+        
+        currentTop += cardHeight + 20; // 加上卡片间距
+      });
+      
+      // 触发事件，通知父组件更新地图标记点
+      this.$emit('visible-cards-change', visibleCardIndices);
     },
   },
   computed: {

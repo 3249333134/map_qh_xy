@@ -1,13 +1,16 @@
 <template>
   <view class="map-container" :style="{ height: height + 'px' }">
     <map
+      id="map"
       class="map"
       :latitude="config.latitude"
       :longitude="config.longitude"
       :markers="config.markers"
-      :scale="16"
+      :scale="currentScale"
       show-location
       :subkey="mapKey"
+      @regionchange="onRegionChange"
+      @updated="onMapUpdated"
     ></map>
     
     <!-- 添加位置刷新按钮 -->
@@ -31,12 +34,244 @@ export default {
   },
   data() {
     return {
-      mapKey: 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K'
+      mapKey: 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K',
+      mapContext: null,
+      currentScale: 16,
+      isInitialized: false,
+      boundsFetchTimer: null, // 添加定时器引用
+      lastBoundsTime: 0, // 添加防抖时间戳
+      hasInitialBounds: false // 添加初始边界获取标志
     }
   },
+  mounted() {
+    // 延迟获取地图上下文，确保地图组件已完全渲染
+    this.$nextTick(() => {
+      this.boundsFetchTimer = setTimeout(() => {
+        this.initializeMap();
+      }, 300); // 增加延迟时间
+    });
+  },
+  
+  // 添加组件销毁时的清理
+  beforeDestroy() {
+    // 清理定时器
+    if (this.boundsFetchTimer) {
+      clearTimeout(this.boundsFetchTimer);
+    }
+  },
+  
+  // 添加组件卸载时的清理（Vue 3兼容）
+  beforeUnmount() {
+    this.cleanup();
+  },
+  
   methods: {
+    // 清理资源
+    cleanup() {
+      if (this.boundsFetchTimer) {
+        clearTimeout(this.boundsFetchTimer);
+        this.boundsFetchTimer = null;
+      }
+      this.mapContext = null;
+      this.isInitialized = false;
+    },
+    
+    // 初始化地图
+    initializeMap() {
+      try {
+        this.mapContext = uni.createMapContext('map', this);
+        console.log('地图上下文已创建:', this.mapContext);
+        this.isInitialized = true;
+        
+        // 初始化完成后延迟获取边界
+        this.boundsFetchTimer = setTimeout(() => {
+          this.getMapBounds();
+          this.hasInitialBounds = true; // 标记已获取初始边界
+        }, 1000); // 增加延迟确保地图完全加载
+      } catch (error) {
+        console.error('地图初始化失败:', error);
+      }
+    },
+    
     refreshLocation() {
       this.$emit('refresh-location')
+    },
+    
+    // 地图更新完成事件
+    onMapUpdated() {
+      console.log('地图更新完成');
+      // 只在初始化后的第一次更新获取边界，后续依赖regionchange事件
+      if (this.isInitialized && !this.hasInitialBounds) {
+        this.hasInitialBounds = true;
+        this.debouncedGetBounds();
+      }
+    },
+    
+    // 地图区域变化事件
+    onRegionChange(e) {
+      console.log('地图区域变化事件:', e);
+      // 只在用户操作结束时获取边界，并且添加类型判断
+      if (e.type === 'end' && (e.causedBy === 'drag' || e.causedBy === 'scale')) {
+        this.currentScale = e.scale || this.currentScale;
+        console.log('地图缩放级别:', this.currentScale);
+        
+        // 使用防抖，避免频繁调用
+        this.debouncedGetBounds();
+      }
+    },
+    
+    // 防抖获取边界
+    debouncedGetBounds() {
+      const now = Date.now();
+      // 增加防抖时间到2000ms
+      if (now - this.lastBoundsTime < 2000) { 
+        console.log('防抖：跳过边界获取');
+        return;
+      }
+      this.lastBoundsTime = now;
+      
+      if (this.boundsFetchTimer) {
+        clearTimeout(this.boundsFetchTimer);
+      }
+      
+      // 增加延迟时间，确保用户完全停止操作
+      this.boundsFetchTimer = setTimeout(() => {
+        this.getMapBounds();
+      }, 1000);
+    },
+    
+    // 获取地图可视区域边界
+    getMapBounds() {
+      if (!this.isInitialized || !this.mapContext) {
+        console.log('地图未初始化，跳过边界获取');
+        return;
+      }
+      
+      console.log('开始获取地图区域...');
+      
+      // 添加超时处理
+      const timeoutId = setTimeout(() => {
+        console.error('获取地图区域超时');
+        this.handleBoundsFailure();
+      }, 5000);
+      
+      this.mapContext.getRegion({
+        success: (res) => {
+          clearTimeout(timeoutId);
+          console.log('原始地图区域数据:', res);
+          
+          // 验证返回的数据
+          if (!res || !res.northeast || !res.southwest) {
+            console.error('地图区域数据不完整:', res);
+            this.handleBoundsFailure();
+            return;
+          }
+          
+          try {
+            const bounds = {
+              northeast: {
+                latitude: parseFloat(res.northeast.latitude),
+                longitude: parseFloat(res.northeast.longitude)
+              },
+              southwest: {
+                latitude: parseFloat(res.southwest.latitude),
+                longitude: parseFloat(res.southwest.longitude)
+              },
+              scale: this.currentScale
+            };
+            
+            console.log('处理后的地图可视区域:', bounds);
+            
+            // 验证边界数据的合理性
+            if (this.validateBounds(bounds)) {
+              console.log('发送区域变化事件给父组件');
+              this.$emit('region-changed', bounds);
+            } else {
+              this.handleBoundsFailure();
+            }
+          } catch (error) {
+            console.error('处理边界数据时出错:', error);
+            this.handleBoundsFailure();
+          }
+        },
+        fail: (error) => {
+          clearTimeout(timeoutId);
+          console.error('获取地图区域失败:', error);
+          this.handleBoundsFailure();
+        }
+      });
+    },
+    
+    // 验证边界数据
+    validateBounds(bounds) {
+      if (!bounds.northeast || !bounds.southwest) {
+        console.error('边界数据缺失');
+        return false;
+      }
+      
+      const { northeast, southwest } = bounds;
+      
+      // 检查数据类型
+      if (isNaN(northeast.latitude) || isNaN(northeast.longitude) ||
+          isNaN(southwest.latitude) || isNaN(southwest.longitude)) {
+        console.error('边界数据包含非数字值:', bounds);
+        return false;
+      }
+      
+      // 检查边界逻辑
+      if (northeast.latitude <= southwest.latitude ||
+          northeast.longitude <= southwest.longitude) {
+        console.error('地图边界数据异常:', bounds);
+        return false;
+      }
+      
+      // 检查边界范围是否合理（避免过大或过小的范围）
+      const latDiff = northeast.latitude - southwest.latitude;
+      const lngDiff = northeast.longitude - southwest.longitude;
+      
+      if (latDiff > 10 || lngDiff > 10 || latDiff < 0.0001 || lngDiff < 0.0001) {
+        console.error('地图边界范围异常:', { latDiff, lngDiff });
+        return false;
+      }
+      
+      return true;
+    },
+    
+    // 处理边界获取失败
+    handleBoundsFailure() {
+      console.log('尝试使用fallback边界');
+      const fallbackBounds = this.createFallbackBounds();
+      if (fallbackBounds && this.validateBounds(fallbackBounds)) {
+        console.log('使用fallback边界:', fallbackBounds);
+        this.$emit('region-changed', fallbackBounds);
+      } else {
+        console.error('无法创建有效的fallback边界');
+      }
+    },
+    
+    // 创建fallback边界（基于当前地图中心点）
+    createFallbackBounds() {
+      if (!this.config.latitude || !this.config.longitude) {
+        console.error('缺少地图中心点坐标');
+        return null;
+      }
+      
+      // 根据缩放级别计算大概的可视范围
+      const scale = this.currentScale || 16;
+      const latDelta = Math.max(0.001, 0.01 * (20 - scale) / 10);
+      const lngDelta = Math.max(0.001, 0.01 * (20 - scale) / 10);
+      
+      return {
+        northeast: {
+          latitude: this.config.latitude + latDelta,
+          longitude: this.config.longitude + lngDelta
+        },
+        southwest: {
+          latitude: this.config.latitude - latDelta,
+          longitude: this.config.longitude - lngDelta
+        },
+        scale: scale
+      };
     }
   }
 }
