@@ -10,7 +10,8 @@
     {
       "path": "pages/service/index",
       "style": {
-        "navigationBarTitleText": "服务"
+        "navigationBarTitleText": "服务",
+        "navigationStyle": "custom"
       }
     },
     {

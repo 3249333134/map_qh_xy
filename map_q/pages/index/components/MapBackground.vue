@@ -36,11 +36,11 @@ export default {
     return {
       mapKey: 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K',
       mapContext: null,
-      currentScale: 16,
+      currentScale: this.config.scale || 18,  // 使用传入的scale值，如果没有则默认为18
       isInitialized: false,
-      boundsFetchTimer: null, // 添加定时器引用
-      lastBoundsTime: 0, // 添加防抖时间戳
-      hasInitialBounds: false // 添加初始边界获取标志
+      boundsFetchTimer: null,
+      lastBoundsTime: 0,
+      hasInitialBounds: false
     }
   },
   mounted() {

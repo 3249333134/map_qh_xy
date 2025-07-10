@@ -1,0 +1,17 @@
+{
+  "name": "mall-cook-service",
+  "version": "1.0.0",
+  "description": "Mall-Cook backend service",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "koa": "^2.13.0",
+    "koa-router": "^10.0.0",
+    "koa-bodyparser": "^4.3.0",
+    "mongoose": "^5.11.15",
+    "koa-compose": "^4.1.0",
+    "glob": "^7.2.3"
+  }
+}
