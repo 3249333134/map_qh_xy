@@ -42,21 +42,25 @@
     },
     "quickapp" : {},
     "mp-weixin" : {
-        "appid" : "",
+        "appid" : "your-appid",
         "setting" : {
-            "urlCheck" : false
+            "urlCheck" : false,
+            "es6": true,
+            "enhance": true,
+            "postcss": true,
+            "minified": true,
+            "checkSiteMap": false
         },
-        "usingComponents" : true,
-        "requiredPrivateInfos": ["getLocation"],
         "permission": {
             "scope.userLocation": {
-                "desc": "您的位置信息将用于展示周边服务点"
+                "desc": "你的位置信息将用于小程序位置接口的效果展示"
             }
         },
         "networkTimeout": {
             "request": 10000,
             "downloadFile": 10000
-        }
+        },
+        "requiredBackgroundModes": ["location"]
     },
     "mp-alipay" : {
         "usingComponents" : true

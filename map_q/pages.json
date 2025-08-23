@@ -1,4 +1,14 @@
 {
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^ProfileSection$": "@/pages/my/components/ProfileSection.vue",
+      "^ContentSection$": "@/pages/my/components/ContentSection.vue",
+      "^LocationModule$": "@/pages/my/components/LocationModule.vue",
+      "^DateModule$": "@/pages/my/components/DateModule.vue",
+      "^FavoriteModule$": "@/pages/my/components/FavoriteModule.vue"
+    }
+  },
   "pages": [
     {
       "path": "pages/index/index",
@@ -17,13 +27,16 @@
     {
       "path": "pages/message/index",
       "style": {
-        "navigationBarTitleText": "消息"
+        "navigationBarTitleText": "消息",
+        "navigationStyle": "custom"
       }
     },
     {
       "path": "pages/my/index",
       "style": {
-        "navigationBarTitleText": "我的"
+        "navigationBarTitleText": "我的",
+        "navigationStyle": "custom",
+        "navigationBarTextStyle": "black"
       }
     }
   ],

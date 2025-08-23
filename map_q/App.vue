@@ -2,6 +2,16 @@
 export default {
   onLaunch: function() {
     console.log('App Launch')
+    
+    // 全局错误处理
+    uni.onError((error) => {
+      console.warn('全局错误捕获:', error)
+      // 过滤掉 jsbridge 相关的警告
+      if (error.includes('jsbridge') && error.includes('too early')) {
+        // 这类错误通常不影响功能，只是时序问题
+        return
+      }
+    })
   },
   onShow: function() {
     console.log('App Show')
