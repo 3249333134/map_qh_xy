@@ -1,0 +1,31 @@
+/components/
+├── InAppNotification.vue          # 现有组件
+├── map/                          # 地图相关组件
+│   ├── MapBackground.vue         # 地图背景
+├── content/                      # 内容相关组件
+│   ├── ContentArea.vue          # 内容区域
+│   ├── SearchBox.vue            # 搜索框（从ContentArea拆分）
+│   └── CategoryTabs.vue         # 分类选项卡（从ContentArea拆分）
+├── layout/                       # 布局相关组件
+│   └── WaterfallLayout.vue      # 瀑布流布局
+└── card/                         # 卡片相关组件
+    └── CardItem.vue             # 卡片组件
+
+/composables/
+├── useMapData.js                 # 地图数据管理 composable
+├── useLayout.js                  # 布局管理 composable  
+├── useCategory.js                # 分类管理 composable
+└── useMapManager.js              # 地图管理 composable
+
+
+
+
+
+
+
+
+
+
+
+
+
