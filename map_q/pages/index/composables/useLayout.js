@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import { LAYOUT_CONFIG } from '../pages/index/constants/layoutConfig.js'
+import { LAYOUT_CONFIG } from '../constants/layoutConfig.js'
 
 export function useLayout() {
   // 布局状态

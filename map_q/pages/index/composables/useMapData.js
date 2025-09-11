@@ -1,5 +1,5 @@
 import { ref, reactive } from 'vue'
-import { MONGO_CONFIG } from '../utils/db.js'
+import { MONGO_CONFIG } from '../../../utils/db.js'
 
 export function useMapData() {
   // 数据状态
@@ -23,37 +23,56 @@ export function useMapData() {
   const maxExpansionFactor = ref(2.0)
   
   // 获取地图数据
+  // 在fetchMapData函数中添加更好的错误处理
   const fetchMapData = async (activeCategory, mapConfig, isLoadMore = false) => {
+    if (isLoading.value && !isLoadMore) {
+      console.log('数据正在加载中，跳过重复请求')
+      return
+    }
+    
     isLoading.value = true
     
-    const params = {
-      page: currentPage.value,
-      pageSize: pageSize.value,
-      lat: mapConfig.latitude,
-      lng: mapConfig.longitude,
-      radius: 5000
-    }
-    
-    if (activeCategory !== 'all') {
-      const categoryMap = {
-        'hot': '热门资源',
-        'exhibition': '展会活动',
-        'personal': '个人活动'
-      }
-      params.category = categoryMap[activeCategory] || activeCategory
-    }
-    
     try {
+      console.log('开始获取地图数据:', { activeCategory, isLoadMore })
+      
+      const params = {
+        page: currentPage.value,
+        pageSize: pageSize.value,
+        lat: mapConfig.latitude,
+        lng: mapConfig.longitude,
+        radius: 5000
+      }
+      
+      if (activeCategory !== 'all') {
+        const categoryMap = {
+          'hot': '热门资源',
+          'exhibition': '展会活动',
+          'personal': '个人活动'
+        }
+        params.category = categoryMap[activeCategory] || activeCategory
+      }
+      
       const res = await new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          reject(new Error('请求超时'))
+        }, 10000) // 10秒超时
+        
         uni.request({
           url: MONGO_CONFIG.API_URL,
           method: 'GET',
           data: params,
-          success: resolve,
-          fail: reject
+          success: (response) => {
+            clearTimeout(timer)
+            resolve(response)
+          },
+          fail: (error) => {
+            clearTimeout(timer)
+            reject(error)
+          }
         })
       })
       
+      console.log('API响应:', res)
       const responseData = res.data && res.data.data ? res.data.data : 
                           (Array.isArray(res.data) ? res.data : [])
       

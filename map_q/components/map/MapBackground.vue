@@ -36,14 +36,44 @@ export default {
     return {
       mapKey: 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K',
       mapContext: null,
-      currentScale: this.config.scale || 18,  // 使用传入的scale值，如果没有则默认为18
       isInitialized: false,
       boundsFetchTimer: null,
       lastBoundsTime: 0,
-      hasInitialBounds: false
+      hasInitialBounds: false,
+      retryCount: 0,
+      maxRetries: 3
     }
   },
+  computed: {
+    currentScale() {
+      return (this.config && this.config.scale) || 18
+    },
+    mapCenter() {
+      return {
+        latitude: (this.config && this.config.latitude) || 39.9042,
+        longitude: (this.config && this.config.longitude) || 116.4074
+      }
+    }
+  },
+  methods: {
+    // 添加地图错误处理
+    onMapError(e) {
+      console.error('地图加载错误:', e)
+      if (this.retryCount < this.maxRetries) {
+        this.retryCount++
+        setTimeout(() => {
+          this.initializeMap()
+        }, 2000 * this.retryCount) // 递增延迟重试
+      } else {
+        this.$emit('map-error', '地图加载失败，请检查网络连接')
+      }
+    }
+  },  // 在这里添加逗号
   mounted() {
+    // 在mounted中安全地设置scale
+    if (this.config && this.config.scale) {
+      this.currentScale = this.config.scale;
+    }
     // 延迟获取地图上下文，确保地图组件已完全渲染
     this.$nextTick(() => {
       this.boundsFetchTimer = setTimeout(() => {

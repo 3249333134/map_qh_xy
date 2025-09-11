@@ -36,8 +36,8 @@ import { LAYOUT_CONFIG } from '../index/constants/layoutConfig.js'
 // 导入MongoDB配置
 import { MONGO_CONFIG } from '../../utils/db.js'
 // 导入组件
-import MapBackground from '../index/components/MapBackground.vue'
-import ContentArea from '../index/components/ContentArea.vue'
+import MapBackground from '../../components/map/MapBackground.vue'
+import ContentArea from '../../components/content/ContentArea.vue'
 
 // 服务页面布局配置常量
 const SERVICE_LAYOUT_CONFIG = {

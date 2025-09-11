@@ -1,11 +1,19 @@
 import { ref, reactive } from 'vue'
 
 export function useMapManager() {
-  // 地图配置
+  // 地图配置 - 添加完整配置
   const mapConfig = reactive({
     latitude: 30.572815,
     longitude: 104.066801,
-    markers: []
+    scale: 18,  // 添加缺失的scale属性
+    markers: [],
+    // 添加其他可能需要的配置
+    showLocation: true,
+    enableOverlooking: false,
+    enableZoom: true,
+    enableScroll: true,
+    enableRotate: false,
+    showCompass: false
   })
   
   // 可视卡片索引
