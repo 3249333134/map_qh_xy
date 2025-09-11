@@ -1,58 +1,42 @@
-import { ref, computed } from 'vue'
-import { MONGO_CONFIG } from '../utils/db.js'
+import { ref, reactive } from 'vue'
+import { MONGO_CONFIG } from '../../../utils/db.js'
+import { CATEGORY_MAP, MARKER_CONFIG } from '../constants/layoutConfig.js'
 
-export function useServiceData() {
-  const isLoading = ref(false)
+export function useServiceMapData() {
+  // 数据状态
   const mapPoints = ref([])
+  const isLoading = ref(false)
+  const hasMoreData = ref(true)
   const currentPage = ref(1)
   const pageSize = ref(10)
-  const hasMoreData = ref(true)
-  const categoryData = ref({})
-  const categoryPages = ref({})
+  
+  // 地图相关
   const mapBounds = ref(null)
+  const visibleCardIndices = ref([])
   
   // 地图配置
-  const mapConfig = ref({
+  const mapConfig = reactive({
     latitude: 30.572815,
     longitude: 104.066801,
     markers: [],
     scale: 18
   })
   
-  // 标记图标配置
-  const markerIcons = {
-    'all': '/static/marker.png',
-    'repair': '/static/marker.png',
-    'clean': '/static/marker.png',
-    'delivery': '/static/marker.png'
-  }
-
-  // 从MongoDB获取数据
-  const fetchMapData = async (isLoadMore = false, activeCategory = 'all') => {
+  // 获取地图数据
+  const fetchMapData = async (activeCategory, isLoadMore = false) => {
     isLoading.value = true
     
-    // 确保categoryData和categoryPages已初始化
-    if (!categoryData.value) categoryData.value = {}
-    if (!categoryPages.value) categoryPages.value = {}
-    
-    // 构建API请求参数
     const params = {
       page: currentPage.value,
       pageSize: pageSize.value,
-      lat: mapConfig.value.latitude,
-      lng: mapConfig.value.longitude,
+      lat: mapConfig.latitude,
+      lng: mapConfig.longitude,
       radius: 5000,
       type: 'service'
     }
     
-    // 如果有分类筛选
     if (activeCategory !== 'all') {
-      const categoryMap = {
-        'repair': '维修服务',
-        'clean': '清洁服务',
-        'delivery': '配送服务'
-      }
-      params.category = categoryMap[activeCategory] || activeCategory
+      params.category = CATEGORY_MAP[activeCategory] || activeCategory
     }
     
     try {
@@ -82,28 +66,23 @@ export function useServiceData() {
         const pagination = res.data && res.data.pagination ? res.data.pagination : {}
         hasMoreData.value = currentPage.value < (pagination.totalPages || 1)
         
-        categoryData.value[activeCategory] = [...mapPoints.value]
-        categoryPages.value[activeCategory] = currentPage.value
-        
         updateMapMarkers()
       } else {
         console.log('获取数据为空，使用测试数据')
-        addTestData(isLoadMore, activeCategory)
+        addTestData(activeCategory, isLoadMore)
       }
     } catch (err) {
       console.error('请求失败:', err)
-      addTestData(isLoadMore, activeCategory)
+      addTestData(activeCategory, isLoadMore)
     } finally {
       isLoading.value = false
     }
   }
   
   // 根据地图边界获取数据
-  const fetchMapDataByBounds = async (isLoadMore = false, activeCategory = 'all') => {
+  const fetchMapDataByBounds = async (activeCategory, isLoadMore = false) => {
     if (!mapBounds.value) {
-      console.error('没有地图边界信息，无法获取数据')
-      await fetchMapData(isLoadMore, activeCategory)
-      return
+      return fetchMapData(activeCategory, isLoadMore)
     }
     
     isLoading.value = true
@@ -119,12 +98,7 @@ export function useServiceData() {
     }
     
     if (activeCategory !== 'all') {
-      const categoryMap = {
-        'repair': '维修服务',
-        'clean': '清洁服务',
-        'delivery': '配送服务'
-      }
-      params.category = categoryMap[activeCategory] || activeCategory
+      params.category = CATEGORY_MAP[activeCategory] || activeCategory
     }
     
     try {
@@ -154,24 +128,21 @@ export function useServiceData() {
         const pagination = res.data && res.data.pagination ? res.data.pagination : {}
         hasMoreData.value = currentPage.value < (pagination.totalPages || 1)
         
-        categoryData.value[activeCategory] = [...mapPoints.value]
-        categoryPages.value[activeCategory] = currentPage.value
-        
         updateMapMarkers()
       } else {
         console.log('获取数据为空，使用测试数据')
-        addTestData(isLoadMore, activeCategory)
+        addTestData(activeCategory, isLoadMore)
       }
     } catch (err) {
       console.error('请求失败:', err)
-      addTestData(isLoadMore, activeCategory)
+      addTestData(activeCategory, isLoadMore)
     } finally {
       isLoading.value = false
     }
   }
   
   // 添加测试数据
-  const addTestData = (isLoadMore = false, activeCategory = 'all') => {
+  const addTestData = (activeCategory, isLoadMore = false) => {
     if (!isLoadMore && currentPage.value === 1) {
       mapPoints.value = []
     }
@@ -208,8 +179,8 @@ export function useServiceData() {
       latRange = mapBounds.value.northeast.latitude - mapBounds.value.southwest.latitude
       lngRange = mapBounds.value.northeast.longitude - mapBounds.value.southwest.longitude
     } else {
-      centerLat = mapConfig.value.latitude
-      centerLng = mapConfig.value.longitude
+      centerLat = mapConfig.latitude
+      centerLng = mapConfig.longitude
       latRange = 0.02
       lngRange = 0.02
     }
@@ -233,44 +204,42 @@ export function useServiceData() {
     }
     
     hasMoreData.value = true
-    categoryData.value[activeCategory] = [...mapPoints.value]
-    categoryPages.value[activeCategory] = currentPage.value
     
-    updateMapMarkers()
+    uni.nextTick(() => {
+      updateMapMarkers()
+    })
   }
   
   // 更新地图标记点
   const updateMapMarkers = () => {
     if (!mapPoints.value || mapPoints.value.length === 0) {
-      mapConfig.value.markers = []
+      mapConfig.markers = []
       return
     }
     
-    const markers = mapPoints.value.map((point, index) => {
-      return {
-        id: index,
-        latitude: point.location.coordinates[1],
-        longitude: point.location.coordinates[0],
-        iconPath: '/static/marker.png',
-        width: 24,
-        height: 24,
-        customData: {
-          pointId: point._id,
-          name: point.name,
-          index: index
-        },
-        callout: {
-          content: point.name,
-          color: '#000000',
-          fontSize: 12,
-          borderRadius: 4,
-          padding: 5,
-          display: 'BYCLICK'
-        }
+    const markers = mapPoints.value.map((point, index) => ({
+      id: index,
+      latitude: point.location.coordinates[1],
+      longitude: point.location.coordinates[0],
+      iconPath: MARKER_CONFIG.DEFAULT_ICON,
+      width: MARKER_CONFIG.SIZE.WIDTH,
+      height: MARKER_CONFIG.SIZE.HEIGHT,
+      customData: {
+        pointId: point._id,
+        name: point.name,
+        index: index
+      },
+      callout: {
+        content: point.name,
+        color: '#000000',
+        fontSize: 12,
+        borderRadius: 4,
+        padding: 5,
+        display: 'BYCLICK'
       }
-    })
+    }))
     
-    mapConfig.value.markers = markers
+    mapConfig.markers = markers
   }
   
   // 获取用户位置
@@ -281,42 +250,20 @@ export function useServiceData() {
         isHighAccuracy: true
       })
       
-      mapConfig.value.latitude = res.latitude
-      mapConfig.value.longitude = res.longitude
+      mapConfig.latitude = res.latitude
+      mapConfig.longitude = res.longitude
       
       return res
     } catch (error) {
       console.error('定位失败，使用默认位置:', error)
-      mapConfig.value.latitude = 30.572269
-      mapConfig.value.longitude = 104.066541
+      mapConfig.latitude = 30.572269
+      mapConfig.longitude = 104.066541
       throw error
     }
   }
   
-  // 处理卡片点击
-  const handleCardTap = (index) => {
-    if (mapPoints.value[index] && mapPoints.value[index].location) {
-      const point = mapPoints.value[index]
-      const coordinates = point.location.coordinates
-      
-      mapConfig.value.latitude = coordinates[1]
-      mapConfig.value.longitude = coordinates[0]
-      
-      uni.showToast({
-        title: `定位到: ${point.name}`,
-        icon: 'none',
-        duration: 2000
-      })
-    }
-  }
-  
-  // 地图区域变化事件处理
-  const onMapRegionChanged = (bounds) => {
-    mapBounds.value = bounds
-  }
-  
-  // 加载更多内容
-  const loadMoreItems = async (activeCategory = 'all') => {
+  // 加载更多数据
+  const loadMoreItems = (activeCategory) => {
     if (isLoading.value || !hasMoreData.value) {
       return
     }
@@ -330,51 +277,55 @@ export function useServiceData() {
     currentPage.value++
     
     if (mapBounds.value) {
-      await fetchMapDataByBounds(true, activeCategory)
+      fetchMapDataByBounds(activeCategory, true)
     } else {
-      await fetchMapData(true, activeCategory)
+      fetchMapData(activeCategory, true)
     }
   }
   
-  // 切换分类
-  const switchCategory = async (categoryId) => {
-    if (!categoryData.value) categoryData.value = {}
-    if (!categoryPages.value) categoryPages.value = {}
-    
-    // 如果已有该分类的数据，则恢复
-    if (categoryData.value[categoryId] && categoryData.value[categoryId].length > 0) {
-      mapPoints.value = [...categoryData.value[categoryId]]
-      currentPage.value = categoryPages.value[categoryId] || 1
-      updateMapMarkers()
-    } else {
-      // 否则重新获取数据
-      currentPage.value = 1
-      await fetchMapData(false, categoryId)
+  // 处理卡片点击
+  const handleCardTap = (index) => {
+    if (mapPoints.value[index] && mapPoints.value[index].location) {
+      const point = mapPoints.value[index]
+      const coordinates = point.location.coordinates
+      
+      mapConfig.latitude = coordinates[1]
+      mapConfig.longitude = coordinates[0]
+      
+      uni.showToast({
+        title: `定位到: ${point.name}`,
+        icon: 'none',
+        duration: 2000
+      })
     }
   }
   
-  // 加载初始数据
-  const loadInitialData = async (activeCategory = 'all') => {
-    console.log('加载初始数据')
-    currentPage.value = 1
-    
-    if (mapBounds.value) {
-      await fetchMapDataByBounds(false, activeCategory)
-    } else {
-      await fetchMapData(false, activeCategory)
-    }
+  // 处理可视卡片变化
+  const handleVisibleCardsChange = (visibleIndices) => {
+    visibleCardIndices.value = visibleIndices
   }
-
+  
+  // 地图区域变化事件处理
+  const onMapRegionChanged = (bounds) => {
+    mapBounds.value = bounds
+  }
+  
+  // 搜索输入处理
+  const onSearchInput = (e) => {
+    const searchText = e.detail.value
+    console.log('搜索:', searchText)
+  }
+  
   return {
     // 状态
-    isLoading,
     mapPoints,
-    currentPage,
+    isLoading,
     hasMoreData,
-    mapConfig,
+    currentPage,
+    pageSize,
     mapBounds,
-    categoryData,
-    categoryPages,
+    visibleCardIndices,
+    mapConfig,
     
     // 方法
     fetchMapData,
@@ -382,10 +333,10 @@ export function useServiceData() {
     addTestData,
     updateMapMarkers,
     getUserLocation,
-    handleCardTap,
-    onMapRegionChanged,
     loadMoreItems,
-    switchCategory,
-    loadInitialData
+    handleCardTap,
+    handleVisibleCardsChange,
+    onMapRegionChanged,
+    onSearchInput
   }
 }
