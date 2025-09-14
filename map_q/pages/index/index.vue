@@ -168,10 +168,20 @@ export default {
         }
       }
       
-      // TODO: 这里可以添加跳转到详情页的逻辑
-      // uni.navigateTo({
-      //   url: `/pages/detail/detail?id=${cardData._id}`
-      // })
+      // 跳转到详情页，传递卡片数据
+      if (cardData && cardData._id) {
+        try {
+          await uni.navigateTo({
+            url: `/pages/detail/index?id=${cardData._id}&title=${encodeURIComponent(cardData.name || cardData.title || '')}&author=${encodeURIComponent(cardData.author || '')}&likes=${cardData.likes || 0}`
+          })
+        } catch (error) {
+          console.error('跳转详情页失败:', error)
+          // 如果跳转失败，可以显示错误提示
+          handleError(error, '跳转详情页')
+        }
+      } else {
+        console.warn('卡片数据不完整，无法跳转详情页')
+      }
     }
     
     // 处理下方内容区域点击：只定位到地图

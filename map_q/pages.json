@@ -18,6 +18,13 @@
       }
     },
     {
+      "path": "pages/detail/index",
+      "style": {
+        "navigationBarTitleText": "详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/service/index",
       "style": {
         "navigationBarTitleText": "服务",
