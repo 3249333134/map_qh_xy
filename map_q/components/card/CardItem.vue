@@ -1,11 +1,17 @@
 <template> 
   <view 
     class="card" 
-    :style="{ '--card-height': height + 'rpx' }"
-    @tap="onCardTap"> 
-    <!-- 卡片内容 --> 
-    <view class="card-media"></view> 
-    <view class="card-content"> 
+    :style="{ '--card-height': height + 'rpx' }"> 
+    <!-- 卡片上半部分：点击进入详情页并定位 --> 
+    <view 
+      class="card-media"
+      @tap="handleMediaTap"
+      @click="handleMediaTap"></view> 
+    <!-- 卡片下半部分：点击只定位到地图 -->
+    <view 
+      class="card-content"
+      @tap="handleContentTap"
+      @click="handleContentTap"> 
       <view class="card-title">{{ cardTitle }}</view> 
       <view class="card-author">{{ cardAuthor }}</view> 
       <view class="card-footer"> 
@@ -60,8 +66,22 @@ export default {
     } 
   },
   methods: {
-    onCardTap() {
-      this.$emit('card-tap', this.index)
+    // 上方媒体区域点击：进入详情页并定位
+    handleMediaTap() {
+      console.log('上方媒体区域被点击，准备跳转详情页并定位')
+      this.$emit('media-tap', {
+        cardData: this.cardData,
+        index: this.index
+      })
+    },
+    
+    // 下方内容区域点击：只定位到地图
+    handleContentTap() {
+      console.log('下方内容区域被点击，准备定位到地图')
+      this.$emit('content-tap', {
+        cardData: this.cardData,
+        index: this.index
+      })
     }
   }
 } 
@@ -83,12 +103,14 @@ export default {
   padding: 16rpx; 
   width: 100%;
   box-sizing: border-box;
+  cursor: pointer;
 } 
 
 .card-media { 
   background-color: #a0c4ff; 
   height: var(--card-height, 200rpx); 
   width: 100%; 
+  cursor: pointer;
 } 
 
 .card-content { 

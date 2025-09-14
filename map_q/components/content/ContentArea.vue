@@ -64,7 +64,8 @@
             :card-data="item"
             :height="getColumnItemHeight('left', index)"
             column-type="left"
-            @card-tap="onCardTap"
+            @media-tap="onMediaTap"
+            @content-tap="onContentTap"
           />
         </view>
         
@@ -77,7 +78,8 @@
             :card-data="item"
             :height="getColumnItemHeight('right', index)"
             column-type="right"
-            @card-tap="onCardTap"
+            @media-tap="onMediaTap"
+            @content-tap="onContentTap"
           />
         </view>
       </view>
@@ -255,7 +257,17 @@ export default {
     }
     },
     
-    // 卡片点击事件
+    // 上方媒体区域点击：进入详情页并定位
+    onMediaTap(data) {
+      this.$emit('media-tap', data)
+    },
+    
+    // 下方内容区域点击：只定位到地图
+    onContentTap(data) {
+      this.$emit('content-tap', data)
+    },
+    
+    // 卡片点击事件（保留兼容性）
     onCardTap(index) {
       this.$emit('card-tap', index)
     },
