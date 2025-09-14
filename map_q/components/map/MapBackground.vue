@@ -126,7 +126,31 @@ export default {
     refreshLocation() {
       this.$emit('refresh-location')
     },
-    
+
+    // 添加地图定位方法
+    moveToLocation(latitude, longitude, scale = 16) {
+      if (!latitude || !longitude) {
+        console.error('定位失败：缺少有效的经纬度坐标')
+        return Promise.reject(new Error('缺少有效的经纬度坐标'))
+      }
+      
+      console.log(`地图定位到坐标: ${latitude}, ${longitude}`)
+      
+      return new Promise((resolve) => {
+        // 触发父组件更新地图配置
+        this.$emit('move-to-location', {
+          latitude,
+          longitude,
+          scale
+        })
+        
+        // 等待地图更新完成
+        setTimeout(() => {
+          resolve({ latitude, longitude, scale })
+        }, 300)
+      })
+    },
+
     // 地图更新完成事件
     onMapUpdated() {
       console.log('地图更新完成');

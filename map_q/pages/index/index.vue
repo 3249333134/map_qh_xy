@@ -11,6 +11,8 @@
       :height="mapHeight"
       @regionchange="onMapRegionChanged"
       @map-error="handleMapError"
+      @move-to-location="handleMoveToLocation"
+      ref="mapBackground"
     />
     
     <!-- 内容区域 -->
@@ -32,6 +34,8 @@
       @search-input="onSearchInput"
       @load-more="loadMoreItems"
       @card-tap="handleCardTap"
+      @media-tap="handleMediaTap"
+      @content-tap="handleContentTap"
       @visible-cards-change="handleVisibleCardsChange"
     />
   </view>
@@ -54,6 +58,8 @@ export default {
   },
   
   setup() {
+    // 获取地图背景组件的引用
+    const mapBackground = ref(null)
     // 使用 composables
     const {
       mapPoints,
@@ -135,6 +141,58 @@ export default {
       // 卡片点击逻辑
       console.log('卡片点击:', cardData)
     }
+
+    // 处理地图定位事件
+    const handleMoveToLocation = (locationData) => {
+      const { latitude, longitude, scale } = locationData
+      mapConfig.latitude = latitude
+      mapConfig.longitude = longitude
+      mapConfig.scale = scale
+      console.log('地图配置已更新:', locationData)
+    }
+
+    // 处理上方媒体区域点击：跳转详情页并定位
+    const handleMediaTap = async (data) => {
+      console.log('媒体区域点击，准备跳转详情页并定位:', data)
+      
+      const { cardData } = data
+      
+      // 调用地图组件的定位方法
+      if (cardData && cardData.location && cardData.location.coordinates && mapBackground.value) {
+        const [longitude, latitude] = cardData.location.coordinates
+        try {
+          await mapBackground.value.moveToLocation(latitude, longitude, 16)
+          console.log('地图定位成功')
+        } catch (error) {
+          console.error('地图定位失败:', error)
+        }
+      }
+      
+      // TODO: 这里可以添加跳转到详情页的逻辑
+      // uni.navigateTo({
+      //   url: `/pages/detail/detail?id=${cardData._id}`
+      // })
+    }
+    
+    // 处理下方内容区域点击：只定位到地图
+    const handleContentTap = async (data) => {
+      console.log('内容区域点击，准备定位到地图:', data)
+      
+      const { cardData } = data
+      
+      // 调用地图组件的定位方法
+      if (cardData && cardData.location && cardData.location.coordinates && mapBackground.value) {
+        const [longitude, latitude] = cardData.location.coordinates
+        try {
+          await mapBackground.value.moveToLocation(latitude, longitude, 16)
+          console.log('地图定位成功')
+        } catch (error) {
+          console.error('地图定位失败:', error)
+        }
+      } else {
+        console.warn('卡片数据中缺少位置信息或地图组件未加载')
+      }
+    }
     
     // 初始化函数优化
     const init = async () => {
@@ -171,30 +229,50 @@ export default {
     })
     
     return {
-      // 状态
-      mapPoints,
-      isLoading,
-      hasMoreData,
+      // 组件引用
+      mapBackground,
+      
+      // 布局相关
       contentHeight,
       mapHeight,
       isDragging,
-      categories,
-      activeCategory,
-      mapConfig,
-      visibleCardIndices,
-      errorMessage,
-      showError,
-      
-      // 方法
       handleDragStart,
       handleDrag,
       handleDragEnd,
-      handleCategoryChange,
-      onSearchInput,
-      loadMoreItems,
-      handleCardTap,
+      initLayout,
+      
+      // 地图相关
+      mapConfig,
+      visibleCardIndices,
+      updateMapMarkers,
+      getUserLocation,
       onMapRegionChanged,
       handleVisibleCardsChange,
+      handleMoveToLocation,
+      
+      // 数据相关
+      mapPoints,
+      isLoading,
+      hasMoreData,
+      fetchMapData,
+      loadMore,
+      
+      // 分类相关
+      categories,
+      activeCategory,
+      handleCategoryChange,
+      
+      // 事件处理
+      loadMoreItems,
+      onSearchInput,
+      handleCardTap,
+      handleMediaTap,
+      handleContentTap,
+      
+      // 错误处理
+      showError,
+      errorMessage,
+      handleError,
       handleMapError
     }
   }
