@@ -1,7 +1,12 @@
 <template>
   <view class="detail-page">
     <!-- 页面滚动容器 -->
-    <scroll-view class="page-scroll" scroll-y :style="{ height: '100vh' }">
+    <scroll-view 
+      class="page-scroll" 
+      scroll-y 
+      :scroll-top="pageScrollTop"
+      :scroll-with-animation="true"
+      :style="{ height: '100vh' }">
 
     <!-- 头部导航 -->
     <view class="header">
@@ -62,31 +67,34 @@
       </view>
       
       <!-- 评论列表区域 -->
+      <!-- 重新设计的评论区域 - 只调整点赞和回复位置 -->
       <view class="comments-section" v-if="showComments && commentList.length > 0">
         <view class="comment-item" v-for="(comment, index) in commentList" :key="index">
           <image class="comment-avatar" :src="comment.avatar" mode="aspectFill"></image>
           <view class="comment-content">
-            <view class="comment-header">
+            <!-- 名字、时间和点赞在同一行 -->
+            <view class="comment-main">
               <text class="comment-username">{{ comment.name }}</text>
               <text class="comment-time">{{ comment.time }}</text>
+              <view class="comment-like" @click="toggleCommentLike(comment)">
+                <text class="like-icon" :class="{ 'liked': comment.isLiked }">♥</text>
+                <text class="like-count" v-if="comment.likeCount > 0">{{ comment.likeCount }}</text>
+              </view>
             </view>
-            <text class="comment-text">{{ comment.content }}</text>
-            <view class="comment-footer">
+            <!-- 评论内容和回复 -->
+            <view class="comment-meta">
+              <text class="comment-text">{{ comment.content }}</text>
               <view class="comment-actions">
-                <view class="comment-like" @click="toggleCommentLike(comment)">
-                  <text class="iconfont icon-like" :class="{ 'liked': comment.isLiked }">♥</text>
-                  <text class="like-count">{{ comment.likeCount }}</text>
-                </view>
                 <text class="comment-reply">回复</text>
               </view>
             </view>
           </view>
         </view>
-        
-        <!-- 评论底部提示 -->
-        <view class="comment-end-tip">
-          <text class="end-tip-text">到底了</text>
-        </view>
+      </view>
+      
+      <!-- 评论底部提示 -->
+      <view class="comment-end-tip">
+        <text class="end-tip-text">到底了</text>
       </view>
       
       <!-- 底部留白区域 -->
@@ -148,6 +156,7 @@
 export default {
   data() {
     return {
+      pageScrollTop: 0,
       userInfo: {
         name: '人中黄疯许陌蒸',
         avatar: '/static/logo.png',
@@ -175,30 +184,15 @@ export default {
       showComments: true, // 将这里改为true，让评论列表默认显示
       commentList: [],
       randomComments: [],
-      commentTemplates: [
-        '太好看了！',
-        '小舞生日快乐！',
-        '哈哈哈哈哈',
-        '666，赞了赞了',
-        '我也想去！',
-        '好可爱啊',
-        '拍得真好',
-        '期待更多作品',
-        '太棒了',
-        '喜欢这个风格',
-        '真的很不错',
-        '支持支持',
-        '好美啊',
-        '太厉害了',
-        '学到了',
-        '收藏了',
-        '转发了',
-        '点赞👍',
-        '真心不错',
-        '继续加油'
-      ],
       usernames: [
-        '司烬', '星白', '夏日', '冰喵喵', '野生的泡泡糖师', '王浩雄', '分程', '冯华平喵', 'Tommy&小古', '冰喵喵', '等着面条有神桃花开', 'Clown小丑'
+        '司烬', '星白', '夏日', '冰喵喵', '野生的泡泡糖师', '王浩雄', 
+        '分程', '冯华平喵', 'Tommy&小古', '冰喵喵', '等着面条有神桃花开', 'Clown小丑'
+      ],
+      commentTemplates: [
+        '太好看了！', '小舞生日快乐！', '哈哈哈哈哈', '666，赞了赞了',
+        '我也想去！', '好可爱啊', '拍得真好', '期待更多作品', '太棒了',
+        '喜欢这个风格', ' really 不错', '支持支持', '好美啊', '太厉害了',
+        '学到了', '收藏了', '转发了', '点赞👍', '真心不错', '继续加油'
       ]
     }
   },
@@ -238,31 +232,48 @@ export default {
         this.commentList = this.randomComments
       }
       
-      // 如果显示评论，则滚动到评论区域
       if (this.showComments) {
-        this.$nextTick(() => {
-          // 使用 uni.createSelectorQuery 获取评论区域的位置
-          const query = uni.createSelectorQuery().in(this)
-          query.select('.comments-section').boundingClientRect(data => {
-            if (data) {
-              // 获取页面滚动视图
-              const scrollQuery = uni.createSelectorQuery().in(this)
-              scrollQuery.select('.page-scroll').scrollOffset(scrollData => {
-                // 计算需要滚动的距离
-                // data.top 是评论区域相对于页面顶部的距离
-                // 减去导航栏高度（大约44px）和一些缓冲空间
-                const targetScrollTop = scrollData.scrollTop + data.top - 60
-                
-                // 执行滚动动画
-                uni.pageScrollTo({
-                  scrollTop: targetScrollTop,
-                  duration: 300 // 300ms 的滚动动画
-                })
-              }).exec()
-            }
-          }).exec()
-        })
+        // 显示评论时滚动到评论区
+        this.scrollToComments()
       }
+      // 如果需要，隐藏评论时可以滚动回顶部
+      // else {
+      //   this.resetScroll()
+      // }
+    },
+    
+    resetScroll() {
+      this.pageScrollTop = 0
+    },
+    
+    // 新增专门的滚动方法
+    scrollToComments() {
+      const query = uni.createSelectorQuery().in(this)
+      
+      // 同时获取评论区域和页面滚动容器的信息
+      query.select('.comment-count-section').boundingClientRect()
+      query.select('.page-scroll').scrollOffset()
+      
+      query.exec((res) => {
+        const commentRect = res[0]  // 评论区域位置信息
+        const scrollData = res[1]   // 当前滚动位置信息
+        
+        if (commentRect && scrollData) {
+          // 计算目标滚动位置
+          // commentRect.top 是相对于视口的位置
+          // scrollData.scrollTop 是当前滚动位置
+          // 80 是导航栏高度，确保评论标题显示在导航栏下方
+          const targetScrollTop = scrollData.scrollTop + commentRect.top - 80
+          
+          // 确保滚动位置不为负数
+          const finalScrollTop = Math.max(0, targetScrollTop)
+          
+          // 使用一个小的延迟来触发滚动动画
+          setTimeout(() => {
+            this.pageScrollTop = finalScrollTop
+          }, 50)
+        }
+      })
     },
     showComments() {
       this.showCommentModal = true
@@ -285,7 +296,7 @@ export default {
           avatar: '/static/logo.png',
           content: this.commentTemplates[Math.floor(Math.random() * this.commentTemplates.length)],
           time: this.getRandomTime(),
-          timestamp: this.getRandomTimestamp(), // 添加时间戳用于排序
+          timestamp: this.getRandomTimestamp(),
           isLiked: Math.random() > 0.7,
           likeCount: Math.floor(Math.random() * 50),
           replies: Math.random() > 0.8 ? this.generateReplies() : []
@@ -293,29 +304,21 @@ export default {
         this.randomComments.push(comment);
       }
       
-      // 1. 先按热度排序（点赞数降序）获取所有评论
+      // 按热度和时间排序
       const allCommentsByHot = [...this.randomComments].sort((a, b) => b.likeCount - a.likeCount);
-      
-      // 2. 获取热度最高的评论（第一条）
       const hotestComment = allCommentsByHot[0];
-      
-      // 3. 从剩余评论中按时间排序获取1-3条最新的评论
       const remainingComments = allCommentsByHot.slice(1);
-      const recentCount = Math.floor(Math.random() * 3) + 1; // 1-3条
+      const recentCount = Math.floor(Math.random() * 3) + 1;
       const recentComments = [...remainingComments]
-        .sort((a, b) => b.timestamp - a.timestamp) // 按时间戳降序排序
-        .slice(0, recentCount); // 取前几条最新的
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, recentCount);
       
-      // 4. 获取剩余的评论（除了最热门的和最新的）
       const otherComments = remainingComments
         .filter(comment => !recentComments.some(recent => recent.id === comment.id))
-        .sort((a, b) => b.likeCount - a.likeCount); // 继续按热度排序
+        .sort((a, b) => b.likeCount - a.likeCount);
       
-      // 5. 最终排序：最热门的 + 最新的1-3条 + 其他按热度排序的
       this.randomComments = [hotestComment, ...recentComments, ...otherComments];
-      
-      // 初始化commentList
-      this.commentList = this.randomComments
+      this.commentList = this.randomComments;
     },
     
     generateReplies() {
@@ -324,9 +327,11 @@ export default {
       
       for (let i = 0; i < replyCount; i++) {
         replies.push({
-          id: Date.now() + i,
+          id: i + 1,
           name: this.usernames[Math.floor(Math.random() * this.usernames.length)],
-          content: this.commentTemplates[Math.floor(Math.random() * this.commentTemplates.length)]
+          avatar: '/static/logo.png',
+          content: this.commentTemplates[Math.floor(Math.random() * this.commentTemplates.length)],
+          time: this.getRandomTime()
         });
       }
       
@@ -342,7 +347,6 @@ export default {
       return timeOptions[Math.floor(Math.random() * timeOptions.length)];
     },
     
-    // 添加新方法：生成随机时间戳
     getRandomTimestamp() {
       const now = Date.now();
       const timeRanges = [
@@ -503,10 +507,22 @@ export default {
   line-height: 1.5;
 }
 
+/* 评论数量标题样式 */
+.comment-count-section {
+  background: #fff;
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  position: sticky;
+  top: 80px; /* 导航栏高度 */
+  z-index: 10;
+}
+
 .comment-count {
   font-size: 16px;
   font-weight: 600;
   color: #333;
+  border-left: 3px solid #007AFF;
+  padding-left: 12px;
 }
 
 /* 评论区域样式 */
@@ -538,40 +554,28 @@ export default {
 .comment-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 6px;
 }
 
+.comment-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
 .comment-username {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   color: #333;
-  margin-right: 8px;
 }
 
 .comment-time {
-  font-size: 13px;
+  font-size: 12px;
   color: #999;
-  margin-left: auto;
-}
-
-.comment-text {
-  font-size: 15px;
-  color: #333;
-  line-height: 1.4;
-  margin-bottom: 8px;
-  word-wrap: break-word;
-}
-
-.comment-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.comment-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+  margin-left: 8px;
+  flex: 1;
 }
 
 .comment-like {
@@ -581,23 +585,41 @@ export default {
   cursor: pointer;
 }
 
-.comment-like .icon-like {
+.like-icon {
   font-size: 16px;
-  color: #999;
+  color: #ddd;
   transition: color 0.3s;
 }
 
-.comment-like .icon-like.liked {
-  color: #ff6b6b;
+.like-icon.liked {
+  color: #ff4757;
 }
 
 .like-count {
-  font-size: 13px;
+  font-size: 11px;
   color: #999;
 }
 
+.comment-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.comment-text {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.4;
+  margin-bottom: 6px;
+  word-wrap: break-word;
+}
+
+.comment-actions {
+  display: flex;
+  align-items: center;
+}
+
 .comment-reply {
-  font-size: 13px;
+  font-size: 12px;
   color: #999;
   cursor: pointer;
 }
