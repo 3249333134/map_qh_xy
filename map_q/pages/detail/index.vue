@@ -67,25 +67,48 @@
       </view>
       
       <!-- 评论列表区域 -->
-      <!-- 重新设计的评论区域 - 只调整点赞和回复位置 -->
       <view class="comments-section" v-if="showComments && commentList.length > 0">
         <view class="comment-item" v-for="(comment, index) in commentList" :key="index">
           <image class="comment-avatar" :src="comment.avatar" mode="aspectFill"></image>
           <view class="comment-content">
-            <!-- 名字、时间和点赞在同一行 -->
+            <!-- 名字、时间在左侧，点赞在右侧 -->
             <view class="comment-main">
-              <text class="comment-username">{{ comment.name }}</text>
-              <text class="comment-time">{{ comment.time }}</text>
-              <view class="comment-like" @click="toggleCommentLike(comment)">
-                <text class="like-icon" :class="{ 'liked': comment.isLiked }">♥</text>
-                <text class="like-count" v-if="comment.likeCount > 0">{{ comment.likeCount }}</text>
+              <view class="comment-left">
+                <text class="comment-username">{{ comment.name }}</text>
+                <text class="comment-time">{{ comment.time }}</text>
+              </view>
+              <view class="comment-right-section">
+                <view class="comment-like" @click="toggleCommentLike(comment)">
+                  <text class="like-icon" :class="{ 'liked': comment.isLiked }">♥</text>
+                  <text class="like-count" v-if="comment.likeCount > 0">{{ comment.likeCount }}</text>
+                </view>
+                <text class="comment-reply" @click="replyToComment(comment)">回复</text>
               </view>
             </view>
-            <!-- 评论内容和回复 -->
+            <!-- 评论内容 -->
             <view class="comment-meta">
               <text class="comment-text">{{ comment.content }}</text>
-              <view class="comment-actions">
-                <text class="comment-reply">回复</text>
+              <!-- 回复列表 -->
+              <view class="replies-section" v-if="comment.replies && comment.replies.length > 0">
+                <view class="reply-item" v-for="(reply, replyIndex) in comment.replies" :key="replyIndex">
+                  <image class="reply-avatar" :src="reply.avatar" mode="aspectFill"></image>
+                  <view class="reply-content-wrapper">
+                    <view class="reply-header">
+                      <view class="reply-left">
+                        <text class="reply-username">{{ reply.name }}</text>
+                        <text class="reply-time">{{ reply.time }}</text>
+                      </view>
+                      <view class="reply-right-section">
+                        <view class="comment-like" @click="toggleReplyLike(reply)">
+                          <text class="like-icon" :class="{ 'liked': reply.isLiked }">♥</text>
+                          <text class="like-count" v-if="reply.likeCount > 0">{{ reply.likeCount }}</text>
+                        </view>
+                        <text class="comment-reply" @click="replyToReply(reply)">回复</text>
+                      </view>
+                    </view>
+                    <text class="reply-content">{{ reply.content }}</text>
+                  </view>
+                </view>
               </view>
             </view>
           </view>
@@ -94,7 +117,7 @@
       
       <!-- 评论底部提示 -->
       <view class="comment-end-tip">
-        <text class="end-tip-text">到底了</text>
+        <text class="end-tip-text">---没有评论了，留下更多回忆吧---</text>
       </view>
       
       <!-- 底部留白区域 -->
@@ -299,7 +322,7 @@ export default {
           timestamp: this.getRandomTimestamp(),
           isLiked: Math.random() > 0.7,
           likeCount: Math.floor(Math.random() * 50),
-          replies: Math.random() > 0.8 ? this.generateReplies() : []
+          replies: Math.random() > 0.5 ? this.generateReplies() : [] // 50%的概率有回复
         };
         this.randomComments.push(comment);
       }
@@ -322,7 +345,7 @@ export default {
     },
     
     generateReplies() {
-      const replyCount = Math.floor(Math.random() * 3) + 1;
+      const replyCount = Math.floor(Math.random() * 3); // 0-2条回复
       const replies = [];
       
       for (let i = 0; i < replyCount; i++) {
@@ -331,11 +354,35 @@ export default {
           name: this.usernames[Math.floor(Math.random() * this.usernames.length)],
           avatar: '/static/logo.png',
           content: this.commentTemplates[Math.floor(Math.random() * this.commentTemplates.length)],
-          time: this.getRandomTime()
+          time: this.getRandomTime(),
+          isLiked: Math.random() > 0.8,
+          likeCount: Math.floor(Math.random() * 20)
         });
       }
       
       return replies;
+    },
+
+    toggleCommentLike(comment) {
+      comment.isLiked = !comment.isLiked;
+      comment.likeCount += comment.isLiked ? 1 : -1;
+      if (comment.likeCount < 0) comment.likeCount = 0;
+    },
+
+    toggleReplyLike(reply) {
+      reply.isLiked = !reply.isLiked;
+      reply.likeCount += reply.isLiked ? 1 : -1;
+      if (reply.likeCount < 0) reply.likeCount = 0;
+    },
+
+    replyToComment(comment) {
+      console.log('回复评论:', comment.name);
+      // 这里可以添加回复评论的逻辑
+    },
+
+    replyToReply(reply) {
+      console.log('回复回复:', reply.name);
+      // 这里可以添加回复回复的逻辑
     },
     
     getRandomTime() {
@@ -366,11 +413,6 @@ export default {
       return timeRanges[Math.floor(Math.random() * timeRanges.length)];
     },
     
-    toggleCommentLike(comment) {
-      comment.isLiked = !comment.isLiked;
-      comment.likeCount += comment.isLiked ? 1 : -1;
-      if (comment.likeCount < 0) comment.likeCount = 0;
-    },
     loadDetailData(id) {
       // 根据ID加载详情数据
       console.log('加载详情数据:', id)
@@ -439,10 +481,11 @@ export default {
 }
 
 .avatar {
-  width: 32px;
-  height: 32px;
+  width: 39px;
+  height: 39px;
   border-radius: 16px;
   margin-right: 8px;
+  flex-shrink: 0;
 }
 
 .username {
@@ -495,16 +538,21 @@ export default {
 
 /* 评论数量显示区域样式 */
 .comment-end-tip {
-  padding: 30rpx 20rpx;
+  padding: 15px;
   text-align: center;
-  background: #f8f8f8;
-  margin-top: 20rpx;
+  background: transparent;
+  margin: 10px 16px;
 }
 
 .end-tip-text {
-  font-size: 28rpx;
+  font-size: 14px;
   color: #999;
   line-height: 1.5;
+}
+
+.bottom-spacer {
+  height: 100px;
+  background: transparent;
 }
 
 /* 评论数量标题样式 */
@@ -533,7 +581,7 @@ export default {
 
 .comment-item {
   display: flex;
-  padding: 16px 0;
+  padding: 10px 0;
   border-bottom: 1px solid #f5f5f5;
   align-items: flex-start;
 }
@@ -560,44 +608,33 @@ export default {
 
 .comment-main {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  align-items: flex-start;
+  margin-bottom: -23px;
+}
+
+.comment-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .comment-username {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   color: #333;
 }
 
 .comment-time {
   font-size: 12px;
   color: #999;
-  margin-left: 8px;
-  flex: 1;
 }
 
-.comment-like {
+.comment-right-section {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 4px;
-  cursor: pointer;
-}
-
-.like-icon {
-  font-size: 16px;
-  color: #ddd;
-  transition: color 0.3s;
-}
-
-.like-icon.liked {
-  color: #ff4757;
-}
-
-.like-count {
-  font-size: 11px;
-  color: #999;
 }
 
 .comment-meta {
@@ -613,11 +650,6 @@ export default {
   word-wrap: break-word;
 }
 
-.comment-actions {
-  display: flex;
-  align-items: center;
-}
-
 .comment-reply {
   font-size: 12px;
   color: #999;
@@ -628,22 +660,100 @@ export default {
   color: #007AFF;
 }
 
+/* 回复区域样式 */
+.replies-section {
+  margin-top: 8px;
+  padding-left: 12px;
+  border-left: 2px solid #f0f0f0;
+}
+
 .reply-item {
+  display: flex;
   background: #f8f8f8;
-  padding: 8px 12px;
+  padding: 12px 8px;
   border-radius: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  align-items: flex-start;
+}
+
+.reply-item:last-child {
+  margin-bottom: 0;
+}
+
+.reply-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.reply-content-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
+.reply-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: -27px;
+}
+
+.reply-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .reply-username {
   font-size: 12px;
+  font-weight: 600;
   color: #666;
-  margin-right: 4px;
 }
 
-.reply-text {
+.reply-time {
+  font-size: 11px;
+  color: #999;
+}
+
+.reply-right-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.reply-like {
+  color: #999;
+  font-size: 14px;
+  padding: 2px;
+}
+
+.reply-like .like-icon.liked {
+  color: #ff4757;
+}
+
+.reply-like .like-count {
+  font-size: 10px;
+  color: #999;
+}
+
+.reply-reply {
+  font-size: 10px;
+  color: #999;
+  cursor: pointer;
+}
+
+.reply-reply:hover {
+  color: #007AFF;
+}
+
+.reply-content {
   font-size: 12px;
   color: #333;
+  line-height: 1.4;
+  word-wrap: break-word;
 }
 
 .like-icon {

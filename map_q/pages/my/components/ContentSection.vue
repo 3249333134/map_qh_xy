@@ -504,16 +504,16 @@ export default {
   top: 0px;
   left: 0;
   right: 0;
-  height: 30px;
+  height: 50px; /* 减少高度，只保留导航栏高度 */
   z-index: 5;
   pointer-events: none;
   
-  /* 毛玻璃效果 - 加深颜色 */
+  /* 毛玻璃效果 */
   background: rgba(255, 255, 255, 0.5);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   
-  /* 渐变遮罩效果 - 加深颜色 */
+  /* 渐变遮罩效果 */
   background: linear-gradient(
     180deg, 
     rgba(255, 255, 255, 0.6) 0%,
@@ -521,12 +521,12 @@ export default {
     rgba(255, 255, 255, 0.2) 100%
   );
   
-  /* 边框和圆角 - 改为长方形 */
+  /* 边框和圆角 */
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-top: none;
-  border-radius: 0; /* 修改：移除圆角，变成长方形 */
+  border-radius: 0;
   
-  /* 阴影效果 - 稍微增强 */
+  /* 阴影效果 */
   box-shadow: 
     0 4px 20px rgba(121, 119, 119, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
@@ -535,30 +535,18 @@ export default {
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
-/* 拖拽时增强毛玻璃效果 - 也相应调整 */
-.content-section:active .frosted-glass-overlay {
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
-  background: linear-gradient(
-    180deg, 
-    rgba(255, 255, 255, 0.7) 0%,  /* 从0.5提升到0.7 */
-    rgba(255, 255, 255, 0.5) 50%, /* 从0.3提升到0.5 */
-    rgba(255, 255, 255, 0.25) 100% /* 从0.15提升到0.25 */
-  );
-}
-
-/* 响应式调整 */
+/* 响应式调整 - 移除额外的高度调整 */
 @media (max-width: 375px) {
   .frosted-glass-overlay {
-    height: 120px;
-    top: 40px;
+    height: 50px;
+    top: 0px;
   }
 }
 
 @media (min-width: 414px) {
   .frosted-glass-overlay {
-    height: 160px;
-    top: 50px;
+    height: 50px;
+    top: 0px;
   }
 }
 .draggable-content {
