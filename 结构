@@ -18,6 +18,19 @@
 └── useMapManager.js              # 地图管理 composable
 
 
+components/
+  ├── Header.vue
+  ├── ImageSlider.vue
+  ├── ContentArea.vue
+  ├── CommentsSection.vue
+  ├── CommentItem.vue
+  ├── ReplyItem.vue
+  ├── BottomActions.vue
+  └── CommentModal.vue
+composables/
+  └── detail.js
+
+
 
 
 
