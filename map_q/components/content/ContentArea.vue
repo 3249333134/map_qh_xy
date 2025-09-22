@@ -57,30 +57,64 @@
       <view class="cards-grid">
         <!-- 左列卡片 -->
         <view class="cards-column">
-          <card-item 
-            v-for="(item, index) in leftColumnData" 
-            :key="'left-' + (item._id || '') + '-' + index"
-            :index="index"
-            :card-data="item"
-            :height="getColumnItemHeight('left', index)"
-            column-type="left"
-            @media-tap="onMediaTap"
-            @content-tap="onContentTap"
-          />
+          <!-- ServiceCardItem 分支 -->
+          <template v-if="useServiceCard">
+            <service-card-item
+              v-for="(item, index) in leftColumnData"
+              :key="'left-svc-' + (item._id || '') + '-' + index"
+              :index="index"
+              :card-data="item"
+              :height="getColumnItemHeight('left', index)"
+              column-type="left"
+              @media-tap="onMediaTap"
+              @content-tap="onContentTap"
+              @reserve="onReserve"
+            />
+          </template>
+          <!-- CardItem 分支 -->
+          <template v-else>
+            <card-item
+              v-for="(item, index) in leftColumnData"
+              :key="'left-base-' + (item._id || '') + '-' + index"
+              :index="index"
+              :card-data="item"
+              :height="getColumnItemHeight('left', index)"
+              column-type="left"
+              @media-tap="onMediaTap"
+              @content-tap="onContentTap"
+            />
+          </template>
         </view>
         
         <!-- 右列卡片 -->
         <view class="cards-column">
-          <card-item 
-            v-for="(item, index) in rightColumnData" 
-            :key="'right-' + (item._id || '') + '-' + index"
-            :index="leftColumnData.length + index"
-            :card-data="item"
-            :height="getColumnItemHeight('right', index)"
-            column-type="right"
-            @media-tap="onMediaTap"
-            @content-tap="onContentTap"
-          />
+          <!-- ServiceCardItem 分支 -->
+          <template v-if="useServiceCard">
+            <service-card-item
+              v-for="(item, index) in rightColumnData"
+              :key="'right-svc-' + (item._id || '') + '-' + index"
+              :index="leftColumnData.length + index"
+              :card-data="item"
+              :height="getColumnItemHeight('right', index)"
+              column-type="right"
+              @media-tap="onMediaTap"
+              @content-tap="onContentTap"
+              @reserve="onReserve"
+            />
+          </template>
+          <!-- CardItem 分支 -->
+          <template v-else>
+            <card-item
+              v-for="(item, index) in rightColumnData"
+              :key="'right-base-' + (item._id || '') + '-' + index"
+              :index="leftColumnData.length + index"
+              :card-data="item"
+              :height="getColumnItemHeight('right', index)"
+              column-type="right"
+              @media-tap="onMediaTap"
+              @content-tap="onContentTap"
+            />
+          </template>
         </view>
       </view>
       
@@ -99,10 +133,12 @@
 
 <script>
 import CardItem from '../card/CardItem.vue'
+import ServiceCardItem from '../card/ServiceCardItem.vue'
 
 export default {
   components: {
-    CardItem
+    CardItem,
+    ServiceCardItem
   },
   props: {
     height: {
@@ -136,6 +172,11 @@ export default {
     hasMoreData: {
       type: Boolean,
       default: true
+    },
+    // 新增：控制使用哪种卡片组件（服务页传递 "ServiceCardItem"）
+    cardComponent: {
+      type: String,
+      default: ''
     }
   },
   // 在 data 中初始化为 false
@@ -413,6 +454,10 @@ export default {
     },
     rightColumnData() {
       return this.mapData ? this.mapData.filter((_, index) => index % 2 === 1) : [];
+    },
+    // 新增：是否使用服务卡片
+    useServiceCard() {
+      return this.cardComponent === 'ServiceCardItem'
     }
   },
 }
