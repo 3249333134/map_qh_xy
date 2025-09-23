@@ -32,6 +32,12 @@
       }
     },
     {
+      "path": "pages/service/detail/index",
+      "style": {
+        "navigationBarTitleText": "服务详情"
+      }
+    },
+    {
       "path": "pages/message/index",
       "style": {
         "navigationBarTitleText": "消息",

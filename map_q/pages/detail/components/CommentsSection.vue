@@ -19,7 +19,7 @@
       <text>暂无评论，快来抢沙发吧~</text>
     </view>
 
-    <view class="load-more" v-if="hasMore && !loading">
+    <view class="load-more" v-if="hasMoreComments && !loading">
       <text @click="loadMoreComments">点击加载更多</text>
     </view>
     <view class="load-more" v-else-if="loading">

@@ -21,6 +21,12 @@ export function useServiceMapData() {
     markers: [],
     scale: 18
   })
+  // 读取启动阶段缓存的定位作为初始坐标
+  const cachedLoc = uni.getStorageSync('USER_LOCATION')
+  if (cachedLoc && typeof cachedLoc.latitude === 'number' && typeof cachedLoc.longitude === 'number') {
+    mapConfig.latitude = cachedLoc.latitude
+    mapConfig.longitude = cachedLoc.longitude
+  }
   
   // 获取地图数据
   const fetchMapData = async (activeCategory, isLoadMore = false) => {
@@ -34,21 +40,17 @@ export function useServiceMapData() {
       radius: 5000,
       type: 'service'
     }
-    
     if (activeCategory !== 'all') {
       params.category = CATEGORY_MAP[activeCategory] || activeCategory
     }
-    
     try {
       const res = await uni.request({
         url: MONGO_CONFIG.API_URL,
         method: 'GET',
         data: params
       })
-      
       const responseData = res.data && res.data.data ? res.data.data : 
                           (Array.isArray(res.data) ? res.data : [])
-      
       if (res.statusCode === 200 && responseData && responseData.length > 0) {
         const newData = responseData.map(item => ({
           ...item,
@@ -56,61 +58,65 @@ export function useServiceMapData() {
           name: item.name || item.title || `服务 ${Math.floor(Math.random() * 1000)}`,
           author: item.author || '未知提供商',
         }))
-        
         if (isLoadMore) {
           mapPoints.value = [...mapPoints.value, ...newData]
         } else {
           mapPoints.value = newData
         }
-        
         const pagination = res.data && res.data.pagination ? res.data.pagination : {}
         hasMoreData.value = currentPage.value < (pagination.totalPages || 1)
-        
         updateMapMarkers()
       } else {
-        console.log('获取数据为空，使用测试数据')
-        addTestData(activeCategory, isLoadMore)
+        const pagination = res.data && res.data.pagination ? res.data.pagination : {}
+        hasMoreData.value = currentPage.value < (pagination.totalPages || 1)
+        if (isLoadMore) {
+          console.log('无更多数据，停止加载更多')
+          // 加载更多为空时，不追加测试数据
+        } else {
+          console.log('获取数据为空，使用测试数据')
+          addTestData(activeCategory, isLoadMore)
+        }
       }
     } catch (err) {
       console.error('请求失败:', err)
-      addTestData(activeCategory, isLoadMore)
+      if (isLoadMore) {
+        console.log('加载更多请求失败，停止加载更多')
+        // 加载更多异常时，不追加测试数据
+      } else {
+        addTestData(activeCategory, isLoadMore)
+      }
     } finally {
       isLoading.value = false
     }
   }
   
   // 根据地图边界获取数据
+  // 在 useServiceMapData.js 中的 fetchMapDataByBounds 函数
   const fetchMapDataByBounds = async (activeCategory, isLoadMore = false) => {
     if (!mapBounds.value) {
       return fetchMapData(activeCategory, isLoadMore)
     }
-    
     isLoading.value = true
-    
     const params = {
       page: currentPage.value,
       pageSize: pageSize.value,
-      ne_lat: mapBounds.value.northeast.latitude,
-      ne_lng: mapBounds.value.northeast.longitude,
-      sw_lat: mapBounds.value.southwest.latitude,
-      sw_lng: mapBounds.value.southwest.longitude,
+      bounds: JSON.stringify({
+        northeast: mapBounds.value.northeast,
+        southwest: mapBounds.value.southwest
+      }),
       type: 'service'
     }
-    
     if (activeCategory !== 'all') {
       params.category = CATEGORY_MAP[activeCategory] || activeCategory
     }
-    
     try {
       const res = await uni.request({
         url: MONGO_CONFIG.API_URL,
         method: 'GET',
         data: params
       })
-      
       const responseData = res.data && res.data.data ? res.data.data : 
                           (Array.isArray(res.data) ? res.data : [])
-      
       if (res.statusCode === 200 && responseData && responseData.length > 0) {
         const newData = responseData.map(item => ({
           ...item,
@@ -118,24 +124,37 @@ export function useServiceMapData() {
           name: item.name || item.title || `服务 ${Math.floor(Math.random() * 1000)}`,
           author: item.author || '未知提供商',
         }))
-        
         if (isLoadMore) {
           mapPoints.value = [...mapPoints.value, ...newData]
         } else {
           mapPoints.value = newData
         }
-        
         const pagination = res.data && res.data.pagination ? res.data.pagination : {}
         hasMoreData.value = currentPage.value < (pagination.totalPages || 1)
-        
         updateMapMarkers()
       } else {
-        console.log('获取数据为空，使用测试数据')
-        addTestData(activeCategory, isLoadMore)
+        const pagination = res.data && res.data.pagination ? res.data.pagination : {}
+        const densityInfo = res.data && res.data.densityInfo ? res.data.densityInfo : {}
+        const totalInBounds = densityInfo.totalInBounds || 0
+        hasMoreData.value = currentPage.value < (pagination.totalPages || 1)
+        if (isLoadMore) {
+          console.log('边界内数据已加载完毕，停止加载更多')
+          // 加载更多为空时，不追加测试数据
+        } else if (totalInBounds === 0) {
+          console.log('边界内没有数据，使用测试数据')
+          addTestData(activeCategory, isLoadMore)
+        } else {
+          console.log('当前页无数据，可能页码越界或已无更多数据')
+          // 首屏但有数据计数却返回空，通常是页码越界；不追加测试数据
+        }
       }
     } catch (err) {
       console.error('请求失败:', err)
-      addTestData(activeCategory, isLoadMore)
+      if (isLoadMore) {
+        console.log('加载更多失败，停止加载更多')
+      } else {
+        addTestData(activeCategory, isLoadMore)
+      }
     } finally {
       isLoading.value = false
     }
@@ -243,22 +262,39 @@ export function useServiceMapData() {
   }
   
   // 获取用户位置
+  // 方法：getUserLocation
   const getUserLocation = async () => {
     try {
-      const res = await uni.getLocation({ 
+      // 先检查并尝试授权
+      const setting = await uni.getSetting()
+      const hasAuth = setting?.authSetting?.['scope.userLocation'] === true
+      if (!hasAuth) {
+        try {
+          await uni.authorize({ scope: 'scope.userLocation' })
+        } catch (authErr) {
+          console.warn('用户未授权地理位置，使用默认坐标', authErr)
+          mapConfig.latitude = 30.572269
+          mapConfig.longitude = 104.066541
+          uni.setStorageSync('USER_LOCATION', { latitude: mapConfig.latitude, longitude: mapConfig.longitude })
+          return { latitude: mapConfig.latitude, longitude: mapConfig.longitude }
+        }
+      }
+
+      // 已授权或授权成功后，获取位置
+      const res = await uni.getLocation({
         type: 'wgs84',
         isHighAccuracy: true
       })
-      
       mapConfig.latitude = res.latitude
       mapConfig.longitude = res.longitude
-      
+      uni.setStorageSync('USER_LOCATION', { latitude: res.latitude, longitude: res.longitude })
       return res
     } catch (error) {
       console.error('定位失败，使用默认位置:', error)
       mapConfig.latitude = 30.572269
       mapConfig.longitude = 104.066541
-      throw error
+      uni.setStorageSync('USER_LOCATION', { latitude: mapConfig.latitude, longitude: mapConfig.longitude })
+      return { latitude: mapConfig.latitude, longitude: mapConfig.longitude }
     }
   }
   
@@ -285,19 +321,22 @@ export function useServiceMapData() {
   
   // 处理卡片点击
   const handleCardTap = (index) => {
-    if (mapPoints.value[index] && mapPoints.value[index].location) {
-      const point = mapPoints.value[index]
-      const coordinates = point.location.coordinates
-      
-      mapConfig.latitude = coordinates[1]
-      mapConfig.longitude = coordinates[0]
-      
-      uni.showToast({
-        title: `定位到: ${point.name}`,
-        icon: 'none',
-        duration: 2000
-      })
+    const item = mapPoints.value[index]
+    if (!item) return
+    if (item.location && Array.isArray(item.location.coordinates)) {
+      const [lng, lat] = item.location.coordinates
+      mapConfig.latitude = lat
+      mapConfig.longitude = lng
+      mapConfig.scale = 16
     }
+    // 跳转到服务详情页
+    uni.setStorageSync('LAST_SERVICE_ITEM', item)
+    uni.navigateTo({
+      url: '/pages/service/detail/index',
+      success(res) {
+        res.eventChannel && res.eventChannel.emit('service-item', { item })
+      }
+    })
   }
   
   // 处理可视卡片变化
@@ -335,6 +374,7 @@ export function useServiceMapData() {
     getUserLocation,
     loadMoreItems,
     handleCardTap,
+    openServiceDetail,
     handleVisibleCardsChange,
     onMapRegionChanged,
     onSearchInput

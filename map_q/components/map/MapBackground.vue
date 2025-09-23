@@ -3,16 +3,16 @@
     <map
       id="map"
       class="map"
-      :latitude="config.latitude"
-      :longitude="config.longitude"
-      :markers="config.markers"
+      :latitude="mapCenter.latitude"
+      :longitude="mapCenter.longitude"
+      :markers="(config && config.markers) || []"
       :scale="currentScale"
       show-location
       :subkey="mapKey"
       @regionchange="onRegionChange"
       @updated="onMapUpdated"
+      @error="onMapError"
     ></map>
-    
     <!-- 添加位置刷新按钮 -->
     <view class="location-btn" @tap="refreshLocation">
       <text class="location-icon">📍</text>
@@ -41,7 +41,9 @@ export default {
       lastBoundsTime: 0,
       hasInitialBounds: false,
       retryCount: 0,
-      maxRetries: 3
+      maxRetries: 3,
+      // 新增：记录最近一次地图的缩放级别，避免写入computed
+      lastScale: null
     }
   },
   computed: {
@@ -56,14 +58,23 @@ export default {
     }
   },
   methods: {
-    // 添加地图错误处理
+    // 清理资源
+    cleanup() {
+      if (this.boundsFetchTimer) {
+        clearTimeout(this.boundsFetchTimer);
+        this.boundsFetchTimer = null;
+      }
+      this.mapContext = null;
+      this.isInitialized = false;
+    },
+    // 地图错误处理（放到实际生效的 methods 中）
     onMapError(e) {
       console.error('地图加载错误:', e)
       if (this.retryCount < this.maxRetries) {
         this.retryCount++
         setTimeout(() => {
           this.initializeMap()
-        }, 2000 * this.retryCount) // 递增延迟重试
+        }, 2000 * this.retryCount)
       } else {
         this.$emit('map-error', '地图加载失败，请检查网络连接')
       }
@@ -164,13 +175,12 @@ export default {
     // 地图区域变化事件
     onRegionChange(e) {
       console.log('地图区域变化事件:', e);
-      // 只在用户操作结束时获取边界，并且添加类型判断
       if (e.type === 'end' && (e.causedBy === 'drag' || e.causedBy === 'scale')) {
-        this.currentScale = e.scale || this.currentScale;
-        console.log('地图缩放级别:', this.currentScale);
-        
-        // 使用防抖，避免频繁调用
-        this.debouncedGetBounds();
+        // 修复：记录缩放到数据字段，避免写入computed
+        const newScale = e.scale || this.lastScale || this.currentScale
+        this.lastScale = newScale
+        console.log('地图缩放级别:', newScale)
+        this.debouncedGetBounds()
       }
     },
     
@@ -231,7 +241,8 @@ export default {
                 latitude: parseFloat(res.southwest.latitude),
                 longitude: parseFloat(res.southwest.longitude)
               },
-              scale: this.currentScale
+              // 修复：使用记录的缩放级别作为bounds的scale
+              scale: this.lastScale || this.currentScale
             };
             
             console.log('处理后的地图可视区域:', bounds);
@@ -303,29 +314,28 @@ export default {
       }
     },
     
-    // 创建fallback边界（基于当前地图中心点）
+    // 创建fallback边界（基于当前地图中心点，防御空值）
     createFallbackBounds() {
-      if (!this.config.latitude || !this.config.longitude) {
-        console.error('缺少地图中心点坐标');
-        return null;
+      const center = this.mapCenter
+      if (!center || center.latitude == null || center.longitude == null ||
+          isNaN(center.latitude) || isNaN(center.longitude)) {
+        console.error('缺少或无效的地图中心点坐标', this.config)
+        return null
       }
-      
-      // 根据缩放级别计算大概的可视范围
-      const scale = this.currentScale || 16;
-      const latDelta = Math.max(0.001, 0.01 * (20 - scale) / 10);
-      const lngDelta = Math.max(0.001, 0.01 * (20 - scale) / 10);
-      
+      const scale = Number(this.currentScale) || 16
+      const latDelta = Math.max(0.001, 0.01 * (20 - scale) / 10)
+      const lngDelta = Math.max(0.001, 0.01 * (20 - scale) / 10)
       return {
         northeast: {
-          latitude: this.config.latitude + latDelta,
-          longitude: this.config.longitude + lngDelta
+          latitude: center.latitude + latDelta,
+          longitude: center.longitude + lngDelta
         },
         southwest: {
-          latitude: this.config.latitude - latDelta,
-          longitude: this.config.longitude - lngDelta
+          latitude: center.latitude - latDelta,
+          longitude: center.longitude - lngDelta
         },
-        scale: scale
-      };
+        scale
+      }
     }
   }
 }

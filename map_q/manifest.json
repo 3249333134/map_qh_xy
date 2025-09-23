@@ -60,7 +60,13 @@
             "request": 10000,
             "downloadFile": 10000
         },
-        "requiredBackgroundModes": ["location"]
+        "requiredBackgroundModes": ["location"],
+        "requiredPrivateInfos": ["getLocation"],
+        "permission": {
+            "scope.userLocation": {
+                "desc": "用于获取您的位置信息以展示附近服务点位"
+            }
+        }
     },
     "mp-alipay" : {
         "usingComponents" : true

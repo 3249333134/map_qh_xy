@@ -12,7 +12,7 @@
       </view>
       <view class="nav-right">
         <view class="follow-btn" :class="{ followed: userInfo.isFollowed }" @tap="toggleFollow">
-          <text>{{ userInfo.isFollowed ? '已关注' : '关注' }}</text>
+          <text class="follow-text">{{ userInfo.isFollowed ? '已关注' : '关注' }}</text>
         </view>
         <text class="share-icon" @tap="share">⤴</text>
       </view>
@@ -117,7 +117,8 @@ export default {
   background: rgba(0, 0, 0, 0.15);
 }
 
-.follow-btn text {
+/* 修复：使用类选择器替代标签选择器 */
+.follow-text {
   color: #000000;
   font-size: 14px;
 }

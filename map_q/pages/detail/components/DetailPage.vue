@@ -24,7 +24,7 @@
     <!-- 评论区域 -->
     <CommentsSection 
       :comments="comments"
-      :hasMore="hasMoreComments"
+      :hasMoreComments="hasMoreComments"
       @loadMore="loadMoreComments"
       @likeComment="likeComment"
       @replyComment="replyComment"

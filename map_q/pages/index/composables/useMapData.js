@@ -52,24 +52,11 @@ export function useMapData() {
         params.category = categoryMap[activeCategory] || activeCategory
       }
       
-      const res = await new Promise((resolve, reject) => {
-        const timer = setTimeout(() => {
-          reject(new Error('请求超时'))
-        }, 10000) // 10秒超时
-        
-        uni.request({
-          url: MONGO_CONFIG.API_URL,
-          method: 'GET',
-          data: params,
-          success: (response) => {
-            clearTimeout(timer)
-            resolve(response)
-          },
-          fail: (error) => {
-            clearTimeout(timer)
-            reject(error)
-          }
-        })
+      // 直接使用 uni.request 的 Promise，移除手动 setTimeout
+      const res = await uni.request({
+        url: MONGO_CONFIG.API_URL,
+        method: 'GET',
+        data: params
       })
       
       console.log('API响应:', res)

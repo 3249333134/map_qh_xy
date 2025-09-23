@@ -1,26 +1,32 @@
 <template>
   <view class="container">
-    <!-- 地图区域 -->    
+    <!-- 地图区域 -->
     <map-background 
       :height="mapHeight"
       :config="mapConfig"
       @refresh-location="getUserLocation"
       @region-changed="onMapRegionChanged"
       ref="mapBackground"
+      @move-to-location="handleMoveToLocation"
+      @moveToLocation="handleMoveToLocation"
     />
-    <!-- 可滑动区域 -->
+    <!-- 可滑动区域（保持服务分类与 ServiceCardItem，但事件/传参风格对齐首页） -->
     <content-area 
       :height="contentHeight"
-      :search-box-height="searchBoxHeight"
-      :min-content-height="minVisibleHeight"
+      :search-box-height="60"
+      :min-content-height="200"
       :categories="categories"
       :active-category="activeCategory"
       :map-data="mapPoints"
       :is-loading="isLoading"
       :has-more-data="hasMoreData"
+      :visible-card-indices="visibleCardIndices"
+      :is-dragging="isDragging"
       @drag-start="handleDragStart"
+      @dragStart="handleDragStart"
       @drag="handleDrag"
       @drag-end="handleDragEnd"
+      @dragEnd="handleDragEnd"
       @category-change="handleCategoryChange"
       @search-input="onSearchInput"
       @load-more="loadMoreItems"
@@ -96,60 +102,35 @@ export default {
     // 地图组件引用（用于调用 moveToLocation）
     const mapBackground = ref(null)
 
-    // 处理上方媒体区域点击：跳转详情页并定位
-    const handleMediaTap = async ({ cardData, index }) => {
-      console.log('媒体区域点击，准备跳转详情页并定位:', { cardData, index })
-      if (cardData?.location?.coordinates) {
-        const [longitude, latitude] = cardData.location.coordinates
-        try {
-          if (mapBackground.value?.moveToLocation) {
-            await mapBackground.value.moveToLocation(latitude, longitude, 16)
-          } else {
-            // 兜底：直接更新地图配置
-            mapConfig.latitude = latitude
-            mapConfig.longitude = longitude
-            mapConfig.scale = 16
-          }
-          console.log('地图定位成功')
-        } catch (err) {
-          console.error('地图定位失败:', err)
-        }
-      }
-
-      // 跳转详情页（与首页保持一致）
-      if (cardData && cardData._id) {
-        try {
-          await uni.navigateTo({
-            url: `/pages/detail/index?id=${cardData._id}&title=${encodeURIComponent(cardData.name || cardData.title || '')}&author=${encodeURIComponent(cardData.author || '')}&likes=${cardData.likes || 0}`
-          })
-        } catch (error) {
-          console.error('跳转详情页失败:', error)
+    // 新增：接收地图组件发出的定位事件，回写到 mapConfig 驱动地图移动
+    const handleMoveToLocation = ({ latitude, longitude, scale }) => {
+      if (typeof latitude === 'number' && typeof longitude === 'number') {
+        mapConfig.latitude = latitude
+        mapConfig.longitude = longitude
+        if (typeof scale === 'number') {
+          mapConfig.scale = scale
         }
       } else {
-        console.warn('卡片数据不完整，无法跳转详情页')
+        console.warn('handleMoveToLocation 收到无效坐标:', { latitude, longitude, scale })
       }
+    }
+
+    // 新增：地图错误处理
+    const handleMapError = (msg) => {
+      console.error('地图错误：', msg)
+      uni.showToast({ title: String(msg || '地图加载失败'), icon: 'none' })
+    }
+
+    // 处理上方媒体区域点击：跳转详情页并定位
+    const handleMediaTap = async ({ cardData, index }) => {
+      // 将媒体区域点击统一委托给 handleCardTap（内部负责定位与跳转服务详情页）
+      return handleCardTap(index)
     }
 
     // 处理下方内容区域点击：只定位到地图
     const handleContentTap = async ({ cardData, index }) => {
-      console.log('内容区域点击，准备定位到地图:', { cardData, index })
-      if (cardData?.location?.coordinates) {
-        const [longitude, latitude] = cardData.location.coordinates
-        try {
-          if (mapBackground.value?.moveToLocation) {
-            await mapBackground.value.moveToLocation(latitude, longitude, 16)
-          } else {
-            mapConfig.latitude = latitude
-            mapConfig.longitude = longitude
-            mapConfig.scale = 16
-          }
-          console.log('地图定位成功')
-        } catch (error) {
-          console.error('地图定位失败:', error)
-        }
-      } else {
-        console.warn('卡片数据中缺少位置信息或地图组件未加载')
-      }
+      // 将内容区域点击也统一委托给 handleCardTap，保持行为一致
+      return handleCardTap(index)
     }
 
     // 处理“预”按钮：最小实现，不改变其他逻辑
@@ -213,33 +194,31 @@ export default {
       minContentHeight,
       minVisibleHeight,
       maxContentHeight,
-      
       // 分类相关
       categories,
       activeCategory,
-      
       // 数据相关
       mapPoints,
       isLoading,
       hasMoreData,
       mapConfig,
       visibleCardIndices,
-      
       // 方法
       handleDragStart,
       handleDrag,
       handleDragEnd,
+      handleMoveToLocation,  // 新增返回
+      handleMapError,        // 新增返回
+      handleMediaTap,
+      handleContentTap,
+      handleReserve,
       handleCategoryChange,
       onSearchInput,
       loadMoreItems,
       handleCardTap,
       handleVisibleCardsChange,
       getUserLocation,
-      onMapRegionChanged,
-      // 新增：事件处理（与首页保持一致）
-      handleMediaTap,
-      handleContentTap,
-      handleReserve
+      onMapRegionChanged
     }
   }
 }

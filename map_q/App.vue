@@ -12,12 +12,35 @@ export default {
         return
       }
     })
+    this.initLocation()
   },
   onShow: function() {
     console.log('App Show')
   },
   onHide: function() {
     console.log('App Hide')
+  },
+  methods: {
+    async initLocation() {
+      try {
+        const setting = await uni.getSetting()
+        const hasAuth = setting?.authSetting?.['scope.userLocation'] === true
+        if (!hasAuth) {
+          try {
+            await uni.authorize({ scope: 'scope.userLocation' })
+          } catch (e) {
+            console.warn('未授权地理位置，使用默认坐标', e)
+            uni.setStorageSync('USER_LOCATION', { latitude: 30.572269, longitude: 104.066541 })
+            return
+          }
+        }
+        const res = await uni.getLocation({ type: 'wgs84', isHighAccuracy: true })
+        uni.setStorageSync('USER_LOCATION', { latitude: res.latitude, longitude: res.longitude })
+      } catch (err) {
+        console.error('启动时定位失败，使用默认坐标', err)
+        uni.setStorageSync('USER_LOCATION', { latitude: 30.572269, longitude: 104.066541 })
+      }
+    }
   }
 }
 </script>

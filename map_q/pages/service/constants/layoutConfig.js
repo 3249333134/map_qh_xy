@@ -43,14 +43,14 @@ export const CATEGORY_MAP = {
 // 地图标记配置
 export const MARKER_CONFIG = {
   DEFAULT_ICON: '/static/marker.png',
-  ICONS: {
+  SIZE: {
+    WIDTH: 24,
+    HEIGHT: 24
+  },
+  CATEGORY_ICONS: {
     'all': '/static/marker.png',
     'repair': '/static/marker.png',
     'clean': '/static/marker.png',
     'delivery': '/static/marker.png'
-  },
-  SIZE: {
-    WIDTH: 24,
-    HEIGHT: 24
   }
 }

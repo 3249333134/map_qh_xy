@@ -33,7 +33,7 @@ export function useMapManager() {
         id: index,
         latitude: point.location.coordinates[1],
         longitude: point.location.coordinates[0],
-        iconPath: '/static/marker.png', // 统一使用定位图标
+        iconPath: 'static/marker.png', // 修复：使用相对路径
         width: 24,
         height: 24,
         customData: {

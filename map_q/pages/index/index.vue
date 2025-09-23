@@ -327,3 +327,51 @@ const handleMapError = (errorMsg) => {
   }
 }
 </style>
+
+<template>
+  <view class="boot">
+    <text class="title">正在初始化应用...</text>
+    <text class="subtitle">定位中，请稍候</text>
+  </view>
+</template>
+
+<script>
+export default {
+  onLoad() {
+    this.initAndGo()
+  },
+  methods: {
+    async initAndGo() {
+      try {
+        const setting = await uni.getSetting()
+        const hasAuth = setting?.authSetting?.['scope.userLocation'] === true
+        if (!hasAuth) {
+          try {
+            await uni.authorize({ scope: 'scope.userLocation' })
+          } catch (e) {
+            // 未授权：写入默认坐标并继续
+            uni.setStorageSync('USER_LOCATION', { latitude: 30.572269, longitude: 104.066541 })
+          }
+        }
+        // 已授权或授权成功：尝试获取定位
+        try {
+          const res = await uni.getLocation({ type: 'wgs84', isHighAccuracy: true })
+          uni.setStorageSync('USER_LOCATION', { latitude: res.latitude, longitude: res.longitude })
+        } catch (getErr) {
+          uni.setStorageSync('USER_LOCATION', { latitude: 30.572269, longitude: 104.066541 })
+        }
+      } finally {
+        // 根据你的路由结构选择跳转方式
+        // 若 service 是 tabBar 页面：改为 switchTab
+        uni.reLaunch({ url: '/pages/service/index' })
+      }
+    }
+  }
+}
+</script>
+
+<style scoped>
+.boot { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.title { font-size: 18px; margin-bottom: 8px; }
+.subtitle { color: #888; }
+</style>

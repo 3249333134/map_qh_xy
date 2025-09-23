@@ -312,6 +312,12 @@ export default {
     onCardTap(index) {
       this.$emit('card-tap', index)
     },
+
+    // 新增：预约事件透传（修复 onReserve 未定义）
+    onReserve(payload) {
+      // payload 形如 { cardData, index }
+      this.$emit('reserve', payload)
+    },
     
     // 为新卡片生成高度
     generateHeightsForNewItems(newData, oldData) {

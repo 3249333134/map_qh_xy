@@ -2,7 +2,7 @@
 export const APP_CONFIG = {
   // 服务器配置 - 修改为本地开发地址
   SERVER: {
-    HOST: 'localhost',  // 改为 localhost 或 127.0.0.1
+    HOST: '127.0.0.1',  // 改为 127.0.0.1，避免 localhost 解析问题
     PORT: '3000',
     PROTOCOL: 'http',
     WS_PROTOCOL: 'ws'
