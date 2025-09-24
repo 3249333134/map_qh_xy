@@ -67,7 +67,8 @@ export default {
       this.mapContext = null;
       this.isInitialized = false;
     },
-    // 地图错误处理（放到实际生效的 methods 中）
+    
+    // 地图错误处理（合并到最终 methods 中，避免被覆盖）
     onMapError(e) {
       console.error('地图加载错误:', e)
       if (this.retryCount < this.maxRetries) {
@@ -78,43 +79,6 @@ export default {
       } else {
         this.$emit('map-error', '地图加载失败，请检查网络连接')
       }
-    }
-  },  // 在这里添加逗号
-  mounted() {
-    // 在mounted中安全地设置scale
-    if (this.config && this.config.scale) {
-      this.currentScale = this.config.scale;
-    }
-    // 延迟获取地图上下文，确保地图组件已完全渲染
-    this.$nextTick(() => {
-      this.boundsFetchTimer = setTimeout(() => {
-        this.initializeMap();
-      }, 300); // 增加延迟时间
-    });
-  },
-  
-  // 添加组件销毁时的清理
-  beforeDestroy() {
-    // 清理定时器
-    if (this.boundsFetchTimer) {
-      clearTimeout(this.boundsFetchTimer);
-    }
-  },
-  
-  // 添加组件卸载时的清理（Vue 3兼容）
-  beforeUnmount() {
-    this.cleanup();
-  },
-  
-  methods: {
-    // 清理资源
-    cleanup() {
-      if (this.boundsFetchTimer) {
-        clearTimeout(this.boundsFetchTimer);
-        this.boundsFetchTimer = null;
-      }
-      this.mapContext = null;
-      this.isInitialized = false;
     },
     
     // 初始化地图
@@ -135,6 +99,7 @@ export default {
     },
     
     refreshLocation() {
+      // 允许父页面在刷新定位时拉起系统定位权限并更新 mapConfig
       this.$emit('refresh-location')
     },
 

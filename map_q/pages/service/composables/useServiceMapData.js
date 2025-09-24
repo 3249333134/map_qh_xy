@@ -319,17 +319,40 @@ export function useServiceMapData() {
     }
   }
   
-  // 处理卡片点击
+  // 处理卡片点击：定位地图并打开详情
   const handleCardTap = (index) => {
     const item = mapPoints.value[index]
-    if (!item) return
+    if (!item) {
+      uni.showToast({ title: '未找到服务数据', icon: 'none' })
+      return
+    }
     if (item.location && Array.isArray(item.location.coordinates)) {
       const [lng, lat] = item.location.coordinates
       mapConfig.latitude = lat
       mapConfig.longitude = lng
       mapConfig.scale = 16
     }
-    // 跳转到服务详情页
+    openServiceDetail(item)
+  }
+
+  // 新增：统一打开服务详情（支持传索引或完整对象）
+  const openServiceDetail = (itemOrIndex) => {
+    let item = null
+    if (typeof itemOrIndex === 'number') {
+      item = mapPoints.value[itemOrIndex]
+    } else if (itemOrIndex && typeof itemOrIndex === 'object') {
+      item = itemOrIndex
+    }
+    if (!item) {
+      uni.showToast({ title: '未找到服务数据', icon: 'none' })
+      return
+    }
+    if (item.location && Array.isArray(item.location.coordinates)) {
+      const [lng, lat] = item.location.coordinates
+      mapConfig.latitude = lat
+      mapConfig.longitude = lng
+      mapConfig.scale = 16
+    }
     uni.setStorageSync('LAST_SERVICE_ITEM', item)
     uni.navigateTo({
       url: '/pages/service/detail/index',

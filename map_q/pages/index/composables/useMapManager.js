@@ -28,12 +28,11 @@ export function useMapManager() {
     
     const markers = mapPoints.map((point, index) => {
       const isVisible = visibleCardIndices.value.includes(index)
-      
       return {
         id: index,
         latitude: point.location.coordinates[1],
         longitude: point.location.coordinates[0],
-        iconPath: 'static/marker.png', // 修复：使用相对路径
+        iconPath: '/static/marker.png',
         width: 24,
         height: 24,
         customData: {

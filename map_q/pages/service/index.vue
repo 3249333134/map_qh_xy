@@ -1,17 +1,16 @@
 <template>
   <view class="container">
     <!-- 地图区域 -->
-    <map-background 
+    <map-background
       :height="mapHeight"
       :config="mapConfig"
       @refresh-location="getUserLocation"
       @region-changed="onMapRegionChanged"
-      ref="mapBackground"
       @move-to-location="handleMoveToLocation"
-      @moveToLocation="handleMoveToLocation"
+      ref="mapBackground"
     />
-    <!-- 可滑动区域（保持服务分类与 ServiceCardItem，但事件/传参风格对齐首页） -->
-    <content-area 
+    <!-- 可滑动区域 -->
+    <content-area
       :height="contentHeight"
       :search-box-height="60"
       :min-content-height="200"
@@ -23,10 +22,8 @@
       :visible-card-indices="visibleCardIndices"
       :is-dragging="isDragging"
       @drag-start="handleDragStart"
-      @dragStart="handleDragStart"
       @drag="handleDrag"
       @drag-end="handleDragEnd"
-      @dragEnd="handleDragEnd"
       @category-change="handleCategoryChange"
       @search-input="onSearchInput"
       @load-more="loadMoreItems"
@@ -129,8 +126,27 @@ export default {
 
     // 处理下方内容区域点击：只定位到地图
     const handleContentTap = async ({ cardData, index }) => {
-      // 将内容区域点击也统一委托给 handleCardTap，保持行为一致
-      return handleCardTap(index)
+      // 只定位到地图，不跳转详情
+      const item = typeof index === 'number' ? mapPoints.value[index] : cardData
+      if (!item) {
+        uni.showToast({ title: '未找到服务数据', icon: 'none' })
+        return
+      }
+      // 支持两种坐标结构：item.location.coordinates 或 item.coordinates
+      let coords = null
+      if (item.location && Array.isArray(item.location.coordinates)) {
+        coords = item.location.coordinates
+      } else if (Array.isArray(item.coordinates)) {
+        coords = item.coordinates
+      }
+      if (coords) {
+        const [lng, lat] = coords
+        mapConfig.latitude = lat
+        mapConfig.longitude = lng
+        mapConfig.scale = 16
+      } else {
+        uni.showToast({ title: '未找到位置信息', icon: 'none' })
+      }
     }
 
     // 处理“预”按钮：最小实现，不改变其他逻辑
@@ -204,11 +220,12 @@ export default {
       mapConfig,
       visibleCardIndices,
       // 方法
+      // 事件处理函数，全部导出
       handleDragStart,
       handleDrag,
       handleDragEnd,
-      handleMoveToLocation,  // 新增返回
-      handleMapError,        // 新增返回
+      handleMoveToLocation,
+      onMapRegionChanged,
       handleMediaTap,
       handleContentTap,
       handleReserve,

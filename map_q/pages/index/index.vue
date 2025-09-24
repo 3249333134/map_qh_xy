@@ -9,9 +9,10 @@
     <map-background 
       :config="mapConfig"
       :height="mapHeight"
-      @regionchange="onMapRegionChanged"
+      @region-changed="onMapRegionChanged"
       @map-error="handleMapError"
       @move-to-location="handleMoveToLocation"
+      @refresh-location="getUserLocation"
       ref="mapBackground"
     />
     
@@ -36,11 +37,11 @@
       @card-tap="handleCardTap"
       @media-tap="handleMediaTap"
       @content-tap="handleContentTap"
-      @visible-cards-change="handleVisibleCardsChange"
+      @visible-cards-change="onVisibleCardsChange"
     />
   </view>
 </template>
-
+ 
 <script>
 import { onMounted, ref } from 'vue'
 import MapBackground from '../../components/map/MapBackground.vue'
@@ -49,7 +50,7 @@ import { useMapData } from './composables/useMapData.js'
 import { useLayout } from './composables/useLayout.js'
 import { useCategory } from './composables/useCategory.js'
 import { useMapManager } from './composables/useMapManager.js'
-
+ 
 export default {
   name: 'IndexPage',
   components: {
@@ -58,18 +59,20 @@ export default {
   },
   
   setup() {
-    // 获取地图背景组件的引用
+    // 地图组件引用
     const mapBackground = ref(null)
-    // 使用 composables
+    // 数据 composables
     const {
       mapPoints,
       isLoading,
       hasMoreData,
       fetchMapData,
       loadMoreItems: loadMore,
-      switchCategory
+      switchCategory,
+      mapBounds
     } = useMapData()
     
+    // 布局 composables
     const {
       contentHeight,
       mapHeight,
@@ -80,68 +83,68 @@ export default {
       handleDragEnd
     } = useLayout()
     
+    // 分类 composables
     const {
       categories,
       activeCategory,
       handleCategoryChange: changeCategoryHandler
     } = useCategory()
     
+    // 地图管理 composables（对方法重命名，便于自定义包装）
     const {
       mapConfig,
       visibleCardIndices,
       updateMapMarkers,
       getUserLocation,
-      onMapRegionChanged,
-      handleVisibleCardsChange
+      onMapRegionChanged: mapMgrRegionChanged,
+      handleVisibleCardsChange: mapMgrVisibleCardsChange
     } = useMapManager()
     
-    // 组合方法
-    // 在setup函数中添加错误状态
+    // 错误状态
     const errorMessage = ref('')
     const showError = ref(false)
     
-    // 错误处理函数
     const handleError = (error, context = '') => {
       console.error(`${context}错误:`, error)
       errorMessage.value = `${context}失败，请稍后重试`
       showError.value = true
-      
-      // 3秒后自动隐藏错误提示
-      setTimeout(() => {
-        showError.value = false
-      }, 3000)
+      setTimeout(() => { showError.value = false }, 3000)
     }
     
-    // 优化分类切换
+    // 地图错误处理（确保在 setup 中定义并返回）
+    const handleMapError = (msg) => {
+      handleError(new Error(msg), '地图加载')
+    }
+    
+    // 分类切换
     const handleCategoryChange = async (categoryId) => {
       try {
         changeCategoryHandler(categoryId)
         const hasCache = switchCategory(categoryId)
-        
         if (!hasCache) {
           await fetchMapData(categoryId, mapConfig)
         }
-        
         updateMapMarkers(mapPoints.value)
       } catch (error) {
         handleError(error, '切换分类')
       }
     }
     
+    // 加载更多
     const loadMoreItems = () => {
       loadMore(activeCategory.value, mapConfig)
     }
     
+    // 搜索输入
     const onSearchInput = (searchText) => {
-      // 搜索逻辑保持简单
       console.log('搜索:', searchText)
     }
     
+    // 卡片点击
     const handleCardTap = (cardData) => {
-      // 卡片点击逻辑
       console.log('卡片点击:', cardData)
     }
-
+ 
     // 处理地图定位事件
     const handleMoveToLocation = (locationData) => {
       const { latitude, longitude, scale } = locationData
@@ -150,14 +153,11 @@ export default {
       mapConfig.scale = scale
       console.log('地图配置已更新:', locationData)
     }
-
-    // 处理上方媒体区域点击：跳转详情页并定位
+ 
+    // 上方媒体区域点击：跳转详情页并定位
     const handleMediaTap = async (data) => {
       console.log('媒体区域点击，准备跳转详情页并定位:', data)
-      
       const { cardData } = data
-      
-      // 调用地图组件的定位方法
       if (cardData && cardData.location && cardData.location.coordinates && mapBackground.value) {
         const [longitude, latitude] = cardData.location.coordinates
         try {
@@ -167,8 +167,6 @@ export default {
           console.error('地图定位失败:', error)
         }
       }
-      
-      // 跳转到详情页，传递卡片数据
       if (cardData && cardData._id) {
         try {
           await uni.navigateTo({
@@ -176,7 +174,6 @@ export default {
           })
         } catch (error) {
           console.error('跳转详情页失败:', error)
-          // 如果跳转失败，可以显示错误提示
           handleError(error, '跳转详情页')
         }
       } else {
@@ -184,13 +181,10 @@ export default {
       }
     }
     
-    // 处理下方内容区域点击：只定位到地图
+    // 下方内容区域点击：只定位到地图
     const handleContentTap = async (data) => {
       console.log('内容区域点击，准备定位到地图:', data)
-      
       const { cardData } = data
-      
-      // 调用地图组件的定位方法
       if (cardData && cardData.location && cardData.location.coordinates && mapBackground.value) {
         const [longitude, latitude] = cardData.location.coordinates
         try {
@@ -204,14 +198,29 @@ export default {
       }
     }
     
-    // 初始化函数优化
+    // 包装：地图区域变化（同步到 useMapData 的 mapBounds）
+    const onMapRegionChanged = (bounds) => {
+      try {
+        mapBounds.value = bounds
+        // 保留原管理器的处理（日志等）
+        mapMgrRegionChanged(bounds)
+      } catch (error) {
+        handleError(error, '处理地图区域变化')
+      }
+    }
+    
+    // 包装：可视卡片索引变化 -> 更新地图标记
+    const onVisibleCardsChange = (indices) => {
+      mapMgrVisibleCardsChange(indices)
+      updateMapMarkers(mapPoints.value)
+    }
+    
+    // 初始化
     const init = async () => {
       try {
         console.log('开始初始化首页...')
-        
         // 1. 初始化布局
         initLayout()
-        
         // 2. 获取用户位置（可选）
         try {
           await getUserLocation()
@@ -219,24 +228,17 @@ export default {
         } catch (error) {
           console.log('获取位置失败，使用默认位置:', error)
         }
-        
         // 3. 获取地图数据
         await fetchMapData(activeCategory.value, mapConfig)
-        
         // 4. 更新地图标记
         updateMapMarkers(mapPoints.value)
-        
         console.log('首页初始化完成')
       } catch (error) {
         console.error('首页初始化失败:', error)
-        // 可以在这里添加用户提示
       }
     }
     
-    // 修复生命周期 - 使用正确的onMounted
-    onMounted(() => {
-      init()
-    })
+    onMounted(() => { init() })
     
     return {
       // 组件引用
@@ -257,7 +259,7 @@ export default {
       updateMapMarkers,
       getUserLocation,
       onMapRegionChanged,
-      handleVisibleCardsChange,
+      onVisibleCardsChange,
       handleMoveToLocation,
       
       // 数据相关
@@ -287,13 +289,8 @@ export default {
     }
   }
 }
-
-// 添加地图错误处理
-const handleMapError = (errorMsg) => {
-  handleError(new Error(errorMsg), '地图加载')
-}
 </script>
-
+ 
 <style scoped>
 .container {
   position: relative;
@@ -326,52 +323,4 @@ const handleMapError = (errorMsg) => {
     transform: translateX(-50%) translateY(0);
   }
 }
-</style>
-
-<template>
-  <view class="boot">
-    <text class="title">正在初始化应用...</text>
-    <text class="subtitle">定位中，请稍候</text>
-  </view>
-</template>
-
-<script>
-export default {
-  onLoad() {
-    this.initAndGo()
-  },
-  methods: {
-    async initAndGo() {
-      try {
-        const setting = await uni.getSetting()
-        const hasAuth = setting?.authSetting?.['scope.userLocation'] === true
-        if (!hasAuth) {
-          try {
-            await uni.authorize({ scope: 'scope.userLocation' })
-          } catch (e) {
-            // 未授权：写入默认坐标并继续
-            uni.setStorageSync('USER_LOCATION', { latitude: 30.572269, longitude: 104.066541 })
-          }
-        }
-        // 已授权或授权成功：尝试获取定位
-        try {
-          const res = await uni.getLocation({ type: 'wgs84', isHighAccuracy: true })
-          uni.setStorageSync('USER_LOCATION', { latitude: res.latitude, longitude: res.longitude })
-        } catch (getErr) {
-          uni.setStorageSync('USER_LOCATION', { latitude: 30.572269, longitude: 104.066541 })
-        }
-      } finally {
-        // 根据你的路由结构选择跳转方式
-        // 若 service 是 tabBar 页面：改为 switchTab
-        uni.reLaunch({ url: '/pages/service/index' })
-      }
-    }
-  }
-}
-</script>
-
-<style scoped>
-.boot { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.title { font-size: 18px; margin-bottom: 8px; }
-.subtitle { color: #888; }
 </style>
