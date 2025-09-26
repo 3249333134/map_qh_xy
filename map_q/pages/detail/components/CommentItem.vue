@@ -6,6 +6,10 @@
         <view class="comment-left">
           <text class="comment-username">{{ comment.name }}</text>
           <text class="comment-time">{{ comment.time }}</text>
+          <!-- 星级：仅当有评分时展示，用有无评分代表是否使用过本服务 -->
+          <view v-if="comment && comment.rating != null" class="comment-rating-inline" :aria-label="'评分' + comment.rating">
+            <text v-for="i in 5" :key="i" class="rating-star" :class="{ active: i <= Math.round(comment.rating) }">★</text>
+          </view>
         </view>
         <view class="comment-right-section">
           <view class="comment-like" @click="onLike">
@@ -108,6 +112,17 @@ export default {
   flex: 1;
   min-width: 0;
 }
+/* 新增：时间后内联星级 */
+.comment-rating-inline {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 2px;
+  transform: translateY(-1px);
+}
+.rating-star { font-size: 12px; color: #ddd; }
+.rating-star.active { color: #FFD54F; }
+
 .comment-right-section {
   display: flex;
   flex-direction: column;

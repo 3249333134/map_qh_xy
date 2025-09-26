@@ -13,6 +13,8 @@ export default {
       }
     })
     this.initLocation()
+    // 统一计算并缓存 TabBar 高度，供各页面直接绑定，确保与首页一致
+    this.computeTabBarMetrics()
   },
   onShow: function() {
     console.log('App Show')
@@ -39,6 +41,34 @@ export default {
       } catch (err) {
         console.error('启动时定位失败，使用默认坐标', err)
         uni.setStorageSync('USER_LOCATION', { latitude: 30.572269, longitude: 104.066541 })
+      }
+    },
+    // 计算并缓存系统 TabBar 高度（rpx）与安全区（rpx），用于全局绑定
+    computeTabBarMetrics() {
+      try {
+        const info = uni.getSystemInfoSync()
+        const toRpx = (px) => Math.round((px * 750) / (info.screenWidth || info.windowWidth))
+        // 近似系统 TabBar 高度（px）：iOS 49、Android 48、开发者工具 50
+        let basePx = 49
+        const plat = (info.platform || '').toLowerCase()
+        if (plat.includes('android')) basePx = 48
+        else if (plat.includes('devtools')) basePx = 50
+        // 安全区底部（px）
+        const safeBottomPx = info.safeArea ? (info.screenHeight - info.safeArea.bottom) : 0
+        const safeBottomRpx = Math.max(0, toRpx(safeBottomPx))
+        const baseRpx = toRpx(basePx)
+        // 视觉微调：有底部安全区更紧凑，做 -4rpx；否则 -2rpx
+        const microAdjustRpx = safeBottomRpx > 0 ? -4 : -2
+        const tabHeightRpx = Math.max(84, baseRpx + microAdjustRpx)
+        const placeholderHeightRpx = tabHeightRpx + safeBottomRpx
+        const metrics = { tabHeightRpx, safeBottomRpx, microAdjustRpx, placeholderHeightRpx }
+        uni.setStorageSync('TABBAR_METRICS', metrics)
+        return metrics
+      } catch (e) {
+        console.warn('计算 TabBar 高度失败，使用默认值', e)
+        const metrics = { tabHeightRpx: 100, safeBottomRpx: 0, microAdjustRpx: 0, placeholderHeightRpx: 100 }
+        uni.setStorageSync('TABBAR_METRICS', metrics)
+        return metrics
       }
     }
   }
