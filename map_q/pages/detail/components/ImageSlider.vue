@@ -21,7 +21,7 @@
         ></image>
       </swiper-item>
     </swiper>
-    <view class="image-count">{{ currentIndex + 1 }}/{{ slides.length }}</view>
+    <view class="image-count" :style="{ bottom: countBottomStyle }">{{ currentIndex + 1 }}/{{ slides.length }}</view>
   </view>
 </template>
 
@@ -32,6 +32,11 @@ export default {
     images: {
       type: Array,
       default: () => []
+    },
+    // 计数器距离底部的偏移，默认 20rpx，可通过父组件定制
+    countBottom: {
+      type: [Number, String],
+      default: 20
     }
   },
   data() {
@@ -47,6 +52,10 @@ export default {
       if (!this.images || this.images.length === 0) return [];
       if (this.images.length === 1) return [this.images[0], this.images[0], this.images[0]];
       return this.images;
+    },
+    countBottomStyle() {
+      if (typeof this.countBottom === 'number') return `${this.countBottom}rpx`;
+      return this.countBottom;
     }
   },
   methods: {

@@ -34,7 +34,8 @@
     {
       "path": "pages/service/detail/index",
       "style": {
-        "navigationBarTitleText": "服务详情"
+        "navigationBarTitleText": "服务详情",
+        "navigationStyle": "custom"
       }
     },
     {
