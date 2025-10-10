@@ -1,5 +1,5 @@
 <template>
-  <view class="bottom-actions">
+  <view class="bottom-actions" :style="bottomActionsStyle">
     <view class="action-left" @tap="handleOpenComment">
       <view class="comment-input">
         <image class="user-avatar" :src="currentUser.avatar" mode="aspectFill"></image>
@@ -38,6 +38,42 @@ export default {
     }
   },
   emits: ['like', 'collect', 'share', 'comment'],
+  data() {
+    return {
+      tabHeightRpx: 100,
+      safeBottomRpx: 0,
+      microAdjustRpx: 0
+    }
+  },
+  computed: {
+    placeholderHeightRpx() {
+      return this.tabHeightRpx + this.safeBottomRpx
+    },
+    bottomActionsStyle() {
+      return {
+        height: this.tabHeightRpx + 'rpx',
+        padding: `${8 + this.microAdjustRpx}rpx 12px ${this.safeBottomRpx}rpx`
+      }
+    }
+  },
+  mounted() {
+    try {
+      const app = getApp && getApp()
+      let metrics = uni.getStorageSync('TABBAR_METRICS')
+      if (!metrics || !metrics.tabHeightRpx) {
+        metrics = app && app.computeTabBarMetrics ? app.computeTabBarMetrics() : null
+      }
+      if (metrics) {
+        this.tabHeightRpx = metrics.tabHeightRpx
+        this.safeBottomRpx = metrics.safeBottomRpx
+        this.microAdjustRpx = metrics.microAdjustRpx || 0
+      }
+    } catch (e) {
+      this.tabHeightRpx = 100
+      this.safeBottomRpx = 0
+      this.microAdjustRpx = 0
+    }
+  },
   methods: {
     handleLike() { this.$emit('like') },
     handleCollect() { this.$emit('collect') },
@@ -54,7 +90,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
+  padding: 8px 12px; /* 具体 padding-bottom 由 bottomActionsStyle 接管 */
   background-color: #fff;
   border-top: 1px solid #f0f0f0;
   z-index: 999;

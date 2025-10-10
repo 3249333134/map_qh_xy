@@ -1,6 +1,7 @@
 <template>
   <view class="content-section" 
-        :style="{ transform: `translateY(${translateY}px)` }">
+        :class="{ dragging: isDragging }"
+        :style="contentSectionStyle">
     
     <!-- 模块内容区域 - 根据模块类型决定是否支持拖拽 -->
     <view class="module-content-background"
@@ -11,9 +12,8 @@
       <slot></slot>
     </view>
     
-    <!-- 顶部操作区域 - 只在位置模块时支持拖拽 -->
-    <view class="top-actions"
-          :class="{ 'draggable-bar': activeModule === 'location' }"
+    <!-- 顶部操作区域 - 所有模块均可拖拽，位置模块由父组件处理位移 -->
+    <view class="top-actions draggable-bar"
           @touchstart="handleBarTouchStart"
           @touchmove="handleBarTouchMove"
           @touchend="handleBarTouchEnd">
@@ -65,10 +65,49 @@ export default {
   data() {
     return {
       startY: 0,
+      startTranslateY: 0,
       startTime: 0,
       isDragging: false,
       dragDistance: 0,
-      lastMoveTime: 0
+      lastMoveTime: 0,
+      // 底部栏与安全区度量（用于裁剪显示高度）
+      tabHeightRpx: 100,
+      safeBottomRpx: 0,
+      microAdjustRpx: 0
+    }
+  },
+  computed: {
+    // 底部占位（TabBar 高度 + 安全区），用于裁剪内容区域避免被底部栏遮挡
+    placeholderHeightRpx() {
+      return this.tabHeightRpx + this.safeBottomRpx
+    },
+    // 根容器样式：同时控制位移与底部裁剪，仅展示蓝框区域
+    contentSectionStyle() {
+      return {
+        transform: `translate3d(0, ${this.translateY}px, 0)`,
+        // 统一贴底，移除位置模块的底部占位，避免出现下方空隙
+        bottom: '0px',
+        top: '0px'
+      }
+    }
+  },
+  mounted() {
+    // 读取并应用全局 TABBAR_METRICS，确保与系统/其他页面一致
+    try {
+      const app = getApp && getApp()
+      let metrics = uni.getStorageSync('TABBAR_METRICS')
+      if (!metrics || !metrics.tabHeightRpx) {
+        metrics = app && app.computeTabBarMetrics ? app.computeTabBarMetrics() : null
+      }
+      if (metrics) {
+        this.tabHeightRpx = metrics.tabHeightRpx
+        this.safeBottomRpx = metrics.safeBottomRpx
+        this.microAdjustRpx = metrics.microAdjustRpx || 0
+      }
+    } catch (e) {
+      this.tabHeightRpx = 100
+      this.safeBottomRpx = 0
+      this.microAdjustRpx = 0
     }
   },
   methods: {
@@ -77,8 +116,36 @@ export default {
       this.initDrag(e)
     },
     
+    // 统一获取触点 Y 坐标，兼容 mp-weixin 的不同事件字段
+    getTouchY(e) {
+      let y = this.startY
+      const t = (e && ((e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0]))) || null
+      if (t) {
+        if (typeof t.clientY === 'number') y = t.clientY
+        else if (typeof t.pageY === 'number') y = t.pageY
+        else if (typeof t.y === 'number') y = t.y
+        else if (typeof t.screenY === 'number') y = t.screenY
+        else if (typeof t.globalY === 'number') y = t.globalY
+        else if (typeof t.localY === 'number') y = t.localY
+      } else if (e && e.detail && typeof e.detail.y === 'number') {
+        y = e.detail.y
+      }
+      return y
+    },
+    
     handleBarTouchMove(e) {
-      this.processDragMove(e, true) // 横条总是允许拖拽
+      // 顶部操作栏拖拽：实时跟随手指移动内容区域
+      const currentY = this.getTouchY(e)
+      const deltaY = currentY - this.startY
+      // 非位置模块：子组件直接发出实时位移事件，父组件逐帧更新
+      if (this.activeModule !== 'location') {
+        // 修正：向上拖动（deltaY 为负）应让 translateY 减小（容器上移），从而内容区域变大
+        const newTranslateY = this.startTranslateY + deltaY
+        // 交由父组件按 positions.top/default 统一夹取
+        this.$emit('update-translate-y', newTranslateY)
+      }
+      // 拖拽过程事件（用于点击与速度判断）
+      this.processDragMove(e, true)
     },
     
     handleBarTouchEnd(e) {
@@ -93,96 +160,60 @@ export default {
       if (this.isInteractiveElement(e.target)) {
         return
       }
-      
+      // 仅当内容滚动在顶部时才允许拖拽移动容器
+      if (!this.isScrollAtTop) {
+        return
+      }
       this.initDrag(e)
     },
     
     handleContentTouchMove(e) {
       if (this.activeModule !== 'date' && this.activeModule !== 'favorite') return
-      
-      const currentY = e.touches[0].clientY
+      // 非顶部时正常滚动内容，不移动容器
+      if (!this.isScrollAtTop) {
+        return
+      }
+      const currentY = this.getTouchY(e)
       const deltaY = currentY - this.startY
-      const absDeltaY = Math.abs(deltaY)
-      
-      // 降低拖拽阈值，提高响应性
-      const dragThreshold = 3
-      
-      if (absDeltaY < dragThreshold) {
-        return // 移动距离太小，不处理
-      }
-      
-      let allowDrag = false
-      
-      if (this.activeModule === 'date') {
-        // 🔥 核心修改：向上滑动时无条件允许拖拽并按比例扩大内容区域
-        if (deltaY < 0) {
-          allowDrag = true
-          e.preventDefault()
-          e.stopPropagation()
-          
-          // 🎯 关键：直接按比例调整内容区域大小
-          const expandRatio = Math.abs(deltaY) / 100 // 每100px拖拽距离对应1倍变化
-          const newTranslateY = this.translateY + deltaY * 0.8 // 0.8是拖拽响应系数
-          
-          // 限制扩大范围，避免过度扩大
-          const maxExpand = -200 // 最大向上扩大200px
-          const finalTranslateY = Math.max(newTranslateY, maxExpand)
-          
-          // 实时更新内容区域位置
-          this.$emit('update-translate-y', finalTranslateY)
-        }
-        // 向下滑动：只有在顶部时才允许拖拽
-        else if (deltaY > 0) {
-          if (this.isScrollAtTop) {
-            allowDrag = true
-            e.preventDefault()
-            e.stopPropagation()
-            
-            // 🎯 关键：直接按比例调整内容区域大小
-            const shrinkRatio = deltaY / 100
-            const newTranslateY = this.translateY + deltaY * 0.8
-            
-            // 限制缩小范围，避免过度缩小
-            const maxShrink = 100 // 最大向下缩小100px
-            const finalTranslateY = Math.min(newTranslateY, maxShrink)
-            
-            // 实时更新内容区域位置
-            this.$emit('update-translate-y', finalTranslateY)
-          } else {
-            allowDrag = false
-            return
-          }
-        }
-      }
-      else if (this.activeModule === 'favorite') {
-        // 收藏模块：总是允许双向拖拽
-        allowDrag = true
-        e.preventDefault()
-        e.stopPropagation()
-        
-        // 收藏模块也支持按比例调整
-        const newTranslateY = this.translateY + deltaY * 0.8
-        const finalTranslateY = Math.max(Math.min(newTranslateY, 100), -200)
-        this.$emit('update-translate-y', finalTranslateY)
-      }
-      
-      // 如果允许拖拽，继续处理拖拽事件
-      if (allowDrag) {
-        this.processDragMove(e, true)
-      }
+    
+      // 统一与顶部横条：向上拖动（deltaY 为负）=> translateY 减小（容器上移）=> 内容区域扩大
+      const newTranslateY = this.startTranslateY + deltaY
+    
+      // 交由父组件按 positions.top/default 统一夹取
+      this.$emit('update-translate-y', newTranslateY)
+      // 仅在允许拖拽时阻止默认并上报拖拽过程
+      this.processDragMove(e, true)
     },
     
-    // 优化拖拽处理方法
+    handleContentTouchEnd(e) {
+      if (this.activeModule !== 'date' && this.activeModule !== 'favorite') return
+      // 若没有进入拖拽状态，直接结束（不影响正常滚动）
+      if (!this.isDragging) return
+      this.finishDrag(e)
+    },
+    
+    // 统一的拖拽初始化方法
+    initDrag(e) {
+      const y = this.getTouchY(e)
+      this.startY = y
+      this.dragStartY = y // 新增：统一初始化，避免未定义导致方向错误
+      this.startTranslateY = this.translateY
+      this.startTime = Date.now()
+      this.lastMoveTime = this.startTime
+      this.isDragging = false
+      this.dragDistance = 0
+    },
+    
+    // 统一的拖拽移动处理方法（统一坐标兼容，并携带 activeModule）
     processDragMove(e, allowDrag) {
       if (!allowDrag) {
         return
       }
-      
-      const currentY = e.touches[0].clientY
+      e.preventDefault()
+      e.stopPropagation()
+      const currentY = this.getTouchY(e)
       const deltaY = currentY - this.startY
       const absDeltaY = Math.abs(deltaY)
-      
-      // 如果还没开始拖拽，先启动拖拽
       if (!this.isDragging) {
         this.isDragging = true
         this.$emit('drag-start', {
@@ -193,12 +224,8 @@ export default {
           activeModule: this.activeModule
         })
       }
-      
-      // 更新拖拽状态
       this.dragDistance = absDeltaY
       this.lastMoveTime = Date.now()
-      
-      // 发出拖拽移动事件
       this.$emit('drag-move', {
         startY: this.startY,
         currentY: currentY,
@@ -209,59 +236,6 @@ export default {
       })
     },
     
-    handleContentTouchEnd(e) {
-      if (this.activeModule !== 'date' && this.activeModule !== 'favorite') return
-      this.finishDrag(e)
-    },
-    
-    // 统一的拖拽初始化方法
-    initDrag(e) {
-      this.startY = e.touches[0].clientY
-      this.startTime = Date.now()
-      this.lastMoveTime = this.startTime
-      this.isDragging = false
-      this.dragDistance = 0
-    },
-    
-    // 统一的拖拽移动处理方法
-    processDragMove(e, allowDrag) {
-      if (!allowDrag) {
-        // 不允许拖拽时，不阻止默认行为，让原生滚动继续
-        return
-      }
-      
-      // 阻止默认滚动行为
-      e.preventDefault()
-      e.stopPropagation()
-      
-      const currentY = e.touches[0].clientY
-      const deltaY = currentY - this.startY
-      const absDeltaY = Math.abs(deltaY)
-      
-      // 如果还没开始拖拽，先启动拖拽
-      if (!this.isDragging) {
-        this.isDragging = true
-        this.$emit('drag-start', {
-          startY: this.startY,
-          currentY: currentY,
-          timestamp: Date.now()
-        })
-      }
-      
-      // 更新拖拽状态
-      this.dragDistance = absDeltaY
-      this.lastMoveTime = Date.now()
-      
-      // 发出拖拽移动事件
-      this.$emit('drag-move', {
-        startY: this.startY,
-        currentY: currentY,
-        deltaY: deltaY,
-        dragDistance: this.dragDistance,
-        timestamp: this.lastMoveTime
-      })
-    },
-    
     // 统一的拖拽结束处理方法
     finishDrag(e) {
       if (!this.isDragging) return
@@ -269,13 +243,10 @@ export default {
       e.preventDefault()
       e.stopPropagation()
       
+      const ct = (e.changedTouches && e.changedTouches[0]) || null
+      const endY = ct ? (ct.clientY ?? ct.pageY ?? this.startY) : this.startY
       const endTime = Date.now()
       const dragDuration = endTime - this.startTime
-      const endY = e.changedTouches && e.changedTouches.length > 0 
-        ? e.changedTouches[0].clientY 
-        : this.startY
-      
-      // 发出拖拽结束事件
       this.$emit('drag-end', {
         startY: this.startY,
         endY: endY,
@@ -293,16 +264,16 @@ export default {
     // 判断是否为交互元素
     isInteractiveElement(target) {
       const interactiveSelectors = [
-        'month-nav',          // 月份导航按钮
-        'view-toggle-bar',    // 视图切换栏
-        'event-item',         // 事件项目
-        'category-tab',       // 分类标签
-        'favorite-item',      // 收藏项目
-        'item-action',        // 项目操作按钮
-        'favorite-list',      // 收藏列表
-        'action-btn',         // 操作按钮
-        'settings-btn',       // 设置按钮
-        'back-to-today'       // 回到今天按钮
+        'month-nav',
+        'view-toggle-bar',
+        'event-item',
+        'category-tab',
+        'favorite-item',
+        'item-action',
+        'favorite-list',
+        'action-btn',
+        'settings-btn',
+        'back-to-today'
       ]
       
       let element = target
@@ -321,14 +292,12 @@ export default {
     },
     
     switchModule(module) {
-      // 只有在非拖拽状态下才切换模块
       if (this.dragDistance < 10) {
         this.$emit('switch-module', module)
       }
     },
     
     handleSettingsClick() {
-      // 只有在非拖拽状态下才处理设置点击
       if (this.dragDistance < 10) {
         this.$emit('settings-click')
       }
@@ -348,18 +317,22 @@ export default {
   border-radius: 20px 20px 0 0;
   box-shadow: 0 -2px 20px rgba(0, 0, 0, 0.1);
   z-index: 2;
-  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: transform 0.25s ease-out; /* 调整为更轻的过渡，提升自然感 */
   will-change: transform;
+}
+
+.content-section.dragging {
+  transition: none !important;
 }
 
 .module-content-background {
   position: absolute;
-  top: 0px; /* 减少top值，让内容区域向上移动 */
+  top: 42px; /* 预留顶栏空间，避免遮挡分类/筛选区域 */
   left: 0;
   right: 0;
   bottom: 0;
   width: 100%;
-  height: calc(100% - 45px); /* 相应调整高度 */
+  /* 移除高度限制，避免出现灰色空白条 */
   overflow: hidden;
   z-index: 1;
 }
@@ -369,12 +342,12 @@ export default {
   top: 0;
   left: 0;
   right: 0;
-  padding: 5px 15px; /* 修改：减少上下内边距(8px→6px)，增加左右内边距(12px→16px) */
+  padding: 3px 15px; /* 恢复原值，避免占用过多垂直空间而遮挡下方分类栏 */
   z-index: 10;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 0 0 16px 16px;
-  margin: 0 7px; /* 修改：减少左右外边距(12px→8px)，让容器更长 */
+  margin: 0 7px;
   cursor: grab;
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   touch-action: pan-y;
@@ -404,11 +377,11 @@ export default {
 
 /* 优化拖拽指示器 */
 .drag-indicator {
-  width: 40px; /* 增加宽度 */
-  height: 4px; /* 增加高度 */
-  background: linear-gradient(90deg, #ddd 0%, #bbb 50%, #ddd 100%); /* 渐变效果 */
+  width: 40px;
+  height: 4px;
+  background: linear-gradient(90deg, #ddd 0%, #bbb 50%, #ddd 100%);
   border-radius: 2px;
-  margin: 0 auto 8px;
+  margin: 0 auto 4px; /* 减小底部间距，顶栏更紧凑 */
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
@@ -504,7 +477,7 @@ export default {
   top: 0px;
   left: 0;
   right: 0;
-  height: 50px; /* 减少高度，只保留导航栏高度 */
+  height: 42px; /* 再收窄高度，避免覆盖到分类栏区域 */
   z-index: 5;
   pointer-events: none;
   

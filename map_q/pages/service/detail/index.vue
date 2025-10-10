@@ -157,7 +157,7 @@ export default {
       // 视觉微调量：为不同平台做 2~4rpx 的细微修正
       microAdjustRpx: 0,
       // 底部操作栏内容整体下移偏移（rpx），用于微调视觉位置
-      contentOffsetRpx: 8,
+      contentOffsetRpx: 0,
       // 评论数据（与首页详情页一致）
       comments: [],
       hasMoreComments: true,
@@ -212,7 +212,7 @@ export default {
     bottomActionsStyle() {
       const topPad = 8 + (this.contentOffsetRpx || 0)
       return {
-        height: this.placeholderHeightRpx + 'rpx',
+        height: this.tabHeightRpx + 'rpx',
         padding: `${topPad}rpx 16rpx ${this.safeBottomRpx}rpx`
       }
     }
@@ -556,5 +556,5 @@ export default {
   font-size: 30rpx;
   font-weight: 700;
 }
-.comments-fullbleed { margin-left: -42rpx; margin-right: -42rpx; }
+.comments-fullbleed { margin-left: -22rpx; margin-right: -22rpx; }
 </style>

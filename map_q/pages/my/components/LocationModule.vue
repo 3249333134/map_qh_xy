@@ -54,7 +54,7 @@ export default {
         left: 20,
         right: 20,
         top: 20,
-        bottom: 80
+        bottom: 0 // 贴底显示，不为底部留白
       }
     }
   },
@@ -168,7 +168,7 @@ export default {
 /* 地图信息覆盖层 - 完全固定在导航栏上方，不受任何变换影响 */
 .map-info {
   position: fixed !important; /* 相对于整个视窗固定 */
-  bottom: 60px !important; /* 始终在导航栏上方 */
+  bottom: 12px !important; /* 更贴近底部，减少空隙 */
   left: 15px !important;
   right: 15px !important;
   background: rgba(255, 255, 255, 0.95);

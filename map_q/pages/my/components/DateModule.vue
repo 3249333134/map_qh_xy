@@ -861,7 +861,7 @@ export default {
   display: flex;
   flex-direction: column;
   background: #fff;
-  padding-top: 60px;
+  padding-top: 12px; /* 原为 60px，缩小顶部内边距以贴近黑色状态栏下缘 */
 }
 
 .calendar-section {
@@ -1078,28 +1078,28 @@ export default {
 .view-toggle-bar {
   display: flex;
   justify-content: center;
-  padding: 20rpx 0;
+  padding: 12rpx 0; /* 压缩高度 */
   border-top: 1rpx solid #eee;
-  margin-top: 20rpx;
+  margin-top: 12rpx; /* 减少上边距 */
 }
 
 .view-toggle {
   display: flex;
   align-items: center;
-  padding: 16rpx 32rpx;
+  padding: 10rpx 24rpx; /* 更薄的按钮 */
   background: #f8f9fa;
-  border-radius: 20rpx;
+  border-radius: 18rpx; /* 略微减小圆角 */
   border: 1rpx solid #e9ecef;
 }
 
 .toggle-text {
-  font-size: 28rpx;
+  font-size: 26rpx; /* 略微缩小字号 */
   color: #495057;
-  margin-right: 8rpx;
+  margin-right: 6rpx;
 }
 
 .toggle-icon {
-  font-size: 24rpx;
+  font-size: 22rpx; /* 略微缩小图标 */
   color: #6c757d;
 }
 

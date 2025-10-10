@@ -29,7 +29,10 @@
       @likeComment="likeComment"
       @replyComment="replyComment"
     />
-    
+
+    <!-- 底部占位，避免评论被底部操作栏遮挡 -->
+    <view :style="{ height: placeholderHeightRpx + 'rpx' }" />
+
     <!-- 底部操作栏 -->
     <BottomActions 
       :likeCount="detailData.likeCount"
@@ -46,7 +49,7 @@
 </template>
 
 <script>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 // 导入子组件
 import Header from './Header.vue';
 import ImageSlider from './ImageSlider.vue';
@@ -91,6 +94,11 @@ export default {
       back,
       initializeData
     } = useDetail();
+
+    // 底部栏与安全区度量（与系统/服务页一致）
+    const tabHeightRpx = ref(100)
+    const safeBottomRpx = ref(0)
+    const placeholderHeightRpx = computed(() => tabHeightRpx.value + safeBottomRpx.value)
     
     // 页面加载时获取数据
     onMounted(async () => {
@@ -104,6 +112,21 @@ export default {
         // 获取评论数据
         await getComments();
         console.log('获取评论数据完成');
+        // 读取全局度量，确保底部占位与底部栏一致
+        try {
+          const app = getApp && getApp()
+          let metrics = uni.getStorageSync('TABBAR_METRICS')
+          if (!metrics || !metrics.tabHeightRpx) {
+            metrics = app && app.computeTabBarMetrics ? app.computeTabBarMetrics() : null
+          }
+          if (metrics) {
+            tabHeightRpx.value = metrics.tabHeightRpx
+            safeBottomRpx.value = metrics.safeBottomRpx
+          }
+        } catch (e) {
+          tabHeightRpx.value = 100
+          safeBottomRpx.value = 0
+        }
       } catch (error) {
         console.error('加载数据失败:', error);
         uni.showToast({
@@ -135,7 +158,8 @@ export default {
       replyComment,
       showCommentInput,
       back,
-      initializeData
+      initializeData,
+      placeholderHeightRpx
     };
   }
 };

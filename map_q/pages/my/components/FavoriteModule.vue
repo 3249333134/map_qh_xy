@@ -18,7 +18,7 @@
     </view>
     
     <!-- 瀑布流收藏列表 -->
-    <scroll-view class="favorite-list" scroll-y @scrolltolower="onLoadMore">
+    <scroll-view class="favorite-list" scroll-y @scrolltolower="onLoadMore" @scroll="onScroll">
       <view v-if="currentCategoryItems.length === 0" class="no-items">
         <text class="no-items-text">暂无{{ getCurrentCategoryName() }}内容</text>
       </view>
@@ -27,47 +27,51 @@
       <view v-else class="cards-grid">
         <!-- 左列卡片 -->
         <view class="cards-column">
-          <view 
-            v-for="(item, index) in leftColumnItems" 
-            :key="'left-' + item.id"
-            class="favorite-card"
-            :style="{ height: getCardHeight(item.id) + 'px' }"
-            @click="handleItemClick(item)"
-          >
-            <view class="card-media" :style="{ backgroundColor: getRandomColor() }">
-              <text class="media-icon">{{ item.icon }}</text>
-            </view>
-            <view class="card-content">
-              <view class="card-title">{{ item.title }}</view>
-              <view class="card-author">{{ item.author || '未知作者' }}</view>
-              <view class="card-footer">
-                <view class="card-location">{{ item.location || '未知位置' }}</view>
-                <view class="card-stats">{{ item.likes || 0 }} 赞</view>
-              </view>
-            </view>
+          <view v-for="(item, index) in leftColumnItems" :key="index" class="card-wrapper">
+            <ServiceCardItem
+              v-if="isServiceItem(item)"
+              :height="getCardHeight(item, index)"
+              column-type="left"
+              :index="index"
+              :card-data="item"
+              @media-tap="openServiceDetail"
+              @content-tap="openServiceDetail"
+              @reserve="handleReserveService"
+            />
+            <CardItem
+              v-else
+              :height="getCardHeight(item, index)"
+              column-type="left"
+              :index="index"
+              :card-data="item"
+              @media-tap="openDetail"
+              @content-tap="openDetail"
+            />
           </view>
         </view>
         
         <!-- 右列卡片 -->
         <view class="cards-column">
-          <view 
-            v-for="(item, index) in rightColumnItems" 
-            :key="'right-' + item.id"
-            class="favorite-card"
-            :style="{ height: getCardHeight(item.id) + 'px' }"
-            @click="handleItemClick(item)"
-          >
-            <view class="card-media" :style="{ backgroundColor: getRandomColor() }">
-              <text class="media-icon">{{ item.icon }}</text>
-            </view>
-            <view class="card-content">
-              <view class="card-title">{{ item.title }}</view>
-              <view class="card-author">{{ item.author || '未知作者' }}</view>
-              <view class="card-footer">
-                <view class="card-location">{{ item.location || '未知位置' }}</view>
-                <view class="card-stats">{{ item.likes || 0 }} 赞</view>
-              </view>
-            </view>
+          <view v-for="(item, index) in rightColumnItems" :key="index" class="card-wrapper">
+            <ServiceCardItem
+              v-if="isServiceItem(item)"
+              :height="getCardHeight(item, index)"
+              column-type="right"
+              :index="index"
+              :card-data="item"
+              @media-tap="openServiceDetail"
+              @content-tap="openServiceDetail"
+              @reserve="handleReserveService"
+            />
+            <CardItem
+              v-else
+              :height="getCardHeight(item, index)"
+              column-type="right"
+              :index="index"
+              :card-data="item"
+              @media-tap="openDetail"
+              @content-tap="openDetail"
+            />
           </view>
         </view>
       </view>
@@ -81,43 +85,50 @@
 </template>
 
 <script>
-export default {
-  name: 'FavoriteModule',
-  props: {
-    favoriteData: {
-      type: Object,
-      default: () => ({})
-    }
-  },
-  data() {
-    return {
-      activeCategory: 'all',
-      isLoading: false,
-      cardHeights: {}, // 存储每个卡片的高度
-      categories: [
-        { key: 'all', name: '全部', icon: '📋' },
-        { key: 'photos', name: '照片', icon: '📷' },
-        { key: 'videos', name: '视频', icon: '🎬' },
-        { key: 'articles', name: '文章', icon: '📚' },
-        { key: 'music', name: '音乐', icon: '🎵' },
-        { key: 'locations', name: '地点', icon: '📍' }
-      ]
-    }
-  },
-  computed: {
+import CardItem from '../../../components/card/CardItem.vue'
+import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
+ export default {
+   name: 'FavoriteModule',
+  components: { CardItem, ServiceCardItem },
+   props: {
+     favoriteData: {
+       type: Object,
+       default: () => ({})
+     }
+   },
+   data() {
+     return {
+       activeCategory: 'all',
+       isLoading: false,
+       cardHeights: {}, // 存储每个卡片的高度
+       categories: [
+         { key: 'all', name: '全部', icon: '📋' },
+         { key: 'photos', name: '照片', icon: '📷' },
+         { key: 'videos', name: '视频', icon: '🎬' },
+         { key: 'articles', name: '文章', icon: '📚' },
+         { key: 'music', name: '音乐', icon: '🎵' },
+         { key: 'locations', name: '地点', icon: '📍' },
+         { key: 'services', name: '服务', icon: '🛠️' }
+       ]
+     }
+   },
+   computed: {
     // 添加一个计算属性来确保数据格式正确
     normalizedFavoriteData() {
-    // 如果 favoriteData 是数组或无效，返回空对象
+    // 如果 favoriteData 是数组或无效，返回空对象（包含 services）
     if (!this.favoriteData || Array.isArray(this.favoriteData) || typeof this.favoriteData !== 'object') {
       return {
         photos: [],
         videos: [],
         articles: [],
         music: [],
-        locations: []
+        locations: [],
+        services: []
       }
     }
-    return this.favoriteData
+    // 确保缺失的类别存在（包含 services）
+    const data = { services: [], photos: [], videos: [], articles: [], music: [], locations: [], ...this.favoriteData }
+    return data
   },
   
   currentCategoryItems() {
@@ -151,6 +162,7 @@ export default {
   },
   methods: {
     parseDate(dateString) {
+      if (!dateString || typeof dateString !== 'string') return new Date(0)
       const normalizedDate = dateString.replace(/-/g, '/')
       return new Date(normalizedDate)
     },
@@ -164,37 +176,110 @@ export default {
       return category ? category.name : ''
     },
     
-    handleItemClick(item) {
-      this.$emit('item-click', item)
+    // 打开详情页（收藏模块中，点击卡片任意区域都进入详情）
+    openDetail({ cardData, index }) {
+      try {
+        const id = (cardData && (cardData._id || cardData.id)) ? (cardData._id || cardData.id) : ''
+        const title = encodeURIComponent((cardData && (cardData.name || cardData.title)) ? (cardData.name || cardData.title) : '')
+        const author = encodeURIComponent(cardData && cardData.author ? cardData.author : '')
+        const likes = cardData && typeof cardData.likes === 'number' ? cardData.likes : 0
+        if (!id) {
+          console.warn('收藏卡片缺少 id，仍尝试跳转详情（可能无法加载数据）', cardData)
+        }
+        uni.navigateTo({
+          url: `/pages/detail/index?id=${id}&title=${title}&author=${author}&likes=${likes}`
+        })
+      } catch (e) {
+        console.error('打开详情失败', e)
+        uni.showToast({ title: '打开详情失败', icon: 'none' })
+      }
     },
     
-    // 获取卡片高度（瀑布流效果）
+    // 获取卡片高度（瀑布流效果，单位 rpx）
     getCardHeight(itemId) {
       if (!this.cardHeights[itemId]) {
-        // 生成180-280之间的随机高度
+        // 生成 180~280 rpx 之间的随机高度
         this.cardHeights[itemId] = Math.floor(Math.random() * (280 - 180 + 1)) + 180
       }
       return this.cardHeights[itemId]
     },
-    
-    // 获取随机颜色
-    getRandomColor() {
-      const colors = ['#a0c4ff', '#ffb3ba', '#bae1ff', '#ffffba', '#baffc9', '#ffdfba']
-      return colors[Math.floor(Math.random() * colors.length)]
-    },
-    
-    // 加载更多
-    onLoadMore() {
-      if (!this.isLoading) {
-        this.isLoading = true
-        // 模拟加载更多数据
-        setTimeout(() => {
-          this.isLoading = false
-        }, 1000)
-      }
-    }
-  }
-}
+     
+     // 获取随机颜色
+     getRandomColor() {
+       const colors = ['#a0c4ff', '#ffb3ba', '#bae1ff', '#ffffba', '#baffc9', '#ffdfba']
+       return colors[Math.floor(Math.random() * colors.length)]
+     },
+     
+     // 加载更多
+     onLoadMore() {
+       if (!this.isLoading) {
+         this.isLoading = true
+         // 模拟加载更多数据
+         setTimeout(() => {
+           this.isLoading = false
+         }, 1000)
+       }
+     },
+
+     // 新增：滚动事件，向父组件广播是否在顶部
+     onScroll(e) {
+       const scrollTop = e && e.detail && typeof e.detail.scrollTop === 'number' ? e.detail.scrollTop : 0
+       const isAtTop = scrollTop <= 2
+       this.$emit('scroll-state-change', { isAtTop })
+     },
+
+     // 判断是否为服务类型收藏项
+     isServiceItem(item) {
+       if (!item || typeof item !== 'object') return false
+       // 显式类型或具备服务常见字段（location.coordinates）
+       if (item.type === 'service') return true
+       const hasCoords = !!(item.location && Array.isArray(item.location.coordinates))
+       const hasId = !!(item._id || item.id)
+       const hasName = !!(item.name || item.title)
+       return hasCoords && hasId && hasName
+     },
+
+     // 收藏模块中的服务卡片：点击进入服务详情页（不定位）
+      openServiceDetail({ cardData, index }) {
+        try {
+          const item = cardData || null
+          if (!item) {
+            uni.showToast({ title: '未找到服务数据', icon: 'none' })
+            return
+          }
+          // 将服务对象写入缓存并通过 eventChannel 传递
+          uni.setStorageSync('LAST_SERVICE_ITEM', item)
+          uni.navigateTo({
+            url: '/pages/service/detail/index',
+            success(res) {
+              res.eventChannel && res.eventChannel.emit('service-item', { item })
+            }
+          })
+        } catch (e) {
+          console.error('打开服务详情失败', e)
+          uni.showToast({ title: '打开服务详情失败', icon: 'none' })
+        }
+      },
+
+     // 保留服务卡片的“预”按钮功能
+     handleReserveService({ cardData, index }) {
+       console.log('收藏模块-点击预约:', { cardData, index })
+       uni.showToast({ title: '预约', icon: 'none' })
+       // 如需跳转预约页面，可在此处接入：
+       // uni.navigateTo({ url: `/pages/reserve/index?id=${cardData._id || cardData.id}` })
+     },
+
+     // 获取卡片高度（瀑布流效果，单位 rpx）- 修正签名
+     getCardHeight(item, index) {
+       const key = (item && (item._id || item.id)) ? (item._id || item.id) : `${this.activeCategory}-${index}`
+       if (!this.cardHeights[key]) {
+         // 生成 180~280 rpx 之间的随机高度
+         this.cardHeights[key] = Math.floor(Math.random() * (280 - 180 + 1)) + 180
+       }
+       return this.cardHeights[key]
+     }
+   }
+ }
 </script>
 
 <style scoped>
@@ -207,32 +292,49 @@ export default {
 
 /* 顶部占位白框 */
 .top-spacer {
-  height: 54px;
-  background: #fff;
+  height: 8px; /* 更薄的顶部占位 */
+  background: transparent;
   width: 100%;
 }
 
 /* 分类选择器样式 - 更紧凑 */
 .category-tabs {
   display: flex;
-  padding: 4px 12px 6px 12px;
-  gap: 4px;
+  padding: 2px 10px 4px 10px; /* 压缩上下内边距，使整体更扁 */
+  gap: 3px; /* 更紧凑的间距 */
   overflow-x: auto;
   border-bottom: 1px solid #eee;
   background: #fff;
+  position: relative;
+  z-index: 6;
+  min-height: 36px; /* 降低最小高度 */
+  margin-bottom: 6px; /* 下方留白更少 */
 }
 
 .category-item {
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 4px 8px;
-  border-radius: 14px;
+  padding: 2px 6px; /* 更薄的标签 */
+  border-radius: 12px; /* 略微减小圆角 */
   background: #f5f5f5;
-  min-width: 50px;
-  transition: all 0.3s ease;
+  min-width: 44px; /* 更紧凑的最小宽度 */
+  transition: all 0.2s ease; /* 更轻微的动效 */
   flex-shrink: 0;
   white-space: nowrap;
+}
+
+.category-icon {
+  font-size: 12px; /* 更小的图标字号 */
+  margin-right: 3px;
+  margin-bottom: 0;
+}
+
+.category-name {
+  font-size: 10px; /* 更小的文案字号 */
+  color: #666;
+  font-weight: 500;
+  line-height: 1;
 }
 
 .category-item.active {
@@ -261,9 +363,12 @@ export default {
 
 /* 瀑布流布局样式 */
 .favorite-list {
-  flex: 1;
-  height: calc(100% - 60px);
-  overflow: hidden;
+  position: absolute;
+  top: 42px; /* 以新的分类栏高度重新对齐 */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
 }
 
 .cards-grid {
@@ -311,9 +416,12 @@ export default {
 }
 
 .card-content {
-  padding: 12px;
-  width: 100%;
-  box-sizing: border-box;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0; /* 填满容器到底，避免出现灰色空白条 */
+  overflow: auto;
 }
 
 .card-title {

@@ -9,12 +9,14 @@
     <!-- 内容区域 - 只在页面就绪后渲染 -->
     <ContentSection 
       v-if="isPageReady"
+      ref="contentSection"
       :translateY="contentTranslateY"
       :activeModule="activeModule"
-      :is-scroll-at-top="dateScrollAtTop"
+      :is-scroll-at-top="activeModule === 'favorite' ? favoriteScrollAtTop : (activeModule === 'date' ? dateScrollAtTop : true)"
       @drag-start="handleDragStart"
       @drag-move="handleDragMove"
       @drag-end="handleDragEnd"
+      @update-translate-y="handleUpdateTranslateY"
       @switch-module="switchModule"
       @settings-click="handleSettingsClick"
     >
@@ -39,6 +41,7 @@
         v-if="activeModule === 'favorite'"
         :favoriteData="favoriteData"
         @item-click="handleFavoriteItemClick"
+        @scroll-state-change="handleFavoriteScrollChange"
       />
     </ContentSection>
     
@@ -77,8 +80,14 @@ export default {
       // 页面基础数据
       screenHeight: 0,
       
+      // 展开位微调：向上展开距离（像素），用于“加宽”（增大内容可视高度）
+      expandUpDistancePx: 305,
+      
       // 日程滚动状态
       dateScrollAtTop: true,
+      
+      // 收藏滚动状态
+      favoriteScrollAtTop: true,
       
       // 位置配置
       positions: {
@@ -94,7 +103,7 @@ export default {
       startY: 0,
       startTranslateY: 0,
       isDragging: false,
-      dragThreshold: 15,  // 降低拖拽阈值，提高灵敏度
+      dragThreshold: 5,  // 降低拖拽阈值，提高灵敏度
       dragStartTime: 0,
       
       // 用户信息
@@ -255,6 +264,42 @@ export default {
             likes: 156,
             time: '2024-01-06 16:30'
           }
+        ],
+        // 新增：服务收藏示例数据（将展示为服务卡片）
+        services: [
+          {
+            id: 1001,
+            type: 'service',
+            name: '家电维修',
+            author: '张师傅',
+            location: { coordinates: [104.0668, 30.5728] },
+            address: '成都市锦江区春熙路',
+            likes: 56,
+            time: '2024-01-05 10:30',
+            rating: 4.7
+          },
+          {
+            id: 1002,
+            type: 'service',
+            name: '上门开锁',
+            author: '李师傅',
+            location: { coordinates: [104.0431, 30.6765] },
+            address: '成都市武侯区火车南站',
+            likes: 123,
+            time: '2024-01-04 21:00',
+            score: 4.9
+          },
+          {
+            id: 1003,
+            type: 'service',
+            name: '管道疏通',
+            author: '杨师傅',
+            location: { coordinates: [104.0720, 30.6710] },
+            address: '成都市青羊区太升南路',
+            likes: 32,
+            time: '2024-01-03 08:45',
+            rating: 4.5
+          }
         ]
       }
     }
@@ -282,6 +327,17 @@ export default {
     }
   },
   
+  created() {
+    // rAF 安全降级初始化（在任何交互发生前）
+    if (typeof requestAnimationFrame !== 'function') {
+      this._requestFrame = (fn) => setTimeout(fn, 16)
+      this._cancelFrame = (id) => clearTimeout(id)
+    } else {
+      this._requestFrame = (fn) => requestAnimationFrame(fn)
+      this._cancelFrame = (id) => cancelAnimationFrame(id)
+    }
+  },
+  
   // 使用 onReady 而不是 onLoad
   onReady() {
     // 确保页面完全加载后再初始化
@@ -294,8 +350,8 @@ export default {
   // 添加 mounted 生命周期钩子
   mounted() {
     console.log('index.vue mounted - favoriteData:', this.favoriteData)
-    console.log('favoriteData.photos length:', this.favoriteData?.photos?.length || 0)
-    console.log('favoriteData.videos length:', this.favoriteData?.videos?.length || 0)
+    console.log('favoriteData.photos length:', (this.favoriteData && this.favoriteData.photos ? this.favoriteData.photos.length : 0))
+    console.log('favoriteData.videos length:', (this.favoriteData && this.favoriteData.videos ? this.favoriteData.videos.length : 0))
     
     // 确保数据是响应式的
     this.$forceUpdate()
@@ -308,10 +364,48 @@ export default {
         try {
           const systemInfo = uni.getWindowInfo()
           this.screenHeight = systemInfo.windowHeight
+      
+          const applyPositions = (profileHeight) => {
+            const computedTop = Math.max(0, Math.round(profileHeight))
+            // 目标：向上拉动让内容变大 => translateY 需要减小，因此 default 必须比 top 更小
+            const expandUp = (this.expandUpDistancePx || 160)
+            const computedDefault = Math.max(0, Math.round(computedTop - expandUp))
+            this.positions.top = computedTop
+            this.positions.default = computedDefault
+            this.positions.middle = Math.round((this.positions.top + this.positions.default) / 2)
+            if (this.activeModule !== 'location') {
+              // 初始状态停在顶部位（图一）
+              this.contentTranslateY = this.positions.top
+            }
+          }
+      
+          const query = typeof uni.createSelectorQuery === 'function' ? uni.createSelectorQuery().in(this) : null
+          if (query) {
+            query
+              .select('.profile-section')
+              .boundingClientRect((rect) => {
+                if (rect && rect.height) {
+                  applyPositions(rect.height)
+                } else {
+                  applyPositions(350)
+                }
+              })
+              .exec()
+          } else {
+            applyPositions(350)
+          }
         } catch (e) {
           console.warn('获取系统信息失败，使用兜底方案:', e)
-          // 兜底方案
           this.screenHeight = 667
+          const fallbackTop = 350
+          const expandUp = (this.expandUpDistancePx || 160)
+          const fallbackDefault = Math.max(0, Math.round(fallbackTop - expandUp))
+          this.positions.top = fallbackTop
+          this.positions.default = fallbackDefault
+          this.positions.middle = Math.round((this.positions.top + this.positions.default) / 2)
+          if (this.activeModule !== 'location') {
+            this.contentTranslateY = this.positions.top
+          }
         }
       }, 100)
     },
@@ -319,6 +413,8 @@ export default {
     // 模块切换
     switchModule(module) {
       this.activeModule = module
+      // 不强制改变当前位置，保持用户当前拖拽状态
+      // 如需点击快速吸附，请使用 handleQuickSwitch 或拖拽到端点
     },
     
     // 新的拖拽开始处理
@@ -329,122 +425,134 @@ export default {
     this.startY = eventData.startY
     this.startTranslateY = this.contentTranslateY
     this.isDragging = true
+    // 记录拖拽开始时间，用于计算甩动速度
     this.dragStartTime = Date.now()
+    // 每次开始拖拽清空上一轮 rAF
+    if (this._rafId && typeof this._cancelFrame === 'function') {
+      this._cancelFrame(this._rafId)
+    }
+    this._queuedY = null
+    this._rafId = null
     },
     
     handleDragMove(e) {
     if (!this.isDragging) return
-    
-    const eventData = e.detail || e
-    if (!eventData || typeof eventData.currentY === 'undefined') {
-      return
-    }
-    
+    const eventData = e && e.detail ? e.detail : {}
     const currentY = eventData.currentY
     const deltaY = currentY - this.startY
     
-    // 位置模块：保持原有的双向限位逻辑
-    if (this.activeModule === 'location') {
-      let newTranslateY = this.startTranslateY + deltaY
-      
-      const minY = this.positions.top      // 50px - 上限位
-      const maxY = this.positions.default  // 350px - 下限位
-      
-      if (newTranslateY < minY) {
-        newTranslateY = minY
-      } else if (newTranslateY > maxY) {
-        newTranslateY = maxY
-      }
-      
-      this.contentTranslateY = newTranslateY
-      return
-    }
-    
-    // 日期模块和收藏模块：实现基于滚动方向的动态调整
-    if (this.activeModule === 'date' || this.activeModule === 'favorite') {
-      let newTranslateY = this.startTranslateY + deltaY
-      
-      // 向上滑动：允许扩大到顶部位置
-      if (deltaY < 0) {
-        const minY = this.positions.top // 50px - 最大扩展位置
-        newTranslateY = Math.max(newTranslateY, minY)
-      }
-      // 向下滑动：允许缩小到默认位置
-      else if (deltaY > 0) {
-        const maxY = this.positions.default // 350px - 最小位置
-        newTranslateY = Math.min(newTranslateY, maxY)
-      }
-      
-      this.contentTranslateY = newTranslateY
-      return
-    }
+    // 统一逻辑：实时位移由子组件通过 update-translate-y 事件驱动，父组件不在 drag-move 中直接更新
+    return
     },
     
+    // 新增：接收收藏模块滚动状态
+    handleFavoriteScrollChange(scrollState) {
+      this.favoriteScrollAtTop = !!(scrollState && scrollState.isAtTop)
+    },
+    
+    // 新增：接收日期模块滚动状态
+    handleDateScrollChange(scrollState) {
+      this.dateScrollAtTop = !!(scrollState && scrollState.isAtTop)
+    },
+    
+    // 新增：接收 ContentSection 内部按比例调整位移
+    handleUpdateTranslateY(newY) {
+      const minY = Math.min(this.positions.top, this.positions.default)
+      const maxY = Math.max(this.positions.top, this.positions.default)
+      const clamped = typeof newY === 'number' ? Math.max(Math.min(newY, maxY), minY) : this.contentTranslateY
+      if (!this._rafId) {
+        this._queuedY = clamped
+        this._rafId = this._requestFrame(() => {
+          this.contentTranslateY = this._queuedY
+          this._rafId = null
+        })
+      } else {
+        this._queuedY = clamped
+      }
+    },
     handleDragEnd(e) {
-      if (!this.isDragging) return
+      if (!this.isDragging) {
+        return
+      }
+      
+      const eventData = e.detail || e
+      const deltaY = eventData.deltaY || 0
+      const dragDurationMs = eventData.dragDuration || (Date.now() - (this.dragStartTime || Date.now()))
+      const dragDistance = Math.abs(deltaY)
+      
+      const tapDistanceThreshold = 6
+      const tapDurationThreshold = 180
+      if (dragDistance <= tapDistanceThreshold && dragDurationMs <= tapDurationThreshold) {
+        this.isDragging = false
+        return
+      }
       
       this.isDragging = false
       
-      // 位置模块：保持原有的智能停靠逻辑
       if (this.activeModule === 'location') {
-        const minY = this.positions.top
-        const maxY = this.positions.default
+        // 与收藏/日期一致：使用速度阈值与 top/default 两档吸附
+        const eventData2 = e.detail || e
+        const deltaY2 = eventData2.deltaY || 0
+        const dragDurationMs2 = Date.now() - (this.dragStartTime || Date.now())
+        const velocity = dragDurationMs2 > 0 ? Math.abs(deltaY2) / dragDurationMs2 : 0
         
         let finalY = this.contentTranslateY
+        const minY = Math.min(this.positions.top, this.positions.default)
+        const maxY = Math.max(this.positions.top, this.positions.default)
         
-        if (finalY < minY) {
-          finalY = minY
-        } else if (finalY > maxY) {
-          finalY = maxY
-        }
-        
-        const distanceToTop = Math.abs(finalY - this.positions.top)
-        const distanceToMiddle = Math.abs(finalY - this.positions.middle)
-        const distanceToDefault = Math.abs(finalY - this.positions.default)
-        
-        if (distanceToTop <= distanceToMiddle && distanceToTop <= distanceToDefault) {
-          finalY = this.positions.top
-        } else if (distanceToMiddle <= distanceToDefault) {
-          finalY = this.positions.middle
+        if (velocity > 0.3) {
+          if (deltaY2 < 0) {
+            // 快速向上：吸附到更小的 Y（default）
+            finalY = this.positions.default
+          } else {
+            finalY = this.positions.top
+          }
         } else {
-          finalY = this.positions.default
+          const distanceToTop = Math.abs(finalY - this.positions.top)
+          const distanceToDefault = Math.abs(finalY - this.positions.default)
+          const threshold = this.snapThreshold || 60
+          if (distanceToTop <= threshold || distanceToDefault <= threshold) {
+            finalY = distanceToTop <= distanceToDefault ? this.positions.top : this.positions.default
+          } else {
+            finalY = distanceToTop <= distanceToDefault ? this.positions.top : this.positions.default
+          }
         }
         
+        finalY = Math.max(Math.min(finalY, maxY), minY)
         this.animateToPosition(finalY)
         return
       }
       
-      // 日期模块和收藏模块：实现渐进式停靠
       if (this.activeModule === 'date' || this.activeModule === 'favorite') {
-        const eventData = e.detail || e
-        const deltaY = eventData.deltaY || 0
-        const velocity = Math.abs(deltaY) / (eventData.dragDuration || 1)
+        const eventData2 = e.detail || e
+        const deltaY2 = eventData2.deltaY || 0
+        const dragDurationMs2 = Date.now() - (this.dragStartTime || Date.now())
+        const velocity = dragDurationMs2 > 0 ? Math.abs(deltaY2) / dragDurationMs2 : 0
         
         let finalY = this.contentTranslateY
+        const isAtTop = this.activeModule === 'favorite' ? this.favoriteScrollAtTop : this.dateScrollAtTop
+        const minY = Math.min(this.positions.top, this.positions.default)
+        const maxY = Math.max(this.positions.top, this.positions.default)
         
-        // 根据拖拽速度和方向决定最终位置
-        if (velocity > 0.5) { // 快速拖拽
-          if (deltaY < 0) {
-            // 快速向上：直接到顶部
-            finalY = this.positions.top
-          } else {
-            // 快速向下：直接到默认位置
+        if (velocity > 0.3) {
+          if (deltaY2 < 0) {
+            // 快速向上：吸附到更小的 Y（default）
             finalY = this.positions.default
+          } else {
+            finalY = isAtTop ? this.positions.top : finalY
           }
-        } else { // 慢速拖拽：智能停靠到最近位置
+        } else {
           const distanceToTop = Math.abs(finalY - this.positions.top)
-          const distanceToMiddle = Math.abs(finalY - this.positions.middle)
           const distanceToDefault = Math.abs(finalY - this.positions.default)
-          
-          if (distanceToTop <= distanceToMiddle && distanceToTop <= distanceToDefault) {
-            finalY = this.positions.top
-          } else if (distanceToMiddle <= distanceToDefault) {
-            finalY = this.positions.middle
+          const threshold = this.snapThreshold || 60
+          if (distanceToTop <= threshold || distanceToDefault <= threshold) {
+            finalY = distanceToTop <= distanceToDefault ? this.positions.top : this.positions.default
           } else {
-            finalY = this.positions.default
+            finalY = distanceToTop <= distanceToDefault ? this.positions.top : this.positions.default
           }
         }
         
+        finalY = Math.max(Math.min(finalY, maxY), minY)
         this.animateToPosition(finalY)
         return
       }
@@ -452,20 +560,17 @@ export default {
     
     // 增强动画函数，添加平滑过渡
     animateToPosition(targetY) {
-    // 添加CSS过渡动画类
-    const contentSection = this.$refs.contentSection
-    if (contentSection) {
-    contentSection.$el.style.transition = 'transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94)'
-    }
-    
-    this.contentTranslateY = targetY
-    
-    // 动画完成后移除过渡
-    setTimeout(() => {
-    if (contentSection) {
-    contentSection.$el.style.transition = ''
-    }
-    }, 300)
+      // 小程序端不要直接操作 DOM，依靠子组件的 CSS 过渡
+      // 使用 rAF/polyfill 确保赋值在同一帧
+      if (!this._rafId) {
+        this._queuedY = targetY
+        this._rafId = this._requestFrame(() => {
+          this.contentTranslateY = this._queuedY
+          this._rafId = null
+        })
+      } else {
+        this._queuedY = targetY
+      }
     },
     
     // 添加点击快速切换功能（可选）
@@ -520,11 +625,6 @@ export default {
       })
     },
     
-    // 新增：处理日程滚动状态变化
-    // 修改 handleDateScrollChange 方法
-    handleDateScrollChange(scrollState) {
-    this.dateScrollAtTop = scrollState.isAtTop
-    }
   }
 }
 </script>
@@ -541,7 +641,7 @@ export default {
 /* 地图信息覆盖层样式 */
 .map-info-overlay {
   position: fixed !important;
-  bottom: 5px; /* 下移到更靠近底部导航栏的位置 */
+  bottom: 2px; /* 更贴近底部导航，尽可能消除空隙 */
   left: 9px;
   right: 9px;
   background: rgba(255, 255, 255, 0.9); /* 改为绿色背景，与位置按钮颜色呼应 */

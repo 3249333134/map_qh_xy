@@ -48,18 +48,13 @@ export default {
       try {
         const info = uni.getSystemInfoSync()
         const toRpx = (px) => Math.round((px * 750) / (info.screenWidth || info.windowWidth))
-        // 近似系统 TabBar 高度（px）：iOS 49、Android 48、开发者工具 50
-        let basePx = 49
-        const plat = (info.platform || '').toLowerCase()
-        if (plat.includes('android')) basePx = 48
-        else if (plat.includes('devtools')) basePx = 50
-        // 安全区底部（px）
+        const basePx = 44
         const safeBottomPx = info.safeArea ? (info.screenHeight - info.safeArea.bottom) : 0
         const safeBottomRpx = Math.max(0, toRpx(safeBottomPx))
         const baseRpx = toRpx(basePx)
-        // 视觉微调：有底部安全区更紧凑，做 -4rpx；否则 -2rpx
-        const microAdjustRpx = safeBottomRpx > 0 ? -4 : -2
-        const tabHeightRpx = Math.max(84, baseRpx + microAdjustRpx)
+        // 取消微调，保证与 44px 导航栏精确一致
+        const microAdjustRpx = 0
+        const tabHeightRpx = baseRpx
         const placeholderHeightRpx = tabHeightRpx + safeBottomRpx
         const metrics = { tabHeightRpx, safeBottomRpx, microAdjustRpx, placeholderHeightRpx }
         uni.setStorageSync('TABBAR_METRICS', metrics)
