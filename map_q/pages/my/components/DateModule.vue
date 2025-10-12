@@ -14,6 +14,17 @@
         </view>
       </view>
       
+      <!-- 固定星期栏：放在滑动容器之外，切换月/周视图时保持不动 -->
+      <view class="weekday-fixed-header">
+        <text class="weekday">一</text>
+        <text class="weekday">二</text>
+        <text class="weekday">三</text>
+        <text class="weekday">四</text>
+        <text class="weekday">五</text>
+        <text class="weekday">六</text>
+        <text class="weekday">日</text>
+      </view>
+      
       <!-- 滑动容器 -->
       <view class="calendar-container" 
             :style="{ transform: `translateX(${containerTranslateX}px)` }">
@@ -219,36 +230,41 @@
     </view>
     
     <!-- 日程列表 -->
-    <scroll-view 
-      class="schedule-list" 
-      scroll-y="true"
-      @scroll="onScheduleScroll">
-      <view v-if="upcomingSchedules.length === 0" class="no-schedule">
-        <text class="no-schedule-text">暂无日程安排</text>
-      </view>
-      
-      <view v-for="(daySchedule, index) in upcomingSchedules" :key="index" class="schedule-day">
-        <view class="schedule-date">
-          <text class="date-text">{{ daySchedule.date }}</text>
-          <text class="weekday-text">{{ daySchedule.weekday }}</text>
+    <view class="schedule-content">
+      <scroll-view 
+        class="schedule-list" 
+        scroll-y="true"
+        @scroll="onScheduleScroll">
+        <view v-if="upcomingSchedules.length === 0" class="no-schedule">
+          <text class="no-schedule-text">暂无日程安排</text>
         </view>
         
-        <view class="schedule-items">
-          <view v-for="(schedule, scheduleIndex) in daySchedule.schedules" :key="scheduleIndex" class="schedule-item">
-            <view class="schedule-time">
-              <text class="time-text">{{ schedule.time }}</text>
-            </view>
-            <view class="schedule-info">
-              <text class="schedule-title-text">{{ schedule.title }}</text>
-              <text class="schedule-desc">{{ schedule.description }}</text>
-              <view class="schedule-type" :class="'type-' + schedule.type">
-                <text class="type-text">{{ getScheduleTypeText(schedule.type) }}</text>
+        <view v-for="(daySchedule, index) in upcomingSchedules" :key="index" class="schedule-day">
+          <view class="schedule-date">
+            <text class="date-text">{{ daySchedule.date }}</text>
+            <text class="weekday-text">{{ daySchedule.weekday }}</text>
+          </view>
+          
+          <view class="schedule-items">
+            <view v-for="(schedule, scheduleIndex) in daySchedule.schedules" :key="scheduleIndex" class="schedule-item">
+              <view class="schedule-time">
+                <text class="time-text">{{ schedule.time }}</text>
+              </view>
+              <view class="schedule-info">
+                <text class="schedule-title-text">{{ schedule.title }}</text>
+                <text class="schedule-desc">{{ schedule.description }}</text>
+                <view class="schedule-type" :class="'type-' + schedule.type">
+                  <text class="type-text">{{ getScheduleTypeText(schedule.type) }}</text>
+                </view>
               </view>
             </view>
           </view>
         </view>
-      </view>
-    </scroll-view>
+        
+        <!-- 额外底部占位，避免最后一项被底部栏遮挡 -->
+        <view class="scroll-bottom-spacer"></view>
+      </scroll-view>
+    </view>
     
     <!-- ... 其他内容保持不变 ... -->
   </view>
@@ -305,14 +321,15 @@ export default {
   computed: {
     upcomingSchedules() {
       const schedules = []
-      const today = new Date()
+      // 从选中日期开始生成后续日程（包含选中当天）
+      const startDate = new Date(this.selectedDate)
+      startDate.setHours(0, 0, 0, 0)
       
-      // 生成未来7天的日程
+      // 生成未来7天的日程（可按需扩展）
       for (let i = 0; i < 7; i++) {
-        const date = new Date(today)
-        date.setDate(today.getDate() + i)
+        const date = new Date(startDate)
+        date.setDate(startDate.getDate() + i)
         
-        const dateKey = this.formatDateKey(date)
         const daySchedules = this.generateRandomSchedules(date)
         
         if (daySchedules.length > 0) {
@@ -330,41 +347,45 @@ export default {
     calendarDays() {
       const year = this.currentMonth.getFullYear()
       const month = this.currentMonth.getMonth()
-      
+    
       const firstDay = new Date(year, month, 1)
       const lastDay = new Date(year, month + 1, 0)
-      const firstDayOfWeek = (firstDay.getDay() + 6) % 7
-      
+      const firstDayOfWeek = (firstDay.getDay() + 6) % 7 // 以周一为起始
+    
       const days = []
-      
+    
+      // 前置补位：上个月的最后几天，数量 = firstDayOfWeek
       for (let i = firstDayOfWeek - 1; i >= 0; i--) {
         const date = new Date(year, month, -i)
         days.push({
           date: this.formatDateKey(date),
           day: date.getDate(),
-          isCurrentMonth: false
+          isCurrentMonth: date.getMonth() === month
         })
       }
       
+      // 当前月的日期
       for (let day = 1; day <= lastDay.getDate(); day++) {
         const date = new Date(year, month, day)
         days.push({
           date: this.formatDateKey(date),
           day: day,
-          isCurrentMonth: true
+          isCurrentMonth: date.getMonth() === month
         })
       }
       
-      const remainingDays = 42 - days.length
-      for (let day = 1; day <= remainingDays; day++) {
+      // 末尾补位：仅补齐最后一周，不再强制到42格
+      const remainder = (firstDayOfWeek + lastDay.getDate()) % 7
+      const trailingDays = remainder === 0 ? 0 : (7 - remainder)
+      for (let day = 1; day <= trailingDays; day++) {
         const date = new Date(year, month + 1, day)
         days.push({
           date: this.formatDateKey(date),
           day: day,
-          isCurrentMonth: false
+          isCurrentMonth: date.getMonth() === month
         })
       }
-      
+    
       return days
     },
     
@@ -462,20 +483,20 @@ export default {
     getMonthDays(monthDate) {
       const year = monthDate.getFullYear()
       const month = monthDate.getMonth()
-      
+    
       const firstDay = new Date(year, month, 1)
       const lastDay = new Date(year, month + 1, 0)
-      const firstDayOfWeek = (firstDay.getDay() + 6) % 7
-      
+      const firstDayOfWeek = (firstDay.getDay() + 6) % 7 // 周一为起始
+    
       const days = []
-      
-      // 上个月的日期
+    
+      // 上个月的日期（补齐首行）
       for (let i = firstDayOfWeek - 1; i >= 0; i--) {
         const date = new Date(year, month, -i)
         days.push({
           date: this.formatDateKey(date),
           day: date.getDate(),
-          isCurrentMonth: false
+          isCurrentMonth: date.getMonth() === month
         })
       }
       
@@ -485,21 +506,22 @@ export default {
         days.push({
           date: this.formatDateKey(date),
           day: day,
-          isCurrentMonth: true
+          isCurrentMonth: date.getMonth() === month
         })
       }
       
-      // 下个月的日期
-      const remainingDays = 42 - days.length
-      for (let day = 1; day <= remainingDays; day++) {
+      // 下个月的日期（仅补齐末行，不再强制填充到42格）
+      const remainder = (firstDayOfWeek + lastDay.getDate()) % 7
+      const trailingDays = remainder === 0 ? 0 : (7 - remainder)
+      for (let day = 1; day <= trailingDays; day++) {
         const date = new Date(year, month + 1, day)
         days.push({
           date: this.formatDateKey(date),
           day: day,
-          isCurrentMonth: false
+          isCurrentMonth: date.getMonth() === month
         })
       }
-      
+    
       return days
     },
     
@@ -692,12 +714,22 @@ export default {
     },
     
     previousMonth() {
-      this.currentMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() - 1, 1)
+      const newMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() - 1, 1)
+      const dayOfMonth = this.selectedDate.getDate()
+      const lastDay = new Date(newMonth.getFullYear(), newMonth.getMonth() + 1, 0).getDate()
+      const newDay = Math.min(dayOfMonth, lastDay)
+      this.currentMonth = newMonth
+      this.selectedDate = new Date(newMonth.getFullYear(), newMonth.getMonth(), newDay)
       this.updateAdjacentMonths()
     },
     
     nextMonth() {
-      this.currentMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() + 1, 1)
+      const newMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() + 1, 1)
+      const dayOfMonth = this.selectedDate.getDate()
+      const lastDay = new Date(newMonth.getFullYear(), newMonth.getMonth() + 1, 0).getDate()
+      const newDay = Math.min(dayOfMonth, lastDay)
+      this.currentMonth = newMonth
+      this.selectedDate = new Date(newMonth.getFullYear(), newMonth.getMonth(), newDay)
       this.updateAdjacentMonths()
     },
     
@@ -893,14 +925,14 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 20px;
+  padding: 6px 16px; /* 原10px 20px → 更窄 */
   background: #e9ecef;
   position: relative;
   z-index: 10;
 }
 
 .month-title {
-  font-size: 16px;
+  font-size: 15px; /* 原16px → 略微缩小 */
   font-weight: bold;
   color: #333;
   flex: 1;
@@ -909,31 +941,32 @@ export default {
 }
 
 .back-to-today {
-  padding: 6px 12px;
+  padding: 4px 10px; /* 原6px 12px → 更薄 */
   background: #007AFF;
-  border-radius: 15px;
-  margin-left: 10px;
+  border-radius: 14px; /* 原15px → 略减 */
+  margin-left: 8px; /* 原10px → 略减 */
   transition: all 0.2s;
 }
 
-.back-to-today:active {
-  background: #0056CC;
-  transform: scale(0.95);
-}
-
 .back-to-today-text {
-  font-size: 12px;
+  font-size: 11px; /* 原12px → 略减 */
   color: #fff;
   font-weight: 500;
 }
 
 .calendar-grid {
-  padding: 0 20px 15px;
+  padding: 0 16px 12px; /* 同步与 .calendar-grid 一致 */
 }
 
+.week-view {
+  padding: 0 16px 12px; /* 同步与 .calendar-grid 一致 */
+}
+
+/* 月视图星期标题容器：与周视图 .week-header 一致 */
 .weekdays {
   display: flex;
   margin-bottom: 8px;
+  padding: 0;
 }
 
 .weekday {
@@ -941,7 +974,9 @@ export default {
   text-align: center;
   font-size: 12px;
   color: #999;
-  padding: 8px 0;
+  padding: 6px 0; /* 与周视图星期标题一致 */
+  font-weight: normal;
+  display: inline-block; /* 移除潜在的默认 block/换行影响，确保在 flex 下均匀分布 */
 }
 
 .calendar-days {
@@ -951,7 +986,7 @@ export default {
 
 .calendar-day {
   width: 14.28%;
-  height: 40px;
+  height: 42px; /* 确认与月视图一致 */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -962,10 +997,8 @@ export default {
 
 .calendar-day.selected {
   background: #007AFF;
-  border-radius: 12px; /* 改为更大的圆角 */
-  width: 42px; /* 增大尺寸 */
-  height: 42px; /* 增大尺寸 */
-  margin: 0 auto; /* 居中对齐 */
+  border-radius: 12px;
+  /* 移除固定宽高与居中，改为覆盖整格，与周视图一致 */
 }
 
 .calendar-day.selected .day-number {
@@ -973,25 +1006,35 @@ export default {
 }
 
 .calendar-day.other-month .day-number {
-  color: #ccc;
+  color: #ccc; /* 显示非当月为灰色，以便用户识别上下月补位 */
+}
+
+.calendar-day.other-month .event-indicator {
+  display: none; /* 非当月不显示事件点 */
+}
+
+.calendar-day.other-month {
+  pointer-events: none; /* 禁止点击非当月日期，避免误选导致高亮问题 */
 }
 
 .day-number {
   font-size: 15px;
   color: #333;
+  font-weight: 500; /* 与周视图的 date-number 保持一致 */
 }
 
 .event-indicator {
-  width: 5px;
-  height: 5px;
+  width: 4px; /* 原5px → 与周视图一致 */
+  height: 4px; /* 原5px → 与周视图一致 */
   background: #FF3B30;
-  border-radius: 3px;
+  border-radius: 2px; /* 原3px → 与周视图一致 */
   position: absolute;
-  bottom: 4px;
+  bottom: 6px; /* 原4px → 与周视图一致（选中态另行下移到4px） */
 }
 
 .calendar-day.selected .event-indicator {
   background: #fff;
+  bottom: 4px; /* 与周视图选中态一致 */
 }
 
 .week-container {
@@ -1020,7 +1063,7 @@ export default {
   text-align: center;
   font-size: 12px;
   color: #999;
-  padding: 8px 0;
+  padding: 6px 0; /* 与周视图星期标题一致 */
   font-weight: normal;
 }
 
@@ -1192,22 +1235,42 @@ export default {
   color: #fff;
 }
 
-.week-date.selected .event-indicator {
+.week-date.selected .event-dot {
   bottom: 4px;
   background: white;
 }
 
 /* 日程内容区域样式 */
 .schedule-content {
+  display: flex;
+  flex-direction: column;
   flex: 1;
-  padding: 0 20px;
+  min-height: 0; /* 允许子滚动区在弹性布局中正确压缩并填充剩余空间 */
+  padding: 0 9px; /* 原 20px → 缩小边距，让卡片更宽 */
   background-color: #f8f9fa;
 }
 
 
 .schedule-list {
-  height: 400px;
+  flex: 1;
+  height: 100%;
+  min-height: 0; /* 避免固定高度导致底部留白 */
+  box-sizing: border-box;
   padding-top: 10px;
+  /* 兼容不同平台的安全区，确保可滚动到最后一项 */
+  padding-bottom: 24rpx; /* 原 80rpx → 缩小底部留白，避免割裂 */
+}
+
+/* 安全区增强：优先使用 env()，在不支持的平台回退到 rpx */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .schedule-list {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 24rpx); /* 原 +80rpx → +24rpx，保留安全区但减少多余空白 */
+  }
+}
+
+/* 底部占位元素（用于确保最后一个卡片完全可见） */
+.scroll-bottom-spacer {
+  height: 0; /* 原 120rpx → 去除占位，改用安全区 padding 实现；若某机型仍遮挡可再微调 */
 }
 
 .no-schedule {
@@ -1223,13 +1286,16 @@ export default {
 }
 
 .schedule-day {
-  margin-bottom: 20px;
+  margin-bottom: 16px; /* 维持每张卡片之间间距 */
   background-color: #fff;
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 15px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
+.schedule-day:last-child {
+  margin-bottom: 0; /* 最后一张卡片不再额外增加底部空白 */
+}
 .schedule-date {
   display: flex;
   align-items: center;
@@ -1351,5 +1417,21 @@ export default {
 
 .type-text {
   font-size: 12px;
+}
+
+/* 固定星期栏样式与隐藏内部标题，确保切换视图时星期栏不动 */
+.weekday-fixed-header {
+  display: flex;
+  padding: 0 16px;
+  margin-bottom: 8px;
+}
+.calendar-grid .weekdays,
+.week-view .week-header {
+  display: none;
+}
+
+/* 统一 .week-view padding 与 .calendar-grid 一致（最后覆盖） */
+.week-view {
+  padding: 0 16px 12px;
 }
 </style>

@@ -109,7 +109,9 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
          { key: 'music', name: '音乐', icon: '🎵' },
          { key: 'locations', name: '地点', icon: '📍' },
          { key: 'services', name: '服务', icon: '🛠️' }
-       ]
+       ],
+       // 新增：为每个卡片缓存一次生成的随机位置，确保切换/重渲染后位置稳定
+       randomLocations: {}
      }
    },
    computed: {
@@ -143,13 +145,17 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
         }
       })
       console.log('allItems:', allItems)
-      return allItems.sort((a, b) => {
+      const sorted = allItems.sort((a, b) => {
         const dateA = this.parseDate(a.time)
         const dateB = this.parseDate(b.time)
         return dateB - dateA
       })
+      // 新增：为缺少坐标的非服务卡片补充随机位置
+      return sorted.map((item, index) => this.ensureRandomLocation(item, index))
     }
-    return data[this.activeCategory] || []
+    const list = data[this.activeCategory] || []
+    // 新增：为缺少坐标的非服务卡片补充随机位置
+    return list.map((item, index) => this.ensureRandomLocation(item, index))
   },
     // 左列数据（偶数索引）
     leftColumnItems() {
@@ -231,12 +237,62 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
      // 判断是否为服务类型收藏项
      isServiceItem(item) {
        if (!item || typeof item !== 'object') return false
-       // 显式类型或具备服务常见字段（location.coordinates）
+       // 仅按显式服务标识判断，避免随机坐标导致误判内容卡片
        if (item.type === 'service') return true
-       const hasCoords = !!(item.location && Array.isArray(item.location.coordinates))
-       const hasId = !!(item._id || item.id)
-       const hasName = !!(item.name || item.title)
-       return hasCoords && hasId && hasName
+       if (item.category === 'services' || item.category === 'service') return true
+       // 如果当前分类就是“服务”，也视为服务卡片
+       if (this.activeCategory === 'services') return true
+       return false
+     },
+
+     // 新增：生成成都区域内的随机坐标（lng, lat）
+     getRandomCoordinateInChengdu() {
+       const minLat = 30.55, maxLat = 30.75
+       const minLng = 104.03, maxLng = 104.15
+       const lat = +(minLat + Math.random() * (maxLat - minLat)).toFixed(6)
+       const lng = +(minLng + Math.random() * (maxLng - minLng)).toFixed(6)
+       return [lng, lat]
+     },
+
+     // 新增：随机地址文案（用于展示更友好位置文本）
+     getRandomAddress() {
+       const addresses = [
+         '成都市锦江区春熙路',
+         '成都市武侯区科华北路',
+         '成都市青羊区顺城大街',
+         '成都市高新区天府大道',
+         '成都市金牛区一环路北一段'
+       ]
+       return addresses[Math.floor(Math.random() * addresses.length)]
+     },
+
+     // 新增：为卡片补充随机位置（仅在缺少坐标且非服务卡片时生效）
+     ensureRandomLocation(item, index) {
+       try {
+         if (!item || typeof item !== 'object') return item
+         // 服务卡片或已有坐标的卡片保持不变
+         const isService = this.isServiceItem && this.isServiceItem(item)
+         const hasCoords = !!(item.location && Array.isArray(item.location.coordinates) && item.location.coordinates.length === 2)
+         if (isService || hasCoords) return item
+         // 使用 id 作为稳定键，若无 id 则使用当前分类+索引
+         const key = (item._id || item.id) ? (item._id || item.id) : `${this.activeCategory}-${index}`
+         if (!this.randomLocations[key]) {
+           const coordinates = this.getRandomCoordinateInChengdu()
+           this.randomLocations[key] = {
+             coordinates,
+             address: item.address || this.getRandomAddress()
+           }
+         }
+         const { coordinates, address } = this.randomLocations[key]
+         return {
+           ...item,
+           location: { coordinates },
+           address: address
+         }
+       } catch (e) {
+         console.warn('为卡片生成随机位置失败', e, item)
+         return item
+       }
      },
 
      // 收藏模块中的服务卡片：点击进入服务详情页（不定位）
