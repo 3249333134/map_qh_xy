@@ -4,6 +4,7 @@
       <!-- 只在页面就绪后渲染地图 -->
       <map
         v-if="isMapReady"
+        id="userMap"
         :class="isFullyExpanded ? 'user-map-full-expanded' : 'user-map-optimized'"
         :latitude="mapCenter.latitude"
         :longitude="mapCenter.longitude"
@@ -38,17 +39,15 @@
             <cover-view v-else class="card-media-placeholder"></cover-view>
           </cover-view>
           <cover-view class="card-content">
-            <cover-view class="card-title">{{ m.title }}</cover-view>
-            <cover-view v-if="m.subtitle" class="card-author">{{ m.subtitle }}</cover-view>
-            <cover-view class="card-footer">
-              <cover-view class="card-location">{{ m.coords }}</cover-view>
-              <cover-view v-if="m.likes !== undefined" class="card-stats">{{ m.likes }} 赞</cover-view>
-            </cover-view>
-            <!-- 服务卡片：保留右下角“预” -->
+            <cover-view v-if="showText" class="card-title">{{ m.title }}</cover-view>
+            <cover-view v-if="showText && m.subtitle" class="card-author">{{ m.subtitle }}</cover-view>
+            <!-- 移除地点与点赞，仅保留名字与作者。服务卡片保留右下角“预”。 -->
             <cover-view v-if="m.type === 'service'" class="cta-float">
               <cover-view class="reserve-big">预</cover-view>
             </cover-view>
           </cover-view>
+          <!-- 聚合数量徽标：右上角 -->
+          <cover-view v-if="m.clusterCount && m.clusterCount > 0" class="cluster-count-badge">{{ clusterLabel(m.clusterCount) }}</cover-view>
         </cover-view>
       </map>
       
@@ -105,6 +104,11 @@ export default {
       // 新增：地图点击资格判定（由 map touchend 判定）
       _mapTapEligible: false,
       _lastMapTouchEnd: 0,
+      // 新增：MapContext 和缩放/视野状态
+      mapCtx: null,
+      currentScale: null,
+      currentRegion: null,
+      showAllThresholdScale: 14,
     }
   },
   
@@ -116,6 +120,15 @@ export default {
         setTimeout(() => {
           this.isMapReady = true
           this._initDone = true
+          // 初始化 MapContext 并获取当前缩放与视野范围
+          try {
+            // 微信环境优先使用 wx.createMapContext，其它环境回退到 uni.createMapContext
+            // @ts-ignore
+            this.mapCtx = (typeof wx !== 'undefined' && wx.createMapContext) ? wx.createMapContext('userMap') : uni.createMapContext('userMap', this)
+          } catch (e) {
+            this.mapCtx = uni.createMapContext('userMap', this)
+          }
+          this.updateScaleAndRegion()
         }, 200)
       }
     })
@@ -139,9 +152,51 @@ export default {
         scale: 10
       }
     },
+
+    // 新增：根据当前缩放和视野进行网格聚合，仅保留点赞最高项，并记录聚合数量
+    visibleLocations() {
+      const hasScale = typeof this.currentScale === 'number' && !isNaN(this.currentScale)
+      const scale = hasScale ? this.currentScale : ((this.mapCenter && this.mapCenter.scale) || null)
+      const locs = Array.isArray(this.userLocations) ? this.userLocations.slice() : []
+      const region = this.currentRegion
+      const inView = region ? locs.filter(l => {
+        try {
+          const sw = region.southwest || {}
+          const ne = region.northeast || {}
+          const lat = l.latitude
+          const lng = l.longitude
+          return lat >= (sw.latitude ?? -90) && lat <= (ne.latitude ?? 90) && lng >= (sw.longitude ?? -180) && lng <= (ne.longitude ?? 180)
+        } catch (_) {
+          return true
+        }
+      }) : locs
+      // 仅在无法获取缩放值时使用“小视野”作为解除聚合的后备；否则严格按缩放门槛解除
+      if ((!hasScale && this.isSmallRegion(region)) || (scale != null && scale >= this.showAllThresholdScale)) {
+        return inView.map(l => ({ ...l, clusterCount: 0 }))
+      }
+      const { latSize, lngSize, swLat, swLng } = this.getCellSizesForScale(scale)
+      const buckets = new Map()
+      inView.forEach((l) => {
+        const likesNum = typeof l.likes === 'number' ? l.likes : (parseInt(l.likes, 10) || 0)
+        const latIdx = Math.floor(((l.latitude || 0) - (swLat || 0)) / latSize)
+        const lngIdx = Math.floor(((l.longitude || 0) - (swLng || 0)) / lngSize)
+        const key = `${latIdx}_${lngIdx}`
+        const arr = buckets.get(key) || []
+        arr.push({ loc: l, likes: likesNum })
+        buckets.set(key, arr)
+      })
+      const result = []
+      buckets.forEach(arr => {
+        arr.sort((a, b) => this.getHotness(b.loc) - this.getHotness(a.loc))
+        const top = arr[0].loc
+        const count = Math.max(0, arr.length - 1)
+        result.push({ ...top, clusterCount: count })
+      })
+      return result
+    },
     
     mapMarkers() {
-      return this.userLocations.map((location, index) => ({
+      return this.visibleLocations.map((location, index) => ({
         id: index,
         latitude: location.latitude,
         longitude: location.longitude,
@@ -152,6 +207,7 @@ export default {
         coords: `${(location.latitude ?? 0).toFixed(2)}, ${(location.longitude ?? 0).toFixed(2)}`,
         // 新增：透传类型，便于区分服务与内容
         type: location.type || 'content',
+        clusterCount: location.clusterCount || 0,
         iconPath: '/static/marker.png',
         width: 20,
         height: 20,
@@ -173,6 +229,15 @@ export default {
     },
     cardScaleStyle() {
       return `transform: scale(${this.scaleFactor}); transform-origin: bottom center;`;
+    },
+    // 新增：是否显示文本（标题/作者），严格按缩放门槛；仅在无法获取缩放值时，使用小视野后备
+    showText() {
+      const hasScale = typeof this.currentScale === 'number' && !isNaN(this.currentScale)
+      const scale = hasScale ? this.currentScale : null
+      if (scale != null && scale >= this.showAllThresholdScale) return true
+      // 仅在无法获取缩放值时，使用“小视野”作为后备显示标题/作者
+      if (!hasScale && this.isSmallRegion(this.currentRegion)) return true
+      return false
     }
   },
   methods: {
@@ -336,6 +401,8 @@ export default {
           this._mapDragging = false
           this._lastDragAt = Date.now()
           this._mapTapEligible = false
+          // 结束缩放或拖动后更新当前缩放级别和视野范围，用于动态聚合显示
+          this.updateScaleAndRegion()
         }
       } catch (err) {
         console.warn('regionchange 处理异常', err)
@@ -343,6 +410,89 @@ export default {
     },
     handleMapTap(e) {
       // 地图空白处点击占位
+    },
+    // 新增：更新缩放和视野范围
+    updateScaleAndRegion() {
+      if (!this.mapCtx) return
+      try {
+        this.mapCtx.getScale({
+          success: (res) => {
+            const s = (res && (res.scale ?? res.value)) || null
+            if (s) {
+              this.currentScale = parseInt(s, 10)
+              console.log('[Map] currentScale =', this.currentScale)
+            }
+          }
+        })
+        this.mapCtx.getRegion({
+          success: (res) => {
+            this.currentRegion = res || null
+            try {
+              const r = this.currentRegion
+              const latSpan = r && r.southwest && r.northeast ? Math.abs((r.northeast.latitude ?? 0) - (r.southwest.latitude ?? 0)) : null
+              const lngSpan = r && r.southwest && r.northeast ? Math.abs((r.northeast.longitude ?? 0) - (r.southwest.longitude ?? 0)) : null
+              console.log('[Map] region spans:', { latSpan, lngSpan })
+            } catch (_) {}
+          }
+        })
+      } catch (e) {
+        // 忽略
+      }
+    },
+    // 新增：视野是否足够小（用于在无法获取准确缩放时，仍能体现“阶梯感”）
+    isSmallRegion(region) {
+      try {
+        const r = region || this.currentRegion
+        if (!r || !r.southwest || !r.northeast) return false
+        const latSpan = Math.abs((r.northeast.latitude ?? 0) - (r.southwest.latitude ?? 0))
+        const lngSpan = Math.abs((r.northeast.longitude ?? 0) - (r.southwest.longitude ?? 0))
+        // 收紧阈值：更接近街区/楼宇级别时才解除聚合
+        return latSpan <= 0.03 && lngSpan <= 0.03
+      } catch (_) {
+        return false
+      }
+    },
+    // 新增：不同缩放级别对应的网格尺寸（经纬度度数）
+    getCellSizeForScale(scale) {
+      const s = parseInt(scale, 10) || 10
+      if (s <= 6) return 1.0
+      if (s <= 8) return 0.5
+      if (s <= 10) return 0.2
+      if (s <= 12) return 0.1
+      if (s <= 13) return 0.06
+      return 0.04
+    },
+    // 新增：不同缩放级别对应的网格尺寸（优先依据当前视野范围动态计算；无视野时回退到固定阶梯粒度）
+    getCellSizesForScale(scale) {
+       const s = parseInt(scale, 10) || 10
+       const r = this.currentRegion
+       if (r && r.southwest && r.northeast) {
+         const latSpan = Math.abs((r.northeast.latitude ?? 0) - (r.southwest.latitude ?? 0))
+         const lngSpan = Math.abs((r.northeast.longitude ?? 0) - (r.southwest.longitude ?? 0))
+         // 更强的“阶梯感”：低缩放更粗，高缩放更细
+         const div = s <= 6 ? 1 : (s <= 8 ? 2 : (s <= 10 ? 3 : (s <= 12 ? 6 : (s <= 13 ? 10 : 16))))
+         // 每档设置最小网格度数下限，避免在 include-points 导致视野很小时过度细分
+         const floorDeg = s <= 6 ? 0.6 : (s <= 8 ? 0.35 : (s <= 10 ? 0.2 : (s <= 12 ? 0.12 : (s <= 13 ? 0.08 : 0.05))))
+         const latSize = Math.max(latSpan / div, floorDeg)
+         const lngSize = Math.max(lngSpan / div, floorDeg)
+         return { latSize: Math.max(latSize, 1e-6), lngSize: Math.max(lngSize, 1e-6), swLat: r.southwest.latitude, swLng: r.southwest.longitude }
+       }
+       const fixed = this.getCellSizeForScale(s)
+       return { latSize: fixed, lngSize: fixed, swLat: 0, swLng: 0 }
+     },
+    // 新增：热度评分（优先使用显式 hotness，其次使用 likes）
+    getHotness(loc) {
+      if (!loc) return 0
+      const hot = typeof loc.hotness === 'number' ? loc.hotness : parseFloat(loc.hotness)
+      if (!Number.isNaN(hot)) return hot
+      const likes = typeof loc.likes === 'number' ? loc.likes : (parseInt(loc.likes, 10) || 0)
+      return likes
+    },
+    // 新增：聚合数量标签（上限 99+，显示总收纳数量 = clusterCount + 1）
+    clusterLabel(count) {
+      const n = (typeof count === 'number') ? count : (parseInt(count, 10) || 0)
+      const total = n + 1
+      return total > 99 ? '99+' : String(total)
     }
   },
 }
@@ -365,20 +515,13 @@ export default {
 }
 .card-media {
   background-color: #a0c4ff;
-  height: 100px; /* 原 200rpx ~ 100px */
-  width: 180px;  /* 基础宽度，缩放后为 360px */
-}
-.card-media-img {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-.card-media-placeholder {
-  width: 100%;
-  height: 100%;
+  height: 120px; /* 正方形尺寸 */
+  width: 120px;  /* 正方形尺寸 */
+  border-radius: 12px; /* 视觉更贴近示例 */
+  overflow: hidden;
 }
 .card-content {
-  padding: 8px; /* 原 16rpx ~ 8px */
+  padding: 6px; /* 更紧凑 */
   box-sizing: border-box;
 }
 .card-title {
@@ -393,11 +536,12 @@ export default {
 .card-author {
   font-size: 12px; /* 原 24rpx ~ 12px */
   color: #666;
-  margin-bottom: 6px;
+  margin-bottom: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* 移除 card-footer 的展示（地点与点赞） */
 .card-footer {
   display: flex;
   justify-content: space-between;
@@ -553,5 +697,19 @@ export default {
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+
+/* 新增：聚合数量徽标样式 */
+.cluster-count-badge {
+  position: absolute;
+  right: 9px;
+  top: 9px;
+  background: #FF4D4F; /* 红色醒目 */
+  color: #fff;
+  font-size: 12px;
+  border-radius: 999px;
+  padding: 2px 6px;
+  z-index: 2;
+  font-weight: 700;
 }
 </style>

@@ -51,14 +51,47 @@
       <text class="map-desc">我的内容轨迹 ({{ userLocations.length }}个地点)</text>
       <!-- 展开后显示分类 + 两列瀑布流收藏卡片 -->
       <view v-if="isOverlayExpanded" class="overlay-expanded-content" @tap.stop @click.stop @touchstart.stop="onOverlayTouchStart" @touchmove.stop="onOverlayTouchMove" @touchend.stop="onOverlayTouchEnd">
+        <!-- 顶部位置分组筛选（显示每组内容数量） -->
+        <scroll-view class="overlay-area-filter" scroll-x show-scrollbar="false">
+          <view class="overlay-area-filter-inner">
+            <view v-for="g in locationFilterGroups" :key="g.key" class="filter-chip" :class="{ active: g.key === activeOverlayAreaGroup }" @tap.stop="selectAreaGroup(g.key)" @click.stop="selectAreaGroup(g.key)">
+              {{ g.label }}（{{ g.count }}）
+            </view>
+          </view>
+        </scroll-view>
+        <!-- 左右结构：左侧分组导航，右侧分段内容 -->
+        <view v-if="overlayDisplayMode === 'sections'" class="overlay-left-right" :style="{ height: overlayExpandedHeight + 'px' }">
+          <!-- 左侧分组导航列表 -->
+          <scroll-view class="overlay-left-nav" scroll-y show-scrollbar="false" :style="{ height: overlayExpandedHeight + 'px' }">
+            <view v-for="g in locationFilterGroups" :key="'nav-' + g.key" class="left-nav-item" :class="{ active: g.key === activeOverlayAreaGroup }" @tap.stop="selectAreaGroup(g.key)" @click.stop="selectAreaGroup(g.key)">
+              {{ g.label }}
+            </view>
+          </scroll-view>
+          <!-- 右侧分段内容列表 -->
+          <scroll-view class="overlay-right-sections" scroll-y show-scrollbar="false" :scroll-into-view="overlayScrollIntoView" :style="{ height: overlayExpandedHeight + 'px' }">
+            <view v-for="sec in groupedOverlaySections" :key="'sec-' + sec.key" :id="'section-' + sec.key" class="overlay-section">
+              <view class="section-header">
+                <text class="section-title">{{ sec.label }}</text>
+                <text class="section-more" @tap.stop="viewSectionAll(sec)" @click.stop="viewSectionAll(sec)">全部 ></text>
+              </view>
+              <view class="section-grid">
+                <template v-for="(item, idx) in sec.items" :key="(item._id || item.id || '') + '-' + idx">
+                  <service-card-item v-if="item.type === 'service'" :index="idx" :card-data="item" :height="getOverlayCardHeight('right', idx)" />
+                  <card-item v-else :index="idx" :card-data="item" :height="getOverlayCardHeight('right', idx)" />
+                </template>
+              </view>
+            </view>
+          </scroll-view>
+        </view>
+      </view>
         <!-- 左侧行政层级分类 -->
-        <view class="overlay-levels">
+        <view v-if="isOverlayExpanded && overlayDisplayMode === 'waterfall'" class="overlay-levels">
           <view v-for="lvl in overlayLevels" :key="lvl" class="overlay-level-item" :class="{ active: lvl === activeOverlayLevel }" @tap.stop="handleOverlayLevelChange(lvl)" @click.stop="handleOverlayLevelChange(lvl)">
             {{ lvl }}
           </view>
         </view>
         <!-- 右侧两列瀑布流收藏卡片 -->
-        <scroll-view class="overlay-cards-container" scroll-y show-scrollbar="false">
+        <scroll-view v-if="isOverlayExpanded && overlayDisplayMode === 'waterfall'" class="overlay-cards-container" scroll-y show-scrollbar="false">
           <view class="overlay-cards-grid">
             <view class="overlay-cards-column">
               <template v-for="(item, idx) in overlayLeftColumnData" :key="'left-' + (item._id || item.id || '') + '-' + idx">
@@ -74,7 +107,6 @@
             </view>
           </view>
         </scroll-view>
-      </view>
     </view>
   </view>
 </template>
@@ -133,6 +165,12 @@ export default {
       // 展开后的左侧行政层级分类（按你的要求排序：国、县、市、区、街）
       overlayLevels: ['国', '县', '市', '区', '街'],
       activeOverlayLevel: '市',
+      // 位置分组筛选（chips），默认“全部”
+      activeOverlayAreaGroup: 'all',
+      // 展开模式：sections（左右结构分段）/ waterfall（两列瀑布流）
+      overlayDisplayMode: 'sections',
+      // 右侧 scroll-view 锚点，用于点击左侧时滚动到对应分段
+      overlayScrollIntoView: '',
       // 设备安全区顶部偏移，用于展开覆盖层对齐
       safeTopOffset: 0,
       // 覆盖层触摸交互
@@ -141,6 +179,9 @@ export default {
       overlayTouchStartTime: 0,
       overlaySwipeThreshold: 50,
       overlaySwipeVelocityThreshold: 0.35,
+      // 展开覆盖层卡片列数据（避免“未定义在实例上”的警告，保持响应式）
+      overlayLeftColumnData: [],
+      overlayRightColumnData: [],
       // rAF/动画相关内部状态（避免 no-undef 报错）
       _requestFrame: null,
       _cancelFrame: null,
@@ -371,7 +412,19 @@ export default {
         bottom: '2px'
       };
     },
-    // 展开覆盖层右侧卡片：汇总收藏、按层级过滤、两列分配
+    // 新增：展开内容区域的可滚动高度（用于左右分栏 scroll-view）
+    overlayExpandedHeight: function() {
+      if (!this.isOverlayExpanded) return 0;
+      const top = this.contentTranslateY + 42 + (this.safeTopOffset || 0);
+      const total = this.screenHeight || 667;
+      const paddingBottom = 2;      // mapOverlayStyle 的 bottom
+      const reservedHeader = 64;    // 覆盖层标题 + 描述的占位高度
+      const chipsHeight = 48;       // 顶部 chips 区域高度（约值）
+      const spacing = 16;           // 内边距/间距
+      const height = total - top - paddingBottom - reservedHeader - chipsHeight - spacing;
+      return Math.max(120, Math.round(height));
+    },
+    // 展开覆盖层右侧卡片：汇总收藏、按层级过滤、两列分配（左右列由方法计算并写入 data）
     favoriteAllItems: function() {
       var f = this.favoriteData || {};
       var groups = ['photos', 'videos', 'articles', 'music', 'locations', 'services'];
@@ -388,13 +441,37 @@ export default {
     },
     overlayFilteredCards: function() {
       var lvl = this.activeOverlayLevel;
-      return this.favoriteAllItems.filter(function(it) { return this.matchCardScope(it, lvl); }.bind(this));
+      var areaKey = this.activeOverlayAreaGroup;
+      var self = this;
+      return this.favoriteAllItems.filter(function(it) { return self.matchCardScope(it, lvl) && self.matchAreaGroup(it, areaKey); });
     },
-    overlayLeftColumnData: function() {
-      return this.overlayFilteredCards.filter(function(_, i) { return i % 2 === 0; });
+    // 分段数据：按分组聚合为 { key, label, items }，右侧按段显示
+    groupedOverlaySections: function() {
+      var groups = Array.isArray(this.locationFilterGroups) ? this.locationFilterGroups : []
+      var items = Array.isArray(this.favoriteAllItems) ? this.favoriteAllItems : []
+      var lvl = this.activeOverlayLevel
+      var self = this
+      return groups.filter(function(g){ return g.key !== 'all' }).map(function(g){
+        var list = items.filter(function(it){ return self.matchCardScope(it, lvl) && self.matchAreaGroup(it, g.key) })
+        return { key: g.key, label: g.label, items: list }
+      })
     },
-    overlayRightColumnData: function() {
-      return this.overlayFilteredCards.filter(function(_, i) { return i % 2 === 1; });
+    // 位置分组列表（带计数），基于收藏条目地址/位置文本自动聚合
+    locationFilterGroups: function() {
+      var items = Array.isArray(this.favoriteAllItems) ? this.favoriteAllItems : [];
+      var dict = {};
+      items.forEach(function(it) {
+        var txt = ((it && (it.address || it.location || '')) || '').toString();
+        var mDistrict = txt.match(/[\u4e00-\u9fa5]+区/);
+        var mCity = txt.match(/[\u4e00-\u9fa5]+市/);
+        var mStreet = txt.match(/[\u4e00-\u9fa5]+(?:路|街)/);
+        var seg = (mDistrict && mDistrict[0]) || (mCity && mCity[0]) || (mStreet && mStreet[0]) || '未知';
+        dict[seg] = (dict[seg] || 0) + 1;
+      });
+      var arr = Object.keys(dict).map(function(k) { return { key: k, label: k, count: dict[k] }; });
+      arr.sort(function(a, b) { return b.count - a.count; });
+      arr.unshift({ key: 'all', label: '全部', count: items.length });
+      return arr;
     }
   },
   
@@ -428,6 +505,38 @@ export default {
     
     // 确保数据是响应式的
     this.$forceUpdate()
+  },
+
+  // 通过监听在展开时或条件变化时计算左右列数据
+  watch: {
+    isOverlayExpanded: function(val) {
+      if (val) {
+        this.$nextTick(() => {
+          this.computeOverlayColumns()
+          // 展开后将右侧滚动到当前分组
+          this.overlayScrollIntoView = 'section-' + (this.activeOverlayAreaGroup || 'all')
+        })
+      }
+    },
+    activeOverlayLevel: function() {
+      if (this.isOverlayExpanded) {
+        this.computeOverlayColumns()
+      }
+    },
+    activeOverlayAreaGroup: function() {
+      if (this.isOverlayExpanded) {
+        // 切换左侧分组时滚动到对应分段
+        this.overlayScrollIntoView = 'section-' + (this.activeOverlayAreaGroup || 'all')
+      }
+    },
+    favoriteData: {
+      deep: true,
+      handler: function() {
+        if (this.isOverlayExpanded) {
+          this.computeOverlayColumns()
+        }
+      }
+    }
   },
   
   methods: {
@@ -708,6 +817,13 @@ export default {
       this.activeModule = 'location'
       // 切换展开/收起
       this.isOverlayExpanded = !this.isOverlayExpanded
+      if (this.isOverlayExpanded) {
+        // 展开后默认采用左右分栏分段模式
+        this.overlayDisplayMode = 'sections'
+        this.$nextTick(() => {
+          this.computeOverlayColumns()
+        })
+      }
       try {
         uni.showToast({ title: this.isOverlayExpanded ? '展开我的足迹地图卡片' : '收起我的足迹地图卡片', icon: 'none', duration: 600 })
       } catch (e) {}
@@ -759,6 +875,29 @@ export default {
     // 行政层级点击切换
     handleOverlayLevelChange: function(lvl) {
       this.activeOverlayLevel = lvl
+    },
+    // 选择位置分组（chips）
+    selectAreaGroup: function(key) {
+      this.activeOverlayAreaGroup = key || 'all'
+      if (this.isOverlayExpanded) {
+        this.computeOverlayColumns()
+      }
+    },
+    // 点击分段的“全部 >”按钮：切换到对应分组并滚动定位
+    viewSectionAll: function(sec) {
+      if (!sec || !sec.key) return
+      this.activeOverlayAreaGroup = sec.key
+      this.$nextTick(() => {
+        this.overlayScrollIntoView = 'section-' + sec.key
+        if (this.isOverlayExpanded) this.computeOverlayColumns()
+      })
+      try { uni.showToast({ title: '已切换到 ' + (sec.label || sec.key), icon: 'none', duration: 500 }) } catch (e) {}
+    },
+    // 判断条目是否属于所选位置分组
+    matchAreaGroup: function(item, key) {
+      if (!key || key === 'all') return true
+      var txt = ((item && (item.address || item.location || '')) || '').toString()
+      return txt.indexOf(key) !== -1
     },
     // 根据地址/位置文本判断所属层级（简易规则）
     matchCardScope: function(item, lvl) {
@@ -865,6 +1004,19 @@ export default {
       } catch (e) {
         console.warn('根据收藏数据构建位置标记点失败', e)
       }
+    },
+
+    // 计算覆盖层左右两列卡片数据（基于当前层级筛选结果）
+    computeOverlayColumns: function() {
+      try {
+        var filtered = Array.isArray(this.overlayFilteredCards) ? this.overlayFilteredCards : []
+        this.overlayLeftColumnData = filtered.filter(function(_, i) { return i % 2 === 0 })
+        this.overlayRightColumnData = filtered.filter(function(_, i) { return i % 2 === 1 })
+      } catch (e) {
+        console.warn('计算覆盖层卡片列数据失败', e)
+        this.overlayLeftColumnData = []
+        this.overlayRightColumnData = []
+      }
     }
 }
 </script>
@@ -901,6 +1053,12 @@ export default {
   border-radius: 12px;
 }
 
+/* 顶部位置分组筛选 chips 样式 */
+.overlay-area-filter { margin: 6px 0 8px 0; width: 100%; }
+.overlay-area-filter-inner { display: flex; gap: 8px; padding: 4px 2px; }
+.filter-chip { padding: 6px 10px; border-radius: 14px; background: rgba(0,0,0,0.06); color: #333; font-size: 12px; }
+.filter-chip.active { background: #4CAF50; color: #fff; }
+
 .map-title {
   color: #000000;
   font-size: 16px;
@@ -917,10 +1075,11 @@ export default {
 /* 展开内容布局样式 */
 .overlay-expanded-content {
   display: flex;
-  flex-direction: row;
+  flex-direction: column; /* 改为纵向：顶部 chips + 下方左右分栏 */
   gap: 12px;
   margin-top: 8px;
   height: calc(100% - 48px); /* 预留标题与描述空间 */
+  overflow: hidden; /* 防止子容器溢出 */
 }
 
 .overlay-levels {
@@ -962,4 +1121,14 @@ export default {
   flex-direction: column;
   gap: 12px;
 }
+.overlay-left-right { display: flex; flex-direction: row; gap: 8px; flex: 1 1 auto; height: 100%; }
+.overlay-left-nav { width: 92px; height: 100%; /* 改为充满父容器高度 */ }
+.left-nav-item { padding: 10px 8px; font-size: 12px; color: #333; }
+.left-nav-item.active { color: #ff6a00; font-weight: 600; }
+.overlay-right-sections { flex: 1; height: 100%; /* 改为充满父容器高度 */ }
+.overlay-section { margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dashed rgba(0,0,0,0.08); }
+.section-header { display: flex; align-items: center; justify-content: space-between; padding: 0 2px; }
+.section-title { font-size: 14px; color: #333; }
+.section-more { font-size: 12px; color: #888; }
+.section-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 </style>
