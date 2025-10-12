@@ -108,7 +108,7 @@ export default {
       mapCtx: null,
       currentScale: null,
       currentRegion: null,
-      showAllThresholdScale: 14,
+      showAllThresholdScale: 12,
     }
   },
   
@@ -170,8 +170,8 @@ export default {
           return true
         }
       }) : locs
-      // 仅在无法获取缩放值时使用“小视野”作为解除聚合的后备；否则严格按缩放门槛解除
-      if ((!hasScale && this.isSmallRegion(region)) || (scale != null && scale >= this.showAllThresholdScale)) {
+      // 解除聚合条件：达到缩放阈值，或当前视野已足够小
+      if ((scale != null && scale >= this.showAllThresholdScale) || this.isSmallRegion(region)) {
         return inView.map(l => ({ ...l, clusterCount: 0 }))
       }
       const { latSize, lngSize, swLat, swLng } = this.getCellSizesForScale(scale)
@@ -471,8 +471,8 @@ export default {
          const lngSpan = Math.abs((r.northeast.longitude ?? 0) - (r.southwest.longitude ?? 0))
          // 更强的“阶梯感”：低缩放更粗，高缩放更细
          const div = s <= 6 ? 1 : (s <= 8 ? 2 : (s <= 10 ? 3 : (s <= 12 ? 6 : (s <= 13 ? 10 : 16))))
-         // 每档设置最小网格度数下限，避免在 include-points 导致视野很小时过度细分
-         const floorDeg = s <= 6 ? 0.6 : (s <= 8 ? 0.35 : (s <= 10 ? 0.2 : (s <= 12 ? 0.12 : (s <= 13 ? 0.08 : 0.05))))
+         // 每档设置最小网格度数下限，避免在 include-points 导致视野很小时过度细分（高缩放档位进一步降低下限，便于解除聚合）
+         const floorDeg = s <= 6 ? 0.8 : (s <= 8 ? 0.5 : (s <= 10 ? 0.3 : (s <= 12 ? 0.15 : (s <= 13 ? 0.06 : 0.02))))
          const latSize = Math.max(latSpan / div, floorDeg)
          const lngSize = Math.max(lngSpan / div, floorDeg)
          return { latSize: Math.max(latSize, 1e-6), lngSize: Math.max(lngSize, 1e-6), swLat: r.southwest.latitude, swLng: r.southwest.longitude }
