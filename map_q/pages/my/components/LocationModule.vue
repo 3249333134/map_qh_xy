@@ -26,29 +26,43 @@
         :include-padding="includePadding"
       >
         <!-- 悬浮缩小卡片：基于 cover-view 锚定到每个标记点 -->
-        <cover-view
-          v-for="m in mapMarkers"
-          :key="m.id"
-          class="card card-floating"
-          :marker-id="m.id"
-          slot="callout"
-          :style="cardScaleStyle"
-        >
-          <cover-view class="card-media" @touchstart="onCardTouchStart" @touchmove="onCardTouchMove" @touchend="onCardTouchEnd" @tap.stop="handleMediaTap(m)">
-            <cover-image v-if="m.cover" class="card-media-img" :src="m.cover" />
-            <cover-view v-else class="card-media-placeholder"></cover-view>
+        <template v-for="m in mapMarkers" :key="m.id">
+          <!-- 新增：低缩放时使用圆形聚合气泡，仅显示聚合数量，形成分层聚合形态 -->
+          <cover-view
+            v-if="zoomTier === 'bubble' && m.clusterCount > 0"
+            :key="`bubble-${m.id}`"
+            class="cluster-bubble"
+            :marker-id="m.id"
+            slot="callout"
+          >
+            <cover-view class="cluster-bubble-count">{{ clusterLabel(m.clusterCount) }}</cover-view>
           </cover-view>
-          <cover-view class="card-content">
-            <cover-view v-if="showText" class="card-title">{{ m.title }}</cover-view>
-            <cover-view v-if="showText && m.subtitle" class="card-author">{{ m.subtitle }}</cover-view>
-            <!-- 移除地点与点赞，仅保留名字与作者。服务卡片保留右下角“预”。 -->
-            <cover-view v-if="m.type === 'service'" class="cta-float">
-              <cover-view class="reserve-big">预</cover-view>
+          
+          <!-- 中高缩放时显示缩略图卡片（中缩放隐藏文本，高缩放显示文本） -->
+          <cover-view
+            v-else
+            :key="m.id"
+            class="card card-floating"
+            :marker-id="m.id"
+            slot="callout"
+            :style="cardScaleStyle"
+          >
+            <cover-view class="card-media" @touchstart="onCardTouchStart" @touchmove="onCardTouchMove" @touchend="onCardTouchEnd" @tap.stop="handleMediaTap(m)">
+              <cover-image v-if="m.cover" class="card-media-img" :src="m.cover" />
+              <cover-view v-else class="card-media-placeholder"></cover-view>
             </cover-view>
+            <cover-view class="card-content">
+              <cover-view v-if="showText" class="card-title">{{ m.title }}</cover-view>
+              <cover-view v-if="showText && m.subtitle" class="card-author">{{ m.subtitle }}</cover-view>
+              <!-- 移除地点与点赞，仅保留名字与作者。服务卡片保留右下角“预”。 -->
+              <cover-view v-if="m.type === 'service'" class="cta-float">
+                <cover-view class="reserve-big">预</cover-view>
+              </cover-view>
+            </cover-view>
+            <!-- 聚合数量徽标：右上角（在非气泡形态下保留显示） -->
+            <cover-view v-if="m.clusterCount && m.clusterCount > 0" class="cluster-count-badge">{{ clusterLabel(m.clusterCount) }}</cover-view>
           </cover-view>
-          <!-- 聚合数量徽标：右上角 -->
-          <cover-view v-if="m.clusterCount && m.clusterCount > 0" class="cluster-count-badge">{{ clusterLabel(m.clusterCount) }}</cover-view>
-        </cover-view>
+        </template>
       </map>
       
       <!-- 加载状态 -->
@@ -232,12 +246,13 @@ export default {
     },
     // 新增：是否显示文本（标题/作者），严格按缩放门槛；仅在无法获取缩放值时，使用小视野后备
     showText() {
-      const hasScale = typeof this.currentScale === 'number' && !isNaN(this.currentScale)
-      const scale = hasScale ? this.currentScale : null
-      if (scale != null && scale >= this.showAllThresholdScale) return true
-      // 仅在无法获取缩放值时，使用“小视野”作为后备显示标题/作者
-      if (!hasScale && this.isSmallRegion(this.currentRegion)) return true
-      return false
+      // 统一样式要求：所有缩放状态都显示标题与作者
+      return true
+    },
+    // 新增：缩放分层，用于切换不同的聚合形态（低缩放：气泡；中缩放：仅图片；高缩放：图片+文本）
+    zoomTier() {
+      // 统一样式要求：所有缩放状态都使用“图片+名称+作者”的卡片形态
+      return 'card'
     }
   },
   methods: {
@@ -402,6 +417,12 @@ export default {
           this._lastDragAt = Date.now()
           this._mapTapEligible = false
           // 结束缩放或拖动后更新当前缩放级别和视野范围，用于动态聚合显示
+          // 优先使用事件中的缩放值，兼容不同地图内核
+          const newScale = e?.scale ?? e?.detail?.scale
+          if (typeof newScale === 'number' && !Number.isNaN(newScale)) {
+            this.currentScale = parseInt(newScale, 10)
+            console.log('[Map] currentScale(event) =', this.currentScale)
+          }
           this.updateScaleAndRegion()
         }
       } catch (err) {
@@ -711,5 +732,23 @@ export default {
   padding: 2px 6px;
   z-index: 2;
   font-weight: 700;
+}
+
+/* 新增：低缩放聚合气泡样式（与卡片形态区分） */
+.cluster-bubble {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #FF4D4F;
+}
+.cluster-bubble-count {
+  color: #FF4D4F;
+  font-weight: 800;
+  font-size: 14px;
 }
 </style>

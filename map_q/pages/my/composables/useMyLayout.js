@@ -47,7 +47,7 @@ export function useMyLayout(params = {}) {
   const mapOverlayStyle = computed(() => {
     if (!isOverlayExpanded.value) return {}
     const top = contentTranslateY.value + 42 + (safeTopOffset.value || 0)
-    return { top: top + 'px', left: '9px', right: '9px', bottom: '2px' }
+    return { top: top + 'px', left: '2px', right: '2px', bottom: '2px' }
   })
 
   const overlayExpandedHeight = computed(() => {

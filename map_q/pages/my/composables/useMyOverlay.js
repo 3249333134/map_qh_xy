@@ -18,6 +18,22 @@ export function useMyOverlay(params) {
   const overlaySwipeThreshold = ref(50)
   const overlaySwipeVelocityThreshold = ref(0.35)
 
+  // 新增：内容类别（列分类）
+  const activeCategory = ref('all')
+  const categoryFilterGroups = computed(() => {
+    const f = favoriteData.value || {}
+    const groups = ['photos', 'videos', 'articles', 'music', 'locations', 'services']
+    const labels = { photos: '照片', videos: '视频', articles: '文章', music: '音乐', locations: '地点', services: '服务' }
+    let total = 0
+    const arr = groups.map((g) => {
+      const len = Array.isArray(f[g]) ? f[g].length : 0
+      total += len
+      return { key: g, label: labels[g], count: len }
+    })
+    arr.unshift({ key: 'all', label: '全部', count: total })
+    return arr
+  })
+
   const favoriteAllItems = computed(() => {
     const f = favoriteData.value || {}
     const groups = ['photos', 'videos', 'articles', 'music', 'locations', 'services']
@@ -26,6 +42,7 @@ export function useMyOverlay(params) {
       const arr = Array.isArray(f[g]) ? f[g] : []
       arr.forEach((item) => {
         const copied = Object.assign({}, item)
+        copied.category = g
         copied.type = (item && item.type === 'service') ? 'service' : (g === 'services' ? 'service' : 'content')
         all.push(copied)
       })
@@ -52,18 +69,31 @@ export function useMyOverlay(params) {
     }
   }
 
+  // 新增：按类别匹配
+  const matchCategory = (item, key) => {
+    if (!key || key === 'all') return true
+    return ((item && item.category) || '') === key
+  }
+
   const overlayFilteredCards = computed(() => {
     const lvl = activeOverlayLevel.value
     const areaKey = activeOverlayAreaGroup.value
-    return favoriteAllItems.value.filter((it) => matchCardScope(it, lvl) && matchAreaGroup(it, areaKey))
+    const cat = activeCategory.value
+    return favoriteAllItems.value.filter((it) => matchCardScope(it, lvl) && matchCategory(it, cat) && matchAreaGroup(it, areaKey))
   })
 
   const groupedOverlaySections = computed(() => {
-    const groups = locationFilterGroups.value.filter((g) => g.key !== 'all')
+    // 只在右侧分段列表中显示当前选中的区域（若为“全部”，则显示所有区域分段）
+    const areaKey = activeOverlayAreaGroup.value
+    const groupsAll = locationFilterGroups.value.filter((g) => g.key !== 'all')
+    const groups = (areaKey && areaKey !== 'all') ? groupsAll.filter((g) => g.key === areaKey) : groupsAll
+
     const items = favoriteAllItems.value
     const lvl = activeOverlayLevel.value
+    const cat = activeCategory.value
+
     return groups.map((g) => {
-      const list = items.filter((it) => matchCardScope(it, lvl) && matchAreaGroup(it, g.key))
+      const list = items.filter((it) => matchCardScope(it, lvl) && matchCategory(it, cat) && matchAreaGroup(it, g.key))
       return { key: g.key, label: g.label, items: list }
     })
   })
@@ -88,8 +118,8 @@ export function useMyOverlay(params) {
   const computeOverlayColumns = () => {
     try {
       const filtered = Array.isArray(overlayFilteredCards.value) ? overlayFilteredCards.value : []
-      overlayLeftColumnData.value = filtered.filter((_, i) => i % 2 === 0)
-      overlayRightColumnData.value = filtered.filter((_, i) => i % 2 === 1)
+      overlayLeftColumnData.value = filtered
+      overlayRightColumnData.value = []
     } catch (e) {
       console.warn('计算覆盖层卡片列数据失败', e)
       overlayLeftColumnData.value = []
@@ -99,7 +129,7 @@ export function useMyOverlay(params) {
 
   const getOverlayCardHeight = (column, idx) => {
     const base = 220
-    const variance = (idx % 3) * 30
+    const variance = 0
     return base + variance
   }
 
@@ -118,8 +148,18 @@ export function useMyOverlay(params) {
   const handleOverlayLevelChange = (lvl) => { activeOverlayLevel.value = lvl }
   const selectAreaGroup = (key) => {
     activeOverlayAreaGroup.value = key || 'all'
+    // 选中具体区域时，滚动到对应分段；选择“全部”时取消定点滚动
+    overlayScrollIntoView.value = (key && key !== 'all') ? ('section-' + key) : ''
     if (isOverlayExpanded.value) computeOverlayColumns()
+    try { uni.showToast({ title: '区域：' + (key || '全部'), icon: 'none', duration: 500 }) } catch (e) {}
   }
+  // 新增：选择类别
+  const selectCategoryGroup = (key) => {
+    activeCategory.value = key || 'all'
+    if (isOverlayExpanded.value) computeOverlayColumns()
+    try { uni.showToast({ title: '类别：' + (key || '全部'), icon: 'none', duration: 500 }) } catch (e) {}
+  }
+
   const viewSectionAll = (sec) => {
     if (!sec || !sec.key) return
     activeOverlayAreaGroup.value = sec.key
@@ -129,17 +169,10 @@ export function useMyOverlay(params) {
   }
 
   const onOverlayTouchStart = (e) => {
-    try {
-      const t = (e && (e.touches && e.touches[0])) || (e && (e.changedTouches && e.changedTouches[0])) || null
-      const y = t ? (typeof t.pageY === 'number' ? t.pageY : t.clientY) : 0
-      overlayTouchStartY.value = y
-      overlayTouchLastY.value = y
-      overlayTouchStartTime.value = Date.now()
-    } catch (err) {
-      overlayTouchStartY.value = 0
-      overlayTouchLastY.value = 0
-      overlayTouchStartTime.value = Date.now()
-    }
+    const t = (e && (e.touches && e.touches[0])) || (e && (e.changedTouches && e.changedTouches[0])) || null
+    const y = t ? (typeof t.pageY === 'number' ? t.pageY : t.clientY) : 0
+    overlayTouchStartY.value = y
+    overlayTouchStartTime.value = Date.now()
   }
   const onOverlayTouchMove = (e) => {
     const t = (e && (e.touches && e.touches[0])) || (e && (e.changedTouches && e.changedTouches[0])) || null
@@ -174,6 +207,8 @@ export function useMyOverlay(params) {
     overlayTouchStartTime,
     overlaySwipeThreshold,
     overlaySwipeVelocityThreshold,
+    activeCategory,
+    categoryFilterGroups,
 
     // 计算
     favoriteAllItems,
@@ -187,6 +222,7 @@ export function useMyOverlay(params) {
     expandMapFullScreen,
     handleOverlayLevelChange,
     selectAreaGroup,
+    selectCategoryGroup,
     viewSectionAll,
     onOverlayTouchStart,
     onOverlayTouchMove,
