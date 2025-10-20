@@ -71,6 +71,9 @@ export default {
 </script>
 
 <style>
+/* 导入tabBar突出按钮样式 */
+@import url("/static/tabbar-plus-style.css");
+
 /* 全局样式 */
 page {
   background-color: #f0f0f0;

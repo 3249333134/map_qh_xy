@@ -1,0 +1,180 @@
+/* 原生tabBar中间突出"+"按钮样式 */
+
+/* 针对第3个tab项（发布按钮）的特殊样式 - 增强选择器优先级 */
+.uni-tabbar .uni-tabbar__item:nth-child(3),
+uni-tabbar .uni-tabbar__item:nth-child(3),
+.uni-tabbar-item:nth-child(3) {
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+/* 发布按钮的图标容器 - 多重选择器确保兼容性 */
+.uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon,
+uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon,
+.uni-tabbar-item:nth-child(3) .uni-tabbar__icon,
+.uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar-item__icon {
+  position: relative !important;
+  transform: translateY(-15px) !important;
+  width: 60px !important;
+  height: 60px !important;
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ff4757 100%) !important;
+  border-radius: 50% !important;
+  border: 3px solid #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 
+    0 4px 12px rgba(255, 71, 87, 0.3),
+    0 2px 8px rgba(255, 107, 53, 0.2),
+    0 0 20px rgba(247, 147, 30, 0.1),
+    0 8px 32px rgba(0, 0, 0, 0.1) !important;
+  animation: tabbar-pulse 2s infinite !important;
+}
+
+/* 隐藏原始图标，使用自定义样式 - 多重选择器 */
+.uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon image,
+.uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon .uni-icon,
+uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon image,
+.uni-tabbar-item:nth-child(3) .uni-tabbar__icon image {
+  display: none !important;
+  opacity: 0 !important;
+}
+
+/* 使用伪元素创建"➕"符号 - 增强优先级和兼容性 */
+.uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon::after,
+uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon::after,
+.uni-tabbar-item:nth-child(3) .uni-tabbar__icon::after,
+.uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar-item__icon::after {
+  content: "➕" !important;
+  color: white !important;
+  font-size: 32px !important;
+  font-weight: normal !important;
+  line-height: 1 !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 999 !important;
+}
+
+/* 发布按钮的文字 - 隐藏文字 - 增强优先级 */
+.uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__item-text,
+uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__item-text,
+.uni-tabbar-item:nth-child(3) .uni-tabbar__item-text,
+.uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar-item__text {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* 发布按钮选中状态 - 增强优先级 */
+.uni-tabbar .uni-tabbar__item:nth-child(3).uni-tabbar__item--selected .uni-tabbar__item-text,
+uni-tabbar .uni-tabbar__item:nth-child(3).uni-tabbar__item--selected .uni-tabbar__item-text,
+.uni-tabbar-item:nth-child(3).uni-tabbar-item--selected .uni-tabbar__item-text {
+  color: #ff4757 !important;
+  display: none !important;
+}
+
+/* 脉冲动画 */
+@keyframes tabbar-pulse {
+  0% {
+    box-shadow: 
+      0 4px 12px rgba(255, 71, 87, 0.3),
+      0 2px 8px rgba(255, 107, 53, 0.2),
+      0 0 20px rgba(247, 147, 30, 0.1),
+      0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 6px 16px rgba(255, 71, 87, 0.4),
+      0 4px 12px rgba(255, 107, 53, 0.3),
+      0 0 30px rgba(247, 147, 30, 0.2),
+      0 12px 40px rgba(0, 0, 0, 0.15);
+    transform: translateY(-15px) scale(1.05);
+  }
+  100% {
+    box-shadow: 
+      0 4px 12px rgba(255, 71, 87, 0.3),
+      0 2px 8px rgba(255, 107, 53, 0.2),
+      0 0 20px rgba(247, 147, 30, 0.1),
+      0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+}
+
+/* 点击反馈效果 */
+.uni-tabbar .uni-tabbar__item:nth-child(3):active .uni-tabbar__icon {
+  transform: translateY(-15px) scale(0.95);
+  transition: transform 0.1s ease;
+}
+
+/* 响应式适配 - 增强优先级 */
+@media screen and (max-width: 375px) {
+  .uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon,
+  uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon,
+  .uni-tabbar-item:nth-child(3) .uni-tabbar__icon {
+    width: 55px !important;
+    height: 55px !important;
+    transform: translateY(-12px) !important;
+  }
+  
+  .uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon::after,
+  uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon::after,
+  .uni-tabbar-item:nth-child(3) .uni-tabbar__icon::after {
+    font-size: 28px !important;
+  }
+  
+  .uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__item-text,
+  uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__item-text,
+  .uni-tabbar-item:nth-child(3) .uni-tabbar__item-text {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+}
+
+@media screen and (min-width: 414px) {
+  .uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon,
+  uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon,
+  .uni-tabbar-item:nth-child(3) .uni-tabbar__icon {
+    width: 65px !important;
+    height: 65px !important;
+    transform: translateY(-18px) !important;
+  }
+  
+  .uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon::after,
+  uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon::after,
+  .uni-tabbar-item:nth-child(3) .uni-tabbar__icon::after {
+    font-size: 36px !important;
+  }
+  
+  .uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__item-text,
+  uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__item-text,
+  .uni-tabbar-item:nth-child(3) .uni-tabbar__item-text {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+}
+
+/* 确保其他tab项不受影响 */
+.uni-tabbar .uni-tabbar__item:not(:nth-child(3)) {
+  z-index: 1;
+}
+
+/* 增强tabbar的整体高度以适应突出按钮 */
+.uni-tabbar {
+  padding-top: 15px;
+  height: calc(50px + env(safe-area-inset-bottom)) !important;
+}
+
+/* 为突出按钮预留空间 */
+.uni-tabbar::before {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: 0;
+  right: 0;
+  height: 15px;
+  background: transparent;
+  z-index: 0;
+}
