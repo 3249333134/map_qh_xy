@@ -122,7 +122,7 @@ export default {
       mapCtx: null,
       currentScale: null,
       currentRegion: null,
-      showAllThresholdScale: 12,
+      showAllThresholdScale: 8,
     }
   },
   

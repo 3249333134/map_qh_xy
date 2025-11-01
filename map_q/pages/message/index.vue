@@ -1,7 +1,7 @@
 <template>
   <view class="message-page">
-    <!-- 状态栏占位 -->
-    <view class="status-bar"></view>
+    <!-- 顶部占位：使用自定义导航栏总高度（状态栏+导航栏） -->
+    <view class="status-bar" :style="{ height: topOffset + 'px' }"></view>
     
     <!-- 搜索栏 -->
     <view class="search-container">
@@ -61,8 +61,14 @@
         </view>
       </view>
 
-      <!-- 右侧消息列表 -->
-      <view class="message-list">
+      <!-- 右侧消息列表（scroll-view，高度=窗口-顶部占位-功能区-底部TabBar） -->
+      <scroll-view 
+        class="message-list" 
+        scroll-y 
+        show-scrollbar="false" 
+        scroll-with-animation
+        :style="{ height: listHeight + 'px' }"
+      >
         <view 
           v-for="(message, index) in currentMessages" 
           :key="message"
@@ -100,7 +106,7 @@
             </view>
           </view>
         </view>
-      </view>
+      </scroll-view>
     </view>
   </view>
 </template>
@@ -109,6 +115,9 @@
 export default {
   data() {
     return {
+      topOffset: 0,
+      bottomOffset: 0,
+      listHeight: 0,
       showAddMenu: false,
       selectedBubble: 1,
       bubbles: [
@@ -133,6 +142,44 @@ export default {
       swipeOffset: 0,
       startX: 0,
       isSwipping: false
+    }
+  },
+  created() {
+    try {
+      const info = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
+      const statusPx = (info && ((info.safeAreaInsets && info.safeAreaInsets.top) || (info.safeArea && info.safeArea.top) || info.statusBarHeight || 0)) || 0
+      // 轻微上移补偿：允许向上再贴近一点（默认6px，可通过缓存覆写）
+      const topComp = uni.getStorageSync('TOP_COMPENSATION_PX')
+      const compPx = (typeof topComp === 'number' && topComp >= 0 && topComp <= 20) ? topComp : 6
+      this.topOffset = Math.max(statusPx - compPx, 0)
+
+      const tabMetrics = uni.getStorageSync('TABBAR_METRICS') || null
+      if (tabMetrics && typeof tabMetrics.tabHeightPx === 'number') {
+        this.bottomOffset = tabMetrics.tabHeightPx
+      } else {
+        this.bottomOffset = 86
+      }
+    } catch (e) {
+      this.topOffset = 20
+      this.bottomOffset = 86
+    }
+  },
+  onReady() {
+    try {
+      const info = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
+      const winH = (info && (info.windowHeight || (info.safeArea && info.safeArea.height))) || 0
+      const q = uni.createSelectorQuery().in(this)
+      q.select('.search-container').boundingClientRect()
+      q.select('.function-blocks').boundingClientRect()
+      q.exec(res => {
+        const searchH = (res && res[0] && res[0].height) ? res[0].height : 0
+        const blocksH = (res && res[1] && res[1].height) ? res[1].height : 0
+        const calc = Math.round(winH - this.topOffset - searchH - blocksH - this.bottomOffset)
+        this.listHeight = Math.max(120, calc)
+      })
+    } catch (e) {
+      // 回退：给一个保守高度，避免滚动区域撑到TabBar
+      this.listHeight = 500
     }
   },
   computed: {
@@ -271,7 +318,21 @@ export default {
       this.messageData[this.selectedBubble] = messages
       this.resetSwipe()
     }
-  }
+  },
+  onShow() {
+    try {
+      if (typeof this.getTabBar === 'function' && this.getTabBar()) {
+        this.getTabBar().setData({ selected: 3 })
+      } else {
+        const pages = getCurrentPages()
+        const page = pages[pages.length - 1]
+        if (page && typeof page.getTabBar === 'function' && page.getTabBar()) {
+          page.getTabBar().setData({ selected: 3 })
+        }
+      }
+    } catch (e) {}
+  },
+  
 }
 </script>
 
@@ -287,14 +348,12 @@ export default {
 
 /* 状态栏占位 */
 .status-bar {
-  height: 44px;
   background: transparent;
 }
 
 /* 右上角悬浮按钮 */
 .floating-buttons {
   position: absolute;
-  top: 54px;
   right: 20px;
   display: flex;
   gap: 10px;
@@ -320,7 +379,7 @@ export default {
 
 /* 搜索栏 */
 .search-container {
-  padding: 3px 20px 10px 10px;
+  padding: 0 20px 10px 10px;
   padding-right: 100px;
   display: flex;
   gap: 10px;
@@ -431,7 +490,7 @@ export default {
   background: white;
   margin: 0;
   border-radius: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* 左侧气泡列表 */
@@ -483,7 +542,7 @@ export default {
 .message-list {
   flex: 1;
   padding: 5px;
-  overflow-y: auto;
+  /* 高度由内联样式控制，确保底部不越过TabBar */
   background: white;
 }
 

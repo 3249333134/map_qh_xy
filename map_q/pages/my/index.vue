@@ -106,6 +106,7 @@
 
 <script>
 import { ref, onMounted, computed } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 // 导入组件
 import ProfileSection from './components/ProfileSection.vue'
 import ContentSection from './components/ContentSection.vue'
@@ -261,6 +262,17 @@ const {
       initPage()
       isPageReady.value = true
       buildUserLocationsFromFavorites()
+    })
+
+    // 页面展示时同步底部 TabBar 高亮为“我的”
+    onShow(() => {
+      try {
+        const pages = getCurrentPages()
+        const page = pages[pages.length - 1]
+        if (page && typeof page.getTabBar === 'function' && page.getTabBar()) {
+          page.getTabBar().setData({ selected: 4 })
+        }
+      } catch (e) {}
     })
 
     return {

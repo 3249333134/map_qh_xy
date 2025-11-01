@@ -19,8 +19,9 @@
     <!-- 内容区域 -->
     <content-area
       :height="contentHeight"
-      :search-box-height="60"
-      :min-content-height="200"
+      :search-box-height="searchBoxHeight"
+      :min-content-height="minContentHeight"
+      :bottom-offset="safeBottomOffset"
       :is-dragging="isDragging"
       :map-data="mapPoints"
       :categories="categories"
@@ -40,10 +41,11 @@
       @visible-cards-change="onVisibleCardsChange"
     />
   </view>
-</template>
+ </template>
  
 <script>
 import { onMounted, ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import MapBackground from '../../components/map/MapBackground.vue'
 import ContentArea from '../../components/content/ContentArea.vue'
 import { useMapData } from './composables/useMapData.js'
@@ -76,6 +78,9 @@ export default {
     const {
       contentHeight,
       mapHeight,
+      searchBoxHeight,
+      minContentHeight,
+      safeBottomOffset,
       isDragging,
       initLayout,
       handleDragStart,
@@ -238,7 +243,22 @@ export default {
       }
     }
     
-    onMounted(() => { init() })
+    onMounted(() => { 
+      // 统一搜索框高度为 60，确保折叠态仅保留搜索框
+      searchBoxHeight.value = 60
+      init()
+    })
+    
+    // 页面展示时同步底部 TabBar 高亮为“首页”
+    onShow(() => {
+      try {
+        const pages = getCurrentPages()
+        const page = pages[pages.length - 1]
+        if (page && typeof page.getTabBar === 'function' && page.getTabBar()) {
+          page.getTabBar().setData({ selected: 0 })
+        }
+      } catch (e) {}
+    })
     
     return {
       // 组件引用
@@ -247,6 +267,9 @@ export default {
       // 布局相关
       contentHeight,
       mapHeight,
+      searchBoxHeight,
+      minContentHeight,
+      safeBottomOffset,
       isDragging,
       handleDragStart,
       handleDrag,
@@ -298,6 +321,8 @@ export default {
   height: 100vh;
   overflow: hidden;
 }
+
+
 
 .error-toast {
   position: fixed;

@@ -1270,7 +1270,7 @@ export default {
 
 /* 底部占位元素（用于确保最后一个卡片完全可见） */
 .scroll-bottom-spacer {
-  height: 0; /* 原 120rpx → 去除占位，改用安全区 padding 实现；若某机型仍遮挡可再微调 */
+  height: var(--safe-bottom-px, 86px);
 }
 
 .no-schedule {

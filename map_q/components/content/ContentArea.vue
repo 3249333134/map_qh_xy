@@ -1,7 +1,7 @@
 <template>
   <view 
     class="content-area" 
-    :style="{ height: height + 'px', bottom: 0 }"
+    :style="{ height: height + 'px', bottom: (bottomOffset || 0) + 'px' }"
   >
     <!-- 拖动区域（包含拖动条和搜索框） -->
     <view 
@@ -11,7 +11,7 @@
       @touchend="onDragEnd"
     >
       <!-- 拖动条 -->
-      <view class="drag-handle">
+      <view class="drag-handle" v-if="!isCollapsed">
         <view class="drag-indicator"></view>
       </view>
       
@@ -34,6 +34,7 @@
       class="category-tabs" 
       scroll-x 
       show-scrollbar="false"
+      v-if="!isCollapsed"
     >
       <view 
         v-for="category in categories" 
@@ -53,6 +54,7 @@
       @scroll="onScroll"
       :scroll-top="scrollTop"
       :scroll-with-animation="scrollWithAnimation"
+      v-if="!isCollapsed"
     >
       <view class="cards-grid">
         <!-- 左列卡片 -->
@@ -144,6 +146,10 @@ export default {
     height: {
       type: Number,
       required: true
+    },
+    bottomOffset: {
+      type: Number,
+      default: 0
     },
     searchBoxHeight: {
       type: Number,
@@ -464,6 +470,11 @@ export default {
     // 新增：是否使用服务卡片
     useServiceCard() {
       return this.cardComponent === 'ServiceCardItem'
+    },
+    // 折叠态：当容器高度接近最小高度，仅显示搜索框
+    isCollapsed() {
+      const minH = Number(this.minContentHeight || 0)
+      return Number(this.height || 0) <= (minH + 1)
     }
   },
 }

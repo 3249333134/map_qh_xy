@@ -6,6 +6,7 @@
     <!-- 模块内容区域 - 根据模块类型决定是否支持拖拽 -->
     <view class="module-content-background"
           :class="{ 'draggable-content': activeModule === 'date' || activeModule === 'favorite' }"
+          :style="moduleContentStyle"
           @touchstart="handleContentTouchStart"
           @touchmove="handleContentTouchMove"
           @touchend="handleContentTouchEnd">
@@ -81,6 +82,17 @@ export default {
     placeholderHeightRpx() {
       return this.tabHeightRpx + this.safeBottomRpx
     },
+    // 将底部占位转换为 px，便于用于样式
+    safeBottomPx() {
+      try {
+        const totalRpx = (this.tabHeightRpx || 0) + (this.safeBottomRpx || 0) + (this.microAdjustRpx || 0)
+        return uni.upx2px(totalRpx)
+      } catch (e) {
+        // 兜底：若运行环境不支持 upx2px，则按 1rpx≈0.5px 粗略换算
+        const totalRpx = (this.tabHeightRpx || 0) + (this.safeBottomRpx || 0) + (this.microAdjustRpx || 0)
+        return Math.round(totalRpx * 0.5)
+      }
+    },
     // 根容器样式：同时控制位移与底部裁剪，仅展示蓝框区域
     contentSectionStyle() {
       return {
@@ -88,6 +100,13 @@ export default {
         // 统一贴底，移除位置模块的底部占位，避免出现下方空隙
         bottom: '0px',
         top: '0px'
+      }
+    },
+    // 模块内容容器样式：为内部滚动区提供底部安全留白，避免被自定义 TabBar 遮挡
+    moduleContentStyle() {
+      return {
+        paddingBottom: `${this.safeBottomPx}px`,
+        '--safe-bottom-px': `${this.safeBottomPx}px`
       }
     }
   },

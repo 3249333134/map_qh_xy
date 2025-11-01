@@ -14,6 +14,9 @@ export function useMyLayout(params = {}) {
 
   const expandUpDistancePx = ref(305)
   const contentTranslateY = ref(350)
+  // 底部占位（TabBar 高度 + 安全区）与微调
+  const safeBottomPlaceholderPx = ref(86)
+  const overlayBottomAdjustPx = ref(27)
 
   // 拖拽与动画状态
   const startY = ref(0)
@@ -45,16 +48,23 @@ export function useMyLayout(params = {}) {
   })
 
   const mapOverlayStyle = computed(() => {
-    if (!isOverlayExpanded.value) return {}
-    const top = contentTranslateY.value + 42 + (safeTopOffset.value || 0)
-    return { top: top + 'px', left: '2px', right: '2px', bottom: '2px' }
+    const placeholder = safeBottomPlaceholderPx.value || 86
+    const adjust = overlayBottomAdjustPx.value || 0
+    const bottomPx = Math.max(2, placeholder - adjust)
+    const base = { left: '2px', right: '2px', bottom: bottomPx + 'px' }
+    if (!isOverlayExpanded.value) return base
+    // 顶部安全区：状态栏 + 自定义导航栏（统一来自 TOP_NAV_METRICS）
+    const top = contentTranslateY.value + (safeTopOffset.value || 0)
+    return { ...base, top: top + 'px' }
   })
 
   const overlayExpandedHeight = computed(() => {
     if (!isOverlayExpanded.value) return 0
-    const top = contentTranslateY.value + 42 + (safeTopOffset.value || 0)
+    const top = contentTranslateY.value + (safeTopOffset.value || 0)
     const total = screenHeight.value || 667
-    const paddingBottom = 2
+    const placeholder = safeBottomPlaceholderPx.value || 86
+    const adjust = overlayBottomAdjustPx.value || 0
+    const paddingBottom = Math.max(2, placeholder - adjust)
     const reservedHeader = 64
     const chipsHeight = 48
     const spacing = 16
@@ -66,7 +76,19 @@ export function useMyLayout(params = {}) {
     setTimeout(() => {
       try {
         const systemInfo = uni.getWindowInfo()
-        safeTopOffset.value = (systemInfo && ((systemInfo.safeAreaInsets && systemInfo.safeAreaInsets.top) || (systemInfo.safeArea && systemInfo.safeArea.top) || systemInfo.statusBarHeight || 0)) || 0
+        const statusPx = (systemInfo && ((systemInfo.safeAreaInsets && systemInfo.safeAreaInsets.top) || (systemInfo.safeArea && systemInfo.safeArea.top) || systemInfo.statusBarHeight || 0)) || 0
+        // 从缓存读取顶部导航总高度（状态栏 + 自定义导航栏），若无则以 44px 导航栏补齐
+        const topMetrics = typeof uni.getStorageSync === 'function' ? uni.getStorageSync('TOP_NAV_METRICS') : null
+        const totalTopPx = (topMetrics && topMetrics.totalPx) ? topMetrics.totalPx : (statusPx + 44)
+        safeTopOffset.value = totalTopPx
+        // 读取底部占位（TabBar + 安全区），用于让覆盖层始终悬浮在自定义导航栏上方
+        try {
+          const tabMetrics = typeof uni.getStorageSync === 'function' ? uni.getStorageSync('TABBAR_METRICS') : null
+          const placeholderPx = (tabMetrics && typeof tabMetrics.placeholderHeightPx === 'number') ? tabMetrics.placeholderHeightPx : 86
+          safeBottomPlaceholderPx.value = Math.max(0, Math.round(placeholderPx))
+        } catch (e2) {
+          safeBottomPlaceholderPx.value = 86
+        }
         screenHeight.value = systemInfo.windowHeight
         const applyPositions = (profileHeight) => {
           const computedTop = Math.max(0, Math.round(profileHeight))
@@ -89,6 +111,7 @@ export function useMyLayout(params = {}) {
       } catch (e) {
         console.warn('获取系统信息失败，使用兜底方案:', e)
         screenHeight.value = 667
+        safeBottomPlaceholderPx.value = 86
         const fallbackTop = 350
         const expandUp = (expandUpDistancePx.value || 160)
         const fallbackDefault = Math.max(0, Math.round(fallbackTop - expandUp))

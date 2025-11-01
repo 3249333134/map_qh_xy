@@ -68,6 +68,7 @@
     "backgroundColor": "#F8F8F8"
   },
   "tabBar": {
+    "custom": true,
     "color": "#7A7E83",
     "selectedColor": "#ffd700",
     "borderStyle": "black",
@@ -87,7 +88,9 @@
       },
       {
         "pagePath": "pages/plus/index",
-        "text": ""
+        "text": "发布",
+        "iconPath": "static/tabbar/plus.png",
+        "selectedIconPath": "static/tabbar/plus-active.png"
       },
       {
         "pagePath": "pages/message/index",

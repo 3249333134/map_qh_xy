@@ -12,8 +12,9 @@
     <!-- 可滑动区域 -->
     <content-area
       :height="contentHeight"
-      :search-box-height="60"
-      :min-content-height="200"
+      :search-box-height="searchBoxHeight"
+      :min-content-height="minContentHeight"
+      :bottom-offset="safeBottomOffset"
       :categories="categories"
       :active-category="activeCategory"
       :map-data="mapPoints"
@@ -38,7 +39,7 @@
 </template>
 
 <script>
-import { onReady } from '@dcloudio/uni-app'
+import { onReady, onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import MapBackground from '../../components/map/MapBackground.vue'
 import ContentArea from '../../components/content/ContentArea.vue'
@@ -58,6 +59,7 @@ export default {
       screenHeight,
       contentHeight,
       searchBoxHeight,
+      safeBottomOffset,
       isDragging,
       mapHeight,
       minContentHeight,
@@ -191,11 +193,25 @@ export default {
     onReady(() => {
       getUserLocation().then(() => {
         initLayout()
+        // 与首页一致：统一搜索框高度为 60
+        searchBoxHeight.value = 60
         loadInitialData()
       }).catch(() => {
         initLayout()
+        searchBoxHeight.value = 60
         loadInitialData()
       })
+    })
+    
+    // 页面展示时同步底部 TabBar 高亮为“服务”
+    onShow(() => {
+      try {
+        const pages = getCurrentPages()
+        const page = pages[pages.length - 1]
+        if (page && typeof page.getTabBar === 'function' && page.getTabBar()) {
+          page.getTabBar().setData({ selected: 1 })
+        }
+      } catch (e) {}
     })
     
     return {
@@ -205,6 +221,7 @@ export default {
       screenHeight,
       contentHeight,
       searchBoxHeight,
+      safeBottomOffset,
       isDragging,
       mapHeight,
       minContentHeight,
@@ -235,7 +252,7 @@ export default {
       handleCardTap,
       handleVisibleCardsChange,
       getUserLocation,
-      onMapRegionChanged
+      
     }
   }
 }

@@ -6,6 +6,8 @@ export function useLayout() {
   const screenHeight = ref(0)
   const contentHeight = ref(0)
   const searchBoxHeight = ref(50)
+  // 底部偏移（TabBar 占位 + 安全区）
+  const safeBottomOffset = ref(0)
   
   // 拖拽状态
   const isDragging = ref(false)
@@ -25,9 +27,23 @@ export function useLayout() {
   
   // 初始化布局
   const initLayout = () => {
-    const systemInfo = uni.getWindowInfo()
+    const systemInfo = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
     screenHeight.value = systemInfo.windowHeight
     contentHeight.value = screenHeight.value * LAYOUT_CONFIG.INITIAL_CONTENT_RATIO
+    // 读取底部 TabBar 的占位高度（px），用于内容区域限位到底部蓝框区域
+    try {
+      const metrics = uni.getStorageSync('TABBAR_METRICS') || null
+      // 只使用 TabBar 本身高度，避免与安全区双重抵消造成空白
+      if (metrics && typeof metrics.tabHeightPx === 'number') {
+        safeBottomOffset.value = metrics.tabHeightPx
+      } else {
+        const tabPx = 86
+        safeBottomOffset.value = tabPx
+      }
+    } catch (e) {
+      const tabPx = 86
+      safeBottomOffset.value = tabPx
+    }
   }
   
   // 拖拽处理
@@ -78,6 +94,7 @@ export function useLayout() {
     screenHeight,
     contentHeight,
     searchBoxHeight,
+    safeBottomOffset,
     isDragging,
     
     // 计算属性

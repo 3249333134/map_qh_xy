@@ -6,6 +6,8 @@ export function useServiceLayout() {
   const screenHeight = ref(0)
   const contentHeight = ref(0)
   const searchBoxHeight = ref(50)
+  // 底部偏移（TabBar 占位），用于将内容区限位到自定义TabBar上缘
+  const safeBottomOffset = ref(0)
   
   // 拖拽状态
   const isDragging = ref(false)
@@ -15,8 +17,9 @@ export function useServiceLayout() {
   // 计算属性
   const mapHeight = computed(() => screenHeight.value - contentHeight.value)
   
+  // 与首页一致：内容区最小高度仅保留搜索框
   const minContentHeight = computed(() => 
-    screenHeight.value * SERVICE_LAYOUT_CONFIG.MIN_CONTENT_RATIO
+    (searchBoxHeight.value || 0) + SERVICE_LAYOUT_CONFIG.MARGIN
   )
   
   const minVisibleHeight = computed(() => 
@@ -29,9 +32,20 @@ export function useServiceLayout() {
   
   // 初始化布局
   const initLayout = () => {
-    const systemInfo = uni.getWindowInfo()
+    const systemInfo = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
     screenHeight.value = systemInfo.windowHeight
     contentHeight.value = screenHeight.value * SERVICE_LAYOUT_CONFIG.INITIAL_CONTENT_RATIO
+    // 读取底部 TabBar 高度，仅用 TabBar 本身高度避免出现额外空白
+    try {
+      const metrics = uni.getStorageSync('TABBAR_METRICS') || null
+      if (metrics && typeof metrics.tabHeightPx === 'number') {
+        safeBottomOffset.value = metrics.tabHeightPx
+      } else {
+        safeBottomOffset.value = 86
+      }
+    } catch (e) {
+      safeBottomOffset.value = 86
+    }
   }
   
   // 拖拽处理
@@ -48,8 +62,9 @@ export function useServiceLayout() {
     const deltaY = dragStartY.value - currentY
     
     let newHeight = dragStartHeight.value + deltaY
+    // 与首页一致：下限为 minContentHeight（仅搜索框高度）
     newHeight = Math.max(
-      minVisibleHeight.value,
+      minContentHeight.value,
       Math.min(maxContentHeight.value, newHeight)
     )
     
@@ -59,18 +74,18 @@ export function useServiceLayout() {
   const handleDragEnd = () => {
     isDragging.value = false
     
-    const range = maxContentHeight.value - minVisibleHeight.value
+    // 与首页一致：吸附阈值围绕 minContentHeight
+    const range = maxContentHeight.value - minContentHeight.value
     const snapThresholds = {
-      min: minVisibleHeight.value + range * SERVICE_LAYOUT_CONFIG.SNAP_THRESHOLD_LOW,
-      mid: minVisibleHeight.value + range * SERVICE_LAYOUT_CONFIG.SNAP_THRESHOLD_MID,
-      max: minVisibleHeight.value + range * SERVICE_LAYOUT_CONFIG.SNAP_THRESHOLD_HIGH
+      min: minContentHeight.value + range * SERVICE_LAYOUT_CONFIG.SNAP_THRESHOLD_LOW,
+      max: minContentHeight.value + range * SERVICE_LAYOUT_CONFIG.SNAP_THRESHOLD_HIGH
     }
     
     let newHeight
     if (contentHeight.value < snapThresholds.min) {
-      newHeight = minVisibleHeight.value
-    } else if (contentHeight.value < snapThresholds.mid) {
       newHeight = minContentHeight.value
+    } else if (contentHeight.value < snapThresholds.max) {
+      newHeight = screenHeight.value * SERVICE_LAYOUT_CONFIG.INITIAL_CONTENT_RATIO
     } else {
       newHeight = maxContentHeight.value
     }
@@ -83,6 +98,7 @@ export function useServiceLayout() {
     screenHeight,
     contentHeight,
     searchBoxHeight,
+    safeBottomOffset,
     isDragging,
     
     // 计算属性

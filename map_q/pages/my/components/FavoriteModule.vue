@@ -80,6 +80,9 @@
       <view class="loading-more" v-if="isLoading">
         <text>加载中...</text>
       </view>
+
+      <!-- 底部安全占位，避免被自定义 TabBar 遮挡 -->
+      <view class="scroll-bottom-spacer"></view>
     </scroll-view>
   </view>
 </template>
@@ -543,5 +546,11 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
   padding: 15px 0;
   color: #666;
   font-size: 14px;
+}
+
+/* 底部安全占位（与 ContentSection 中的 --safe-bottom-px 保持一致） */
+.scroll-bottom-spacer {
+  height: var(--safe-bottom-px, 86px);
+  width: 100%;
 }
 </style>
