@@ -17,13 +17,17 @@ uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon,
   transform: translateY(-15px) !important;
   width: 60px !important;
   height: 60px !important;
-  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ff4757 100%) !important;
-  border-radius: 50% !important;
+  aspect-ratio: 1 / 1 !important;              /* 强制等宽高 */
+  border-radius: 50% !important;               /* 圆角 */
+  clip-path: circle(50% at 50% 50%) !important;/* 进一步裁剪为正圆 */
+  overflow: visible !important;                 /* 避免被父容器裁剪 */
+  box-sizing: border-box !important;
+  background: radial-gradient(circle at 50% 40%, #ff8a3d 0%, #ff6b35 60%, #ff4757 100%) !important;
   border: 3px solid #ffffff !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow: 
+  box-shadow:
     0 4px 12px rgba(255, 71, 87, 0.3),
     0 2px 8px rgba(255, 107, 53, 0.2),
     0 0 20px rgba(247, 147, 30, 0.1),

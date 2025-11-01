@@ -4,14 +4,16 @@
       class="tabbar-item"
       v-for="(item, index) in list"
       :key="item.text"
-      :class="{ active: selectedIndex === index }"
+      :class="[{ active: selectedIndex === index }, { 'publish-item': item.type === 'publish' }]"
       @tap="onTap(item, index)"
     >
-      <image class="icon" :src="selectedIndex === index ? item.selectedIconPath : item.iconPath" mode="aspectFit" />
+      <view v-if="item.type === 'publish'" class="plus-wrapper">
+        <text class="plus-sign">+</text>
+      </view>
+      <image v-else class="icon" :src="selectedIndex === index ? item.selectedIconPath : item.iconPath" mode="aspectFit" />
       <text class="label">{{ item.text }}</text>
     </view>
   </view>
-  
 </template>
 
 <script>
@@ -92,5 +94,38 @@ export default {
 }
 .active .label {
   color: #ffd700;
+}
+.publish-item {
+  position: relative;
+  z-index: 10;
+}
+.publish-item .label {
+  display: none;
+}
+.plus-wrapper {
+  width: 60px;
+  height: 60px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  clip-path: circle(50% at 50% 50%);
+  transform: translateY(-15px);
+  background: radial-gradient(circle at 50% 40%, #ff8a3d 0%, #ff6b35 60%, #ff4757 100%);
+  border: 3px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(255, 71, 87, 0.3),
+              0 2px 8px rgba(255, 107, 53, 0.2),
+              0 0 20px rgba(247, 147, 30, 0.1),
+              0 8px 32px rgba(0, 0, 0, 0.1);
+}
+.plus-sign { color: #fff; font-size: 32px; line-height: 1; }
+@media screen and (max-width: 375px) {
+  .plus-wrapper { width: 55px; height: 55px; transform: translateY(-12px); }
+  .plus-sign { font-size: 28px; }
+}
+@media screen and (min-width: 414px) {
+  .plus-wrapper { width: 65px; height: 65px; transform: translateY(-18px); }
+  .plus-sign { font-size: 36px; }
 }
 </style>

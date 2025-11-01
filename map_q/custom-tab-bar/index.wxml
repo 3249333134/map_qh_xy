@@ -1,15 +1,22 @@
 <view class="tabbar">
   <block wx:for="{{list}}" wx:key="index">
     <view
-      class="tabbar-item {{selected === index ? 'active' : ''}}"
+      class="tabbar-item {{selected === index ? 'active' : ''}} {{item.type === 'publish' ? 'publish-item' : ''}}"
       data-index="{{index}}"
       catchtap="onTap"
     >
-      <image
-        class="icon"
-        src="{{selected === index ? item.selectedIconPath : item.iconPath}}"
-        mode="aspectFit"
-      />
+      <block wx:if="{{item.type === 'publish'}}">
+        <view class="plus-wrapper">
+          <text class="plus-sign">+</text>
+        </view>
+      </block>
+      <block wx:else>
+        <image
+          class="icon"
+          src="{{selected === index ? item.selectedIconPath : item.iconPath}}"
+          mode="aspectFit"
+        />
+      </block>
       <text class="label">{{item.text}}</text>
     </view>
   </block>
