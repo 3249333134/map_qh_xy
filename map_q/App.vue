@@ -1,6 +1,6 @@
 <template>
   <view>
-    <!-- 全局弹出菜单组件 -->
+    <!-- 全局弹出菜单组件（App级别兜底渲染） -->
     <PublishOverlay :show="showPublishOverlay" @close="closePublishOverlay" />
   </view>
 </template>

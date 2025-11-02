@@ -40,6 +40,8 @@
       @content-tap="handleContentTap"
       @visible-cards-change="onVisibleCardsChange"
     />
+    <!-- 全局发布弹窗挂载点 -->
+    <GlobalOverlayHost />
   </view>
  </template>
  
@@ -48,6 +50,7 @@ import { onMounted, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import MapBackground from '../../components/map/MapBackground.vue'
 import ContentArea from '../../components/content/ContentArea.vue'
+import GlobalOverlayHost from '../../components/common/GlobalOverlayHost.vue'
 import { useMapData } from './composables/useMapData.js'
 import { useLayout } from './composables/useLayout.js'
 import { useCategory } from './composables/useCategory.js'
@@ -57,7 +60,8 @@ export default {
   name: 'IndexPage',
   components: {
     MapBackground,
-    ContentArea
+    ContentArea,
+    GlobalOverlayHost
   },
   
   setup() {

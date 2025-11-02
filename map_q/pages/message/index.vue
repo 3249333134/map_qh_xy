@@ -108,11 +108,15 @@
         </view>
       </scroll-view>
     </view>
+    <!-- 全局发布弹窗挂载点 -->
+    <GlobalOverlayHost />
   </view>
 </template>
 
 <script>
+import GlobalOverlayHost from '../../components/common/GlobalOverlayHost.vue'
 export default {
+  components: { GlobalOverlayHost },
   data() {
     return {
       topOffset: 0,

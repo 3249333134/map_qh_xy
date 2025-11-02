@@ -15,17 +15,21 @@ export default {
     this.$nextTick(() => {
       uni.$emit('showPublishOverlay')
       
-      // 延迟返回上一页，确保弹窗已经显示
+      // 延迟返回原来的 Tab（如果有记录），避免固定跳到首页
       setTimeout(() => {
+        const app = getApp && getApp()
+        const prev = app && app.globalData && app.globalData.prevTabPath
+        // 如果有页面栈，优先返回上一页（navigateTo场景）
         uni.navigateBack({
           fail: () => {
-            // 如果没有上一页，跳转到首页
-            uni.switchTab({
-              url: '/pages/index/index'
-            })
+            if (prev && typeof prev === 'string') {
+              const target = prev.startsWith('/') ? prev : '/' + prev
+              uni.switchTab({ url: target })
+            }
+            // 没有 prev 就不再强制跳首页，留在当前发布页也能看到弹窗
           }
         })
-      }, 300) // 增加延迟时间，确保弹窗显示
+      }, 300)
     })
   }
 }

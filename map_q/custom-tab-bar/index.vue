@@ -46,6 +46,11 @@ export default {
         const route = '/' + page.route
         const idx = this.list.findIndex(i => i.pagePath === route)
         this.selectedIndex = idx >= 0 ? idx : 0
+        // 记录当前选中的 Tab，供 plus 页返回使用
+        try {
+          const app = getApp()
+          if (app && app.globalData) app.globalData.prevTabPath = route
+        } catch (e2) {}
       } catch (e) {
         // 兼容H5或非微信小程序环境
         this.selectedIndex = 0
@@ -53,8 +58,22 @@ export default {
     },
     onTap(item, index) {
       if (item.type === 'publish') {
-        // 直接触发全局弹窗，不进行页面跳转
-        uni.$emit('showPublishOverlay')
+        // 仅在点击“+”时触发弹窗：优先直接驱动 App.vue 响应式状态
+        try {
+          const app = getApp()
+          if (app && app.$vm && typeof app.$vm.showPublishOverlay !== 'undefined') {
+            app.$vm.showPublishOverlay = true
+            if (app.globalData) app.globalData.showPublishOverlay = true
+            return
+          }
+        } catch (e) {}
+        // 备选：事件总线（若上面不可用）
+        try { uni.$emit('showPublishOverlay') } catch (e2) {}
+        // 最终兜底：写入全局标记，页面挂载点将轮询同步
+        try {
+          const app = getApp()
+          if (app && app.globalData) app.globalData.showPublishOverlay = true
+        } catch (e3) {}
         return
       }
       if (index !== this.selectedIndex) {

@@ -103,7 +103,7 @@ export default {
   background-color: rgba(0, 0, 0, 0.5);
   opacity: 0;
   transition: opacity 0.3s ease;
-  z-index: 1004; /* Ensure it's above the tab bar */
+  z-index: 10050; /* Ensure it's above the custom tab bar */
   pointer-events: none;
 }
 

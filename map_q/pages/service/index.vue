@@ -35,6 +35,8 @@
       @content-tap="handleContentTap"
       @reserve="handleReserve"
     />
+    <!-- 全局发布弹窗挂载点 -->
+    <GlobalOverlayHost />
   </view>
 </template>
 
@@ -43,6 +45,7 @@ import { onReady, onShow } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import MapBackground from '../../components/map/MapBackground.vue'
 import ContentArea from '../../components/content/ContentArea.vue'
+import GlobalOverlayHost from '../../components/common/GlobalOverlayHost.vue'
 import { useServiceLayout } from './composables/useServiceLayout.js'
 import { useServiceCategory } from './composables/useServiceCategory.js'
 import { useServiceMapData } from './composables/useServiceMapData.js'
@@ -50,7 +53,8 @@ import { useServiceMapData } from './composables/useServiceMapData.js'
 export default {
   components: {
     MapBackground,
-    ContentArea
+    ContentArea,
+    GlobalOverlayHost
   },
   
   setup() {

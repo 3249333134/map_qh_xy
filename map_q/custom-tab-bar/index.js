@@ -35,6 +35,12 @@ Component({
             const route = this.normalize(page.route);
             const idx = this.data.list.findIndex(i => this.normalize(i.pagePath) === route);
             this.setData({ selected: idx >= 0 ? idx : 0 });
+
+            // 记录当前选中的 Tab，供 plus 页返回使用
+            try {
+              const app = getApp();
+              if (app && app.globalData) app.globalData.prevTabPath = route;
+            } catch (e2) {}
         } catch (e) {
             this.setData({ selected: 0 });
         }
@@ -53,16 +59,29 @@ Component({
             return;
         }
 
-        // 中间“发布”：仅弹窗，不切页
+        // 中间“发布”：仅触发弹窗，不进行页面跳转
         if (index === Number(this.data.publishIndex)) {
+            // 仅在点击“+”时触发弹窗：优先直接驱动 App.vue 响应式状态
+            try {
+                const app = getApp();
+                if (app && app.$vm && typeof app.$vm.showPublishOverlay !== 'undefined') {
+                    app.$vm.showPublishOverlay = true;
+                    // 同步全局标记，供页面挂载点感知
+                    if (app.globalData) app.globalData.showPublishOverlay = true;
+                    return;
+                }
+            } catch (err) {}
+            // 备选：事件总线（若上面不可用）
             try {
                 if (typeof uni !== 'undefined' && uni.$emit) {
                     uni.$emit('showPublishOverlay');
                 }
-            } catch (err) {
+            } catch (err2) {}
+            // 最终兜底：写入全局标记，页面挂载点将轮询同步
+            try {
                 const app = getApp();
                 if (app && app.globalData) app.globalData.showPublishOverlay = true;
-            }
+            } catch (e3) {}
             return;
         }
 

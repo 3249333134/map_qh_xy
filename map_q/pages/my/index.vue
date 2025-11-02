@@ -101,12 +101,15 @@
         </scroll-view>
       </view>
     </view>
+    <!-- 全局发布弹窗挂载点 -->
+    <GlobalOverlayHost />
   </view>
 </template>
 
 <script>
 import { ref, onMounted, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import GlobalOverlayHost from '../../components/common/GlobalOverlayHost.vue'
 // 导入组件
 import ProfileSection from './components/ProfileSection.vue'
 import ContentSection from './components/ContentSection.vue'
@@ -122,7 +125,7 @@ import { useMyOverlay } from './composables/useMyOverlay.js'
 
 export default {
   name: 'MyPage',
-  components: { ProfileSection, ContentSection, LocationModule, DateModule, FavoriteModule, CardItem, ServiceCardItem },
+  components: { ProfileSection, ContentSection, LocationModule, DateModule, FavoriteModule, CardItem, ServiceCardItem, GlobalOverlayHost },
   setup() {
     // 页面就绪状态
     const isPageReady = ref(false)
