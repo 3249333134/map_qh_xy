@@ -2,30 +2,18 @@
   <view class="publish-overlay" :class="{ active: show }" @click="close">
     <view class="menu-arc-container" @click.stop>
       <view class="menu-item item-1" @click="handleItemClick('sandbox')">
-        <view class="icon-wrapper">
-          <image src="/static/tabbar/service.png" class="menu-icon" />
-        </view>
-        <text class="menu-text">沙盒</text>
+        <view class="rect-btn rect-small"><text class="btn-text">沙盒</text></view>
       </view>
       <view class="menu-item item-2" @click="handleItemClick('publish')">
-        <view class="icon-wrapper">
-          <image src="/static/tabbar/publish-icon.png" class="menu-icon" />
-        </view>
-        <text class="menu-text">发布</text>
+        <view class="rect-btn rect-large"><text class="btn-text">发布</text></view>
       </view>
       <view class="menu-item item-3" @click="handleItemClick('original-ip')">
-        <view class="icon-wrapper">
-          <image src="/static/tabbar/my.png" class="menu-icon" />
-        </view>
-        <text class="menu-text">原创IP</text>
+        <view class="rect-btn rect-small"><text class="btn-text">原创IP</text></view>
       </view>
-      <!-- 中央凹口遮罩，使半圆底部呈现凹形效果 -->
-      <view class="arc-notch-mask" />
+      <!-- 移除半圆的凹口遮罩，改用圆角矩形背景 -->
     </view>
     <view class="close-button-container" @click.stop="close">
-      <view class="close-button">
-        <image src="/static/tabbar/close.png" class="close-icon" />
-      </view>
+      <view class="close-button" />
     </view>
   </view>
 </template>
@@ -105,6 +93,8 @@ export default {
   transition: opacity 0.3s ease;
   z-index: 10050; /* Ensure it's above the custom tab bar */
   pointer-events: none;
+  /* 中间关闭按钮的水平微调（向右为正） */
+  --close-x-offset: 0.5px;
 }
 
 .publish-overlay.active {
@@ -114,42 +104,50 @@ export default {
 
 .menu-arc-container {
   position: absolute;
-  bottom: 30px; /* Adjust as needed */
-  left: 50%;
-  transform: translateX(-50%);
-  width: 300px; /* Diameter of the arc */
-  height: 150px; /* Half the diameter */
-  border-top-left-radius: 150px;
-  border-top-right-radius: 150px;
-  background: radial-gradient(circle at 50% 100%, rgba(35, 35, 37, 0.96), rgba(48, 48, 52, 0.88));
+  /* 让矩形覆盖你框出的大区域：上边距和下边距可调 */
+  top: 110px;
+  /* 底边对齐到关闭按钮圆心（close: bottom 30px, 半径 28px => 58px）*/
+  bottom: 58px;
+  left: 8px;
+  right: 8px;
+  border-radius: 24px; /* 圆角 */
+  background: linear-gradient(180deg, rgba(40,42,46,0.95) 0%, rgba(52,54,58,0.9) 100%);
   box-shadow: 0 -6px 22px rgba(0, 0, 0, 0.22);
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding-top: 24px;
-  transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-  transform-origin: bottom center;
-  transform: translateX(-50%) scale(0.5);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  justify-items: center;
+  align-items: center;
+  align-content: end; /* 将两排按钮整体压到容器底部 */
+  row-gap: 10px;
+  column-gap: 3px;
+  /* 将列间距同时作为切口居中参考 */
+  --inner-gap: 3px;
+  padding: 24px 24px 10px 24px; /* 底部内边距缩小，贴近关闭按钮 */
+  --bottom-pad: 10px;          /* 下方按钮到底部灰色区域的距离（与上面 padding 底值一致） */
+  transition: transform 0.3s ease;
+  transform-origin: center;
+  transform: scale(0.96);
   overflow: visible;
+  /* 切割圆参数（用于底部两个按钮“被圆切割”真实挖孔） */
+  --cut-size: 72px;            /* 扩散更明显：圆直径稍大 */
+  --corner-x-offset: calc(var(--inner-gap) / 2);      /* 让左右切口以中缝为中心对齐 */
+  --cut-y-offset: var(--bottom-pad); /* 竖直对齐到“+”圆心：从中心向外扩散 */
 }
 
-.publish-overlay.active .menu-arc-container {
-  transform: translateX(-50%) scale(1);
-}
+.publish-overlay.active .menu-arc-container { transform: scale(1); }
 
-/* 顶部粉紫色光晕边缘 */
+/* 顶部轻微光晕（适配圆角矩形） */
 .menu-arc-container::before {
   content: '';
   position: absolute;
-  top: -6px;
-  left: -6px;
-  right: -6px;
-  height: 156px;
-  border-top-left-radius: 156px;
-  border-top-right-radius: 156px;
-  background: radial-gradient( 90px 60px at 85% 100%, rgba(255, 105, 180, 0.45), transparent 70% ),
-              radial-gradient( 90px 60px at 15% 100%, rgba(255, 105, 180, 0.45), transparent 70% );
-  filter: blur(10px);
+  inset: -6px -6px auto -6px;
+  height: 100px;
+  border-radius: 28px;
+  background: radial-gradient( 160px 100px at 80% 0%, rgba(255, 105, 180, 0.35), transparent 78% ),
+              radial-gradient( 160px 100px at 50% 0%, rgba(255, 105, 180, 0.35), transparent 78% ),
+              radial-gradient( 160px 100px at 20% 0%, rgba(255, 105, 180, 0.35), transparent 78% );
+  filter: blur(12px);
   pointer-events: none;
 }
 
@@ -169,46 +167,55 @@ export default {
 }
 
 .menu-item {
-  position: absolute;
+  position: relative; /* 在矩形容器内按网格布局 */
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   cursor: pointer;
-  transition: transform 0.3s ease;
 }
 
-.icon-wrapper {
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
-  background-color: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 8px;
+/* 新的矩形按钮样式 */
+.rect-btn {
+  width: 100%;
+  min-width: 120px;
+  background: rgba(255,255,255,0.92);
+  color: #222;
+  border-radius: 12px;
   box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rect-large { height: 80px; font-size: 16px; font-weight: 600; }
+.rect-small { height: 54px; font-size: 15px; }
+.btn-text { color: #222; }
+
+/* 取消沿弧线的定位，改为矩形内水平分布 */
+.item-1, .item-2, .item-3 { transform: none; }
+/* 发布单独占据上排并居中，沙盒/原创位于下排左右 */
+.item-2 { grid-row: 1; grid-column: 1 / span 2; }
+.item-1 { grid-row: 2; grid-column: 1; }
+.item-3 { grid-row: 2; grid-column: 2; }
+
+/* 在底部两个按钮上使用 mask 真实“挖孔”，显示后方背景 */
+.item-1 .rect-btn {
+  -webkit-mask-image:
+    radial-gradient(circle calc(var(--cut-size) / 2) at calc(100% + var(--corner-x-offset)) calc(100% + var(--cut-y-offset)), transparent 98%, #000 100%);
+  mask-image:
+    radial-gradient(circle calc(var(--cut-size) / 2) at calc(100% + var(--corner-x-offset)) calc(100% + var(--cut-y-offset)), transparent 98%, #000 100%);
+}
+.item-3 .rect-btn {
+  -webkit-mask-image:
+    radial-gradient(circle calc(var(--cut-size) / 2) at calc(0% - var(--corner-x-offset)) calc(100% + var(--cut-y-offset)), transparent 98%, #000 100%);
+  mask-image:
+    radial-gradient(circle calc(var(--cut-size) / 2) at calc(0% - var(--corner-x-offset)) calc(100% + var(--cut-y-offset)), transparent 98%, #000 100%);
 }
 
-.menu-icon {
-  width: 30px;
-  height: 30px;
-}
-
-.menu-text {
-  color: white;
-  font-size: 12px;
-}
-
-/* Positioning items along the arc */
-.item-1 { transform: rotate(-55deg) translate(120px) rotate(55deg); }
-.item-2 { transform: translate(0, -28px); } /* Center item */
-.item-3 { transform: rotate(55deg) translate(120px) rotate(-55deg); }
-
-/* 弹出动效：图标轻微放大回弹，文本淡入 */
-.publish-overlay.active .item-1 .icon-wrapper { animation: popIn 280ms both 60ms; }
-.publish-overlay.active .item-2 .icon-wrapper { animation: popIn 280ms both 120ms; }
-.publish-overlay.active .item-3 .icon-wrapper { animation: popIn 280ms both 180ms; }
-.publish-overlay.active .menu-text { animation: fadeUp 220ms both 160ms; }
+/* 弹出动效：矩形轻微放大回弹，文本淡入 */
+.publish-overlay.active .item-2 .rect-btn { animation: popIn 280ms both 60ms; }
+.publish-overlay.active .item-1 .rect-btn { animation: popIn 280ms both 120ms; }
+.publish-overlay.active .item-3 .rect-btn { animation: popIn 280ms both 180ms; }
 
 @keyframes popIn {
   0% { transform: scale(0.6); opacity: 0; }
@@ -224,7 +231,7 @@ export default {
     position: absolute;
     bottom: 30px; /* Match the arc container's bottom */
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(calc(-50% + var(--close-x-offset, 4px)));
     width: 56px;
     height: 56px;
     border-radius: 50%;
@@ -239,7 +246,7 @@ export default {
 }
 
 .publish-overlay.active .close-button-container {
-    transform: translateX(-50%) rotate(45deg);
+    transform: translateX(calc(-50% + var(--close-x-offset, 4px)));
 }
 
 .close-button {
@@ -248,10 +255,20 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
 }
 
-.close-icon {
+/* 使用伪元素绘制白色“✕” */
+.close-button::before,
+.close-button::after {
+  content: '';
+  position: absolute;
   width: 26px;
-  height: 26px;
+  height: 3px;
+  background: #ffffff;
+  border-radius: 2px;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.25);
 }
+.close-button::before { transform: rotate(45deg); }
+.close-button::after { transform: rotate(-45deg); }
 </style>

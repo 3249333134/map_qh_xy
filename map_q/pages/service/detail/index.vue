@@ -156,6 +156,12 @@ export default {
       safeBottomRpx: 0,
       // 视觉微调量：为不同平台做 2~4rpx 的细微修正
       microAdjustRpx: 0,
+      // 整体抬高量（不再使用，改为直接压缩可视高度）
+      raiseRpx: 0,
+      // 底部安全区上限：避免过度留白（rpx）
+      safeBottomCapRpx: 32,
+      // 额外底部内边距：确保文字高于中间黑色横条
+      bottomExtraRpx: 0,
       // 底部操作栏内容整体下移偏移（rpx），用于微调视觉位置
       contentOffsetRpx: 0,
       // 评论数据（与首页详情页一致）
@@ -207,13 +213,18 @@ export default {
     },
     // 计算：占位高度与底部栏样式
     placeholderHeightRpx() {
-      return this.tabHeightRpx + this.safeBottomRpx
+      // 使用压缩并设定上限后的安全区，确保滚动内容不被遮挡但不过度留白
+      const compactSafe = Math.min(Math.max(0, this.safeBottomRpx - 10), this.safeBottomCapRpx)
+      return (this.tabHeightRpx - 2) + compactSafe
     },
     bottomActionsStyle() {
-      const topPad = 8 + (this.contentOffsetRpx || 0)
+      // 更薄的顶部内边距，压缩底部安全区留白并设上限
+      const topPad = (2 + (this.microAdjustRpx || 0) + (this.contentOffsetRpx || 0))
+      const compactSafe = Math.min(Math.max(0, this.safeBottomRpx - 10), this.safeBottomCapRpx)
       return {
-        height: this.tabHeightRpx + 'rpx',
-        padding: `${topPad}rpx 16rpx ${this.safeBottomRpx}rpx`
+        // 整体高度略小于系统 TabBar，使视觉更薄
+        height: (this.tabHeightRpx - 2) + 'rpx',
+        padding: `${topPad}rpx 12px ${compactSafe}rpx`
       }
     }
   },
@@ -546,14 +557,14 @@ export default {
 
 .action-cta {
   flex: 1;
-  height: 68rpx;
-  line-height: 68rpx;
+  height: 56rpx;
+  line-height: 56rpx;
   text-align: center;
   background: #ff4d4f;
   color: #fff;
   border: none;
-  border-radius: 48rpx;
-  font-size: 30rpx;
+  border-radius: 44rpx;
+  font-size: 28rpx;
   font-weight: 700;
 }
 .comments-fullbleed { margin-left: -22rpx; margin-right: -22rpx; }

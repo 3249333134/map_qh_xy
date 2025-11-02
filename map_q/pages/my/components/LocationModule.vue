@@ -92,12 +92,14 @@ export default {
       default: 0.6667 // 将卡片缩放到当前大小的 1/3（原始尺寸的 2/3）
     }
   },
-  data() {
-    return {
-      isMapReady: false,
-      includePadding: { left: 20, right: 20, top: 20, bottom: 0 },
-      hasTappedOnce: false,
-      _initDone: false,
+    data() {
+      return {
+        isMapReady: false,
+        includePadding: { left: 20, right: 20, top: 20, bottom: 0 },
+        hasTappedOnce: false,
+        _initDone: false,
+        // 缩放结束后的延迟刷新定时器，避免需要再拖动才更新
+        _pendingRefreshTimer: null,
       // 点击判定阈值（像素与毫秒）
       _tapThresholdPx: 12,
       _tapThresholdMs: 200,
@@ -118,13 +120,19 @@ export default {
       // 新增：地图点击资格判定（由 map touchend 判定）
       _mapTapEligible: false,
       _lastMapTouchEnd: 0,
-      // 新增：MapContext 和缩放/视野状态
-      mapCtx: null,
-      currentScale: null,
-      currentRegion: null,
-      showAllThresholdScale: 8,
-    }
-  },
+        // 新增：MapContext 和缩放/视野状态
+        mapCtx: null,
+        currentScale: null,
+        currentRegion: null,
+        // 提升解除聚合的缩放门槛：更高的缩放才完全散开
+        showAllThresholdScale: 13,
+        // 新增：按“初始缩放 + 差值”解除聚合（比例控制）
+        initialScale: null,
+        initialMaxDistanceKm: 0,
+        // 在初始缩放基础上再放大多少级完全散开（可调）
+        unclusterDelta: 2,
+      }
+    },
   
   mounted() {
     // 延迟初始化地图，避免过早调用
@@ -152,12 +160,24 @@ export default {
     // 添加mapCenter计算属性
     mapCenter() {
       if (this.userLocations && this.userLocations.length > 0) {
-        const totalLat = this.userLocations.reduce((sum, loc) => sum + loc.latitude, 0)
-        const totalLng = this.userLocations.reduce((sum, loc) => sum + loc.longitude, 0)
+        // 基于最远两点（用包围盒对角线近似）计算初始缩放
+        const lats = this.userLocations.map(l => l.latitude)
+        const lngs = this.userLocations.map(l => l.longitude)
+        const minLat = Math.min(...lats)
+        const maxLat = Math.max(...lats)
+        const minLng = Math.min(...lngs)
+        const maxLng = Math.max(...lngs)
+        const centerLat = (minLat + maxLat) / 2
+        const centerLng = (minLng + maxLng) / 2
+        const diagKm = this.computeDistanceKm(minLat, minLng, maxLat, maxLng)
+        const initScale = this.distanceToScale(diagKm)
+        // 记录初始距离与缩放，供后续比例控制聚合
+        this.initialMaxDistanceKm = diagKm
+        this.initialScale = initScale
         return {
-          latitude: totalLat / this.userLocations.length,
-          longitude: totalLng / this.userLocations.length,
-          scale: this.userLocations.length > 3 ? 8 : 12  // 根据地点数量调整缩放级别
+          latitude: centerLat,
+          longitude: centerLng,
+          scale: initScale
         }
       }
       return {
@@ -184,8 +204,11 @@ export default {
           return true
         }
       }) : locs
-      // 解除聚合条件：达到缩放阈值，或当前视野已足够小
-      if ((scale != null && scale >= this.showAllThresholdScale) || this.isSmallRegion(region)) {
+      // 解除聚合条件：达到“初始缩放 + 差值”，或当前视野已足够小
+      const unclusterScale = (typeof this.initialScale === 'number' && !Number.isNaN(this.initialScale))
+        ? (this.initialScale + (this.unclusterDelta || 2))
+        : this.showAllThresholdScale
+      if ((scale != null && scale >= unclusterScale) || this.isSmallRegion(region)) {
         return inView.map(l => ({ ...l, clusterCount: 0 }))
       }
       const { latSize, lngSize, swLat, swLng } = this.getCellSizesForScale(scale)
@@ -422,6 +445,16 @@ export default {
           if (typeof newScale === 'number' && !Number.isNaN(newScale)) {
             this.currentScale = parseInt(newScale, 10)
             console.log('[Map] currentScale(event) =', this.currentScale)
+            // 立即用近似方法更新当前视野，避免必须再拖动才刷新聚合
+            const center = this.currentRegion
+              ? {
+                  latitude: (this.currentRegion.southwest.latitude + this.currentRegion.northeast.latitude) / 2,
+                  longitude: (this.currentRegion.southwest.longitude + this.currentRegion.northeast.longitude) / 2
+                }
+              : { latitude: this.mapCenter.latitude, longitude: this.mapCenter.longitude }
+            this.currentRegion = this.approximateRegionFromScale(center.latitude, center.longitude, this.currentScale)
+            // 触发重新计算
+            this.$forceUpdate()
           }
           this.updateScaleAndRegion()
         }
@@ -467,8 +500,8 @@ export default {
         if (!r || !r.southwest || !r.northeast) return false
         const latSpan = Math.abs((r.northeast.latitude ?? 0) - (r.southwest.latitude ?? 0))
         const lngSpan = Math.abs((r.northeast.longitude ?? 0) - (r.southwest.longitude ?? 0))
-        // 收紧阈值：更接近街区/楼宇级别时才解除聚合
-        return latSpan <= 0.03 && lngSpan <= 0.03
+        // 收紧阈值：仅在极小视野（接近街区/楼宇级别）时才解除聚合
+        return latSpan <= 0.01 && lngSpan <= 0.01
       } catch (_) {
         return false
       }
@@ -514,6 +547,58 @@ export default {
       const n = (typeof count === 'number') ? count : (parseInt(count, 10) || 0)
       const total = n + 1
       return total > 99 ? '99+' : String(total)
+    },
+    // 新增：根据经纬度计算两点球面距离（公里）
+    computeDistanceKm(lat1, lng1, lat2, lng2) {
+      const toRad = (d) => (d * Math.PI) / 180
+      const R = 6371 // 地球半径 km
+      const dLat = toRad(lat2 - lat1)
+      const dLng = toRad(lng2 - lng1)
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+      return R * c
+    },
+    // 新增：按距离映射到微信地图缩放级别的经验函数
+    // 近似规则：远距用低缩放，近距用高缩放
+    distanceToScale(distKm) {
+      const d = Math.max(0, distKm || 0)
+      if (d > 1000) return 4
+      if (d > 400) return 5
+      if (d > 200) return 6
+      if (d > 100) return 8
+      if (d > 50) return 10
+      if (d > 20) return 12
+      if (d > 8) return 13
+      if (d > 3) return 14
+      if (d > 1) return 15
+      if (d > 0.3) return 16
+      return 17
+    },
+    // 新增：根据缩放级别近似一个视野范围（避免依赖异步 getRegion）
+    approximateRegionFromScale(centerLat, centerLng, scale) {
+      const span = this.getApproxSpanForScale(scale || 10)
+      const halfLat = span.lat / 2
+      const halfLng = span.lng / 2
+      return {
+        southwest: { latitude: centerLat - halfLat, longitude: centerLng - halfLng },
+        northeast: { latitude: centerLat + halfLat, longitude: centerLng + halfLng }
+      }
+    },
+    // 新增：缩放到经纬度跨度的近似映射（经验值）
+    getApproxSpanForScale(s) {
+      const ss = parseInt(s, 10) || 10
+      if (ss <= 4) return { lat: 35, lng: 35 }
+      if (ss <= 5) return { lat: 20, lng: 20 }
+      if (ss <= 6) return { lat: 12, lng: 12 }
+      if (ss <= 8) return { lat: 8, lng: 8 }
+      if (ss <= 10) return { lat: 3, lng: 3 }
+      if (ss <= 12) return { lat: 1.2, lng: 1.2 }
+      if (ss <= 13) return { lat: 0.5, lng: 0.5 }
+      if (ss <= 14) return { lat: 0.2, lng: 0.2 }
+      if (ss <= 15) return { lat: 0.08, lng: 0.08 }
+      if (ss <= 16) return { lat: 0.03, lng: 0.03 }
+      if (ss <= 17) return { lat: 0.015, lng: 0.015 }
+      return { lat: 0.008, lng: 0.008 }
     }
   },
 }

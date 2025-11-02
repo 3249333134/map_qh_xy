@@ -51,8 +51,10 @@ export default {
     },
     bottomActionsStyle() {
       return {
-        height: this.tabHeightRpx + 'rpx',
-        padding: `${8 + this.microAdjustRpx}rpx 12px ${this.safeBottomRpx}rpx`
+        // 略微缩小视觉高度，向下调整约 8rpx
+        height: (this.tabHeightRpx - 8) + 'rpx',
+        // 减小顶部内边距，保留底部安全区内边距
+        padding: `${4 + this.microAdjustRpx}rpx 12px ${this.safeBottomRpx}rpx`
       }
     }
   },
@@ -93,6 +95,7 @@ export default {
   padding: 8px 12px; /* 具体 padding-bottom 由 bottomActionsStyle 接管 */
   background-color: #fff;
   border-top: 1px solid #f0f0f0;
+  box-sizing: border-box;
   z-index: 999;
 }
 .action-left { flex: 1; }
@@ -101,7 +104,7 @@ export default {
   align-items: center;
   background: #f5f5f5;
   border-radius: 18px;
-  padding: 6px 10px;
+  padding: 4px 10px;
 }
 .user-avatar {
   width: 24px; height: 24px;
