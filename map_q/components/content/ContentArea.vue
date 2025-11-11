@@ -25,26 +25,37 @@
             confirm-type="search"
             @input="onSearchInput"
           />
+          <!-- 图二模式：将橙红色按钮放到搜索栏最右侧 -->
+          <view 
+            v-if="isCollapsed" 
+            class="search-action" 
+            @tap="onRightActionTap"
+          ></view>
         </view>
       </view>
     </view>
     
-    <!-- 分类选项卡 -->
-    <scroll-view 
-      class="category-tabs" 
-      scroll-x 
-      show-scrollbar="false"
-      v-if="!isCollapsed"
-    >
-      <view 
-        v-for="category in categories" 
-        :key="category.id"
-        :class="['category-tab', { active: category.id === activeCategory }]"
-        @tap="onCategoryChange(category.id)"
+    <!-- 分类选项卡（右侧按钮固定） -->
+    <view class="category-tabs-wrap" v-if="!isCollapsed">
+      <scroll-view 
+        class="category-tabs" 
+        scroll-x 
+        show-scrollbar="false"
       >
-        {{ category.name }}
-      </view>
-    </scroll-view>
+        <view 
+          v-for="category in categories" 
+          :key="category.id"
+          :class="['category-tab', { active: category.id === activeCategory }]"
+          @tap="onCategoryChange(category.id)"
+        >
+          {{ category.name }}
+        </view>
+        <!-- 预留右侧空间，避免被固定按钮遮挡 -->
+        <view class="category-tabs-spacer"></view>
+      </scroll-view>
+      <!-- 右侧橙红色按钮（固定在最右侧） -->
+      <view class="category-action-fixed" @tap="onRightActionTap"></view>
+    </view>
     
     <!-- 卡片内容区 -->
     <scroll-view 
@@ -246,6 +257,14 @@ export default {
     }
   },
   methods: {
+    onLeftOutlineTap() {
+      // 左侧线框点击占位：可在此触发筛选或自定义行为
+      this.$emit('left-outline-tap')
+    },
+    onRightActionTap() {
+      // 右侧按钮点击占位：可在此触发发布或快捷操作
+      this.$emit('right-action-tap')
+    },
     // 获取当前滚动位置
     getCurrentScrollPosition() {
       // 获取scroll-view的滚动位置
@@ -535,19 +554,48 @@ export default {
   font-size: 14px;
 }
 
+/* 图二模式：放到搜索栏右侧的橙红色按钮 */
+.search-action {
+  width: 48px;
+  height: 34px;
+  border-radius: 10px;
+  margin-left: 8px;
+  background: radial-gradient(circle at 50% 40%, #ff8a3d 0%, #ff6b35 60%, #ff4757 100%);
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(255, 71, 87, 0.25), 0 2px 8px rgba(255, 107, 53, 0.2);
+  box-sizing: border-box;
+}
+
 .category-tabs {
   display: flex;
+  flex-wrap: nowrap;
   white-space: nowrap;
-  padding: 10px 15px;
+  padding: 2px 9px;
+  align-items: center; /* 垂直居中，统一行内高度感受 */
   border-bottom: 1px solid #eee;
 }
 
-.category-tab {
+/* 包裹层用于固定右侧按钮 */
+.category-tabs-wrap {
+  position: relative;
+  margin-top: -10px; /* 整体下移一点，拉开与搜索框的间距 */
+}
+
+/* 右侧预留空间，避免内容被固定按钮覆盖 */
+.category-tabs-spacer {
   display: inline-block;
-  padding: 8px 15px;
+  width: 52px; /* 与固定按钮宽度+间距一致 */
+  height: 34px; /* 与右侧固定按钮保持一致高度 */
+}
+
+.category-tab {
+  display: inline-flex; /* 使内容垂直居中并可设定固定高度 */
+  align-items: center;
+  height: 34px; /* 与右侧固定按钮一致 */
+  padding: 0 15px; /* 保持原横向留白，去除垂直内边距影响高度 */
   margin-right: 10px;
-  font-size: 14px;
-  border-radius: 20px;
+  font-size: 14px; /* 保持字号不变 */
+  border-radius: 17px; /* 与高度匹配的圆角 */
   background-color: #f0f0f0;
   color: #666;
 }
@@ -591,5 +639,21 @@ export default {
   padding: 15px 0;
   color: #999;
   font-size: 12px;
+}
+
+/* 右侧橙红色按钮样式（与底部“+”按钮统一色系） */
+.category-action-fixed {
+  position: absolute;
+  right: 15px; /* 与 tabs 的内边距右侧一致 */
+  top: calc(50% + 6px); /* 稍微下移以贴合视觉中心 */
+  transform: translateY(-50%);
+  width: 48px;
+  height: 34px;
+  border-radius: 10px;
+  background: radial-gradient(circle at 50% 40%, #ff8a3d 0%, #ff6b35 60%, #ff4757 100%);
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(255, 71, 87, 0.25), 0 2px 8px rgba(255, 107, 53, 0.2);
+  box-sizing: border-box;
+  z-index: 2;
 }
 </style>
