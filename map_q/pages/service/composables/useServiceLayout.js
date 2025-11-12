@@ -48,17 +48,30 @@ export function useServiceLayout() {
     }
   }
   
+  // 统一事件坐标读取
+  const getClientY = (e) => {
+    const d = (e && e.detail) ? e.detail : e || {}
+    const t = (d && d.touches && d.touches[0]) ? d.touches[0]
+      : (d && d.changedTouches && d.changedTouches[0]) ? d.changedTouches[0]
+      : null
+    if (t && typeof t.clientY === 'number') return t.clientY
+    if (t && typeof t.pageY === 'number') return t.pageY
+    if (typeof d.clientY === 'number') return d.clientY
+    if (typeof d.pageY === 'number') return d.pageY
+    return 0
+  }
+
   // 拖拽处理
   const handleDragStart = (e) => {
     isDragging.value = true
-    dragStartY.value = e.touches[0].clientY
+    dragStartY.value = getClientY(e)
     dragStartHeight.value = contentHeight.value
   }
   
   const handleDrag = (e) => {
     if (!isDragging.value) return
     
-    const currentY = e.touches[0].clientY
+    const currentY = getClientY(e)
     const deltaY = dragStartY.value - currentY
     
     let newHeight = dragStartHeight.value + deltaY

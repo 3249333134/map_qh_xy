@@ -1,14 +1,17 @@
 <template>
   <view 
     class="content-area" 
+    :class="{ collapsed: isCollapsed }"
     :style="{ height: height + 'px', bottom: (bottomOffset || 0) + 'px' }"
   >
     <!-- 拖动区域（包含拖动条和搜索框） -->
     <view 
       class="drag-area"
+      catchtouchmove="true"
       @touchstart="onDragStart"
-      @touchmove="onDrag"
+      @touchmove.stop.prevent="onDrag"
       @touchend="onDragEnd"
+      @touchcancel="onDragEnd"
     >
       <!-- 拖动条 -->
       <view class="drag-handle" v-if="!isCollapsed">
@@ -16,27 +19,35 @@
       </view>
       
       <!-- 搜索框 -->
-      <view class="search-box">
-        <view class="search-input-wrapper">
+      <view class="search-box" catchtouchmove="true" @touchstart="onDragStart" @touchmove.stop.prevent="onDrag" @touchend="onDragEnd" @touchcancel="onDragEnd">
+        <view class="search-input-wrapper" :class="{ collapsed: isCollapsed }" :style="isCollapsed ? collapsedSearchStyle : {}" @tap.stop="onSearchTap">
           <text class="search-icon">🔍</text>
           <input 
             class="search-input" 
             placeholder="搜索" 
             confirm-type="search"
             @input="onSearchInput"
+            @focus="onSearchFocus"
           />
-          <!-- 图二模式：将橙红色按钮放到搜索栏最右侧 -->
-          <view 
-            v-if="isCollapsed" 
-            class="search-action" 
-            @tap="onRightActionTap"
-          ></view>
         </view>
+        <!-- 折叠态：按钮保持在搜索框容器右侧（不嵌入输入框） -->
+        <view 
+          v-if="isCollapsed" 
+          class="search-action-fixed" 
+          :class="{ expanded: categoryActionExpanded }"
+          :style="categoryActionExpanded ? { left: (collapsedSearchWidth + collapsedGap) + 'px', right: '0px' } : {}"
+          catchtouchmove="true"
+          @tap.stop="onRightActionTap"
+          @touchstart="onDragStart"
+          @touchmove.stop.prevent="onDrag"
+          @touchend="onDragEnd"
+          @touchcancel="onDragEnd"
+        ></view>
       </view>
     </view>
     
-    <!-- 分类选项卡（右侧按钮固定） -->
-    <view class="category-tabs-wrap" v-if="!isCollapsed">
+    <!-- 分类选项卡（右侧按钮固定，可展开覆盖除“全部”外的区域） -->
+    <view class="category-tabs-wrap" v-if="!isCollapsed" :class="{ expanded: categoryActionExpanded }" catchtouchmove="true" @touchstart="onDragStart" @touchmove.stop.prevent="onDrag" @touchend="onDragEnd" @touchcancel="onDragEnd">
       <scroll-view 
         class="category-tabs" 
         scroll-x 
@@ -53,8 +64,17 @@
         <!-- 预留右侧空间，避免被固定按钮遮挡 -->
         <view class="category-tabs-spacer"></view>
       </scroll-view>
-      <!-- 右侧橙红色按钮（固定在最右侧） -->
-      <view class="category-action-fixed" @tap="onRightActionTap"></view>
+      <!-- 右侧橙红色按钮（固定在最右侧；展开时覆盖除“全部”外的区域） -->
+      <view 
+        class="category-action-fixed" 
+        catchtouchmove="true"
+        @tap.stop="onRightActionTap"
+        @touchstart="onDragStart"
+        @touchmove.stop.prevent="onDrag"
+        @touchend="onDragEnd"
+        @touchcancel="onDragEnd"
+        :style="categoryActionExpanded ? { left: expandedLeft + 'px', right: '15px' } : {}"
+      ></view>
     </view>
     
     <!-- 卡片内容区 -->
@@ -65,6 +85,7 @@
       @scroll="onScroll"
       :scroll-top="scrollTop"
       :scroll-with-animation="scrollWithAnimation"
+      :style="{ height: cardsContainerHeight + 'px' }"
       v-if="!isCollapsed"
     >
       <view class="cards-grid">
@@ -209,8 +230,43 @@ export default {
       // 添加一个对象来跟踪哪些分类已经被访问过
       visitedCategories: {},
       // 添加加载更多的防抖定时器
-      loadMoreTimer: null
+      loadMoreTimer: null,
+      // 分类右侧按钮展开态（覆盖除“全部”外的区域）
+      categoryActionExpanded: false,
+      // 展开时的左起始位置（紧贴“全部”按钮右缘）
+      expandedLeft: 0,
+      collapsedSearchWidth: 76,
+      collapsedGap: 8,
+      collapsedButtonWidth: 48,
+      userToggledAction: false,
+      resetExpandOnExitCollapse: false,
+      storageKeyCategoryAction: 'contentArea.categoryActionExpanded',
+      // 分类栏近似高度（含上下间距），用于计算内容区高度
+      tabsHeightApprox: 50,
+      // 顶部区域实际高度（拖动区 + 分类栏），更精确计算内容区高度
+      topAreaHeight: 0,
+      // 为避免测量误差造成底部细缝，增加少量补偿
+      fillCompensation: 10
     }
+  },
+  mounted() {
+    // 挂载后测量分类栏的高度，提高卡片容器高度计算的准确度
+    this.$nextTick(() => {
+      this.updateTabsHeightApprox()
+      this.updateTopAreaHeight()
+    })
+
+    try {
+      const persisted = uni.getStorageSync(this.storageKeyCategoryAction)
+      if (typeof persisted === 'boolean') {
+        this.categoryActionExpanded = persisted
+        if (persisted) {
+          this.$nextTick(() => {
+            this.updateExpandedLeft()
+          })
+        }
+      }
+    } catch (e) {}
   },
   created() {
     // 假设默认分类是'all'，将其标记为已访问
@@ -227,6 +283,34 @@ export default {
         })
       },
       deep: true
+    },
+    // 组件高度变化时，重新测量顶部区域，避免出现底部空隙
+    height() {
+      this.$nextTick(() => {
+        this.updateTabsHeightApprox()
+        this.updateTopAreaHeight()
+        if (!this.isCollapsed && this.categoryActionExpanded) {
+          this.updateExpandedLeft()
+        }
+      })
+    },
+    // 折叠态切换时重新测量顶部区域
+    isCollapsed() {
+      this.$nextTick(() => {
+        this.updateTopAreaHeight()
+        if (!this.isCollapsed && this.categoryActionExpanded) {
+          this.updateExpandedLeft()
+        }
+      })
+    },
+    // 分类按钮展开/收起时也重新测量
+    categoryActionExpanded() {
+      this.$nextTick(() => {
+        this.updateTopAreaHeight()
+      })
+      try {
+        uni.setStorageSync(this.storageKeyCategoryAction, this.categoryActionExpanded)
+      } catch (e) {}
     },
     // 监听分类变化，恢复该分类的滚动位置
     activeCategory(newCategory, oldCategory) { // 添加 oldCategory 参数
@@ -262,8 +346,74 @@ export default {
       this.$emit('left-outline-tap')
     },
     onRightActionTap() {
-      // 右侧按钮点击占位：可在此触发发布或快捷操作
+      // 切换展开态，并在展开时计算左起始位置以避开“全部”按钮
+      const next = !this.categoryActionExpanded
+      this.categoryActionExpanded = next
+      if (next) {
+        this.$nextTick(() => {
+          this.updateExpandedLeft()
+        })
+      }
+      // 仍向父组件透传点击事件（如需外部处理）
+      this.userToggledAction = true
       this.$emit('right-action-tap')
+    },
+
+    // 计算展开时的 left，使覆盖区域从“全部”按钮右侧开始
+    updateExpandedLeft() {
+      try {
+        const q = uni.createSelectorQuery().in(this)
+        q.select('.category-tabs-wrap').boundingClientRect()
+        q.select('.category-tabs .category-tab').boundingClientRect()
+        q.exec(res => {
+          const wrapRect = res && res[0]
+          const firstTabRect = res && res[1]
+          if (wrapRect && firstTabRect) {
+            // wrap 的左内边距为 15px，tabs 的水平内边距为 9px
+            // 以第一项右缘为基准，再略加 4px 间距
+            const left = Math.max(0, (firstTabRect.right - wrapRect.left) + 4)
+            this.expandedLeft = left
+          }
+        })
+      } catch (e) {
+        // 兜底：如果测量失败，使用一个保守值
+        this.expandedLeft = 90
+      }
+    },
+    // 测量分类栏实际高度（含内边距、边框），用于更精确计算内容滚动区的高度
+    updateTabsHeightApprox() {
+      try {
+        const q = uni.createSelectorQuery().in(this)
+        q.select('.category-tabs-wrap').boundingClientRect()
+        q.exec(res => {
+          const wrapRect = res && res[0]
+          if (wrapRect && wrapRect.height) {
+            // 额外加少量缓冲，避免计算误差造成截断
+            this.tabsHeightApprox = Math.round(wrapRect.height + 6)
+          }
+        })
+      } catch (e) {
+        this.tabsHeightApprox = 50
+      }
+    },
+    // 测量顶部区域（拖动区 + 分类栏）的实际高度
+    updateTopAreaHeight() {
+      try {
+        const q = uni.createSelectorQuery().in(this)
+        q.select('.drag-area').boundingClientRect()
+        if (!this.isCollapsed) {
+          q.select('.category-tabs-wrap').boundingClientRect()
+        }
+        q.exec(res => {
+          const dragRect = res && res[0]
+          const tabsRect = (!this.isCollapsed) ? res && res[1] : null
+          const dragH = (dragRect && dragRect.height) ? dragRect.height : 0
+          const tabsH = (tabsRect && tabsRect.height) ? tabsRect.height : 0
+          this.topAreaHeight = Math.round(dragH + tabsH)
+        })
+      } catch (e) {
+        this.topAreaHeight = 0
+      }
     },
     // 获取当前滚动位置
     getCurrentScrollPosition() {
@@ -285,6 +435,9 @@ export default {
           this.visitedCategories[categoryId] = true;
         }
         
+        if (categoryId === 'all') {
+          this.categoryActionExpanded = false;
+        }
         // 触发分类切换事件
         this.$emit('category-change', categoryId);
       }).exec();
@@ -292,18 +445,62 @@ export default {
     
     // 拖拽事件处理
     onDragStart(e) {
-      this.$emit('drag-start', e)
+      const y = (e && (e.touches && e.touches[0] && e.touches[0].clientY))
+        || (e && (e.changedTouches && e.changedTouches[0] && e.changedTouches[0].clientY))
+        || (e && e.detail && e.detail.clientY)
+        || (e && e.clientY)
+        || 0
+      const ev = {
+        clientY: y,
+        touches: [{ clientY: y }],
+        changedTouches: [{ clientY: y }],
+        detail: { clientY: y },
+        originalEvent: e
+      }
+      this.$emit('drag-start', ev)
     },
     onDrag(e) {
-      this.$emit('drag', e)
+      const y = (e && (e.touches && e.touches[0] && e.touches[0].clientY))
+        || (e && (e.changedTouches && e.changedTouches[0] && e.changedTouches[0].clientY))
+        || (e && e.detail && e.detail.clientY)
+        || (e && e.clientY)
+        || 0
+      const ev = {
+        clientY: y,
+        touches: [{ clientY: y }],
+        changedTouches: [{ clientY: y }],
+        detail: { clientY: y },
+        originalEvent: e
+      }
+      this.$emit('drag', ev)
     },
     onDragEnd(e) {
-      this.$emit('drag-end', e)
+      const y = (e && (e.touches && e.touches[0] && e.touches[0].clientY))
+        || (e && (e.changedTouches && e.changedTouches[0] && e.changedTouches[0].clientY))
+        || (e && e.detail && e.detail.clientY)
+        || (e && e.clientY)
+        || 0
+      const ev = {
+        clientY: y,
+        touches: [{ clientY: y }],
+        changedTouches: [{ clientY: y }],
+        detail: { clientY: y },
+        originalEvent: e
+      }
+      this.$emit('drag-end', ev)
     },
     
     // 搜索输入事件
     onSearchInput(e) {
       this.$emit('search-input', e)
+    },
+    onSearchFocus(e) {
+      this.categoryActionExpanded = false
+      this.$emit('search-focus', e)
+    },
+    onSearchTap() {
+      this.categoryActionExpanded = false
+      this.$emit('search-tap')
     },
     
     // 加载更多事件
@@ -490,10 +687,30 @@ export default {
     useServiceCard() {
       return this.cardComponent === 'ServiceCardItem'
     },
+    // 卡片滚动容器的动态高度：总高度 - 顶部区域（测量优先）
+    cardsContainerHeight() {
+      const H = Number(this.height || 0)
+      const searchH = Number(this.searchBoxHeight || 0)
+      const tabsApprox = Number(this.tabsHeightApprox || 50)
+      const measuredTop = Number(this.topAreaHeight || 0)
+      const topUsed = measuredTop > 0 ? measuredTop : (searchH + tabsApprox)
+      const val = H - topUsed + Number(this.fillCompensation || 0)
+      return val > 0 ? val : 0
+    },
     // 折叠态：当容器高度接近最小高度，仅显示搜索框
     isCollapsed() {
       const minH = Number(this.minContentHeight || 0)
       return Number(this.height || 0) <= (minH + 1)
+    }
+    ,
+    collapsedSearchStyle() {
+      if (!this.isCollapsed) return {}
+      if (this.categoryActionExpanded) {
+        return { width: this.collapsedSearchWidth + 'px' }
+      } else {
+        const w = (this.collapsedButtonWidth || 48) + (this.collapsedGap || 8)
+        return { width: `calc(100% - ${w}px)` }
+      }
     }
   },
 }
@@ -512,14 +729,19 @@ export default {
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
 }
 
+/* 折叠态：容器高度自适应，仅包裹搜索区，去掉下方空白 */
+.content-area.collapsed {
+  height: auto !important;
+}
+
 .drag-area {
-  padding: 10px 15px;
+  padding: 6px 15px; /* 压缩上下内边距，让区域更紧凑 */
 }
 
 .drag-handle {
   display: flex;
   justify-content: center;
-  padding: 5px 0;
+  padding: 2px 0; /* 缩小拖动条上下留白 */
 }
 
 .drag-indicator {
@@ -530,16 +752,23 @@ export default {
 }
 
 .search-box {
-  margin-top: 5px;
+  margin-top: 2px; /* 减少拖动条与搜索框之间的距离 */
+  position: relative; /* 让折叠态的右侧按钮可绝对定位到容器内 */
 }
 
 .search-input-wrapper {
   display: flex;
   align-items: center;
   background-color: #fff;
-  border-radius: 20px;
+  border-radius: 17px; /* 与分类按钮高度匹配的圆角 */
   padding: 0 15px;
-  height: 40px;
+  height: 34px; /* 降低高度以与分类按钮一致 */
+}
+
+/* 折叠态：右侧为按钮预留空间，左侧保持原位置 */
+.search-input-wrapper.collapsed {
+  width: calc(100% - 56px); /* 预留按钮宽48 + 约8px间距 */
+  margin: 0; /* 不居中，贴左对齐 */
 }
 
 .search-icon {
@@ -550,20 +779,30 @@ export default {
 
 .search-input {
   flex: 1;
-  height: 40px;
+  height: 34px; /* 与搜索框容器高度一致 */
   font-size: 14px;
 }
 
-/* 图二模式：放到搜索栏右侧的橙红色按钮 */
-.search-action {
+/* 折叠态：搜索框容器右侧的橙红色按钮（保持当前位置） */
+.search-action-fixed {
+  position: absolute;
+  right: 0; /* 与正常模式的外侧间距对齐（drag-area已有15px padding） */
+  top: 50%;
+  transform: translateY(-50%);
   width: 48px;
   height: 34px;
   border-radius: 10px;
-  margin-left: 8px;
   background: radial-gradient(circle at 50% 40%, #ff8a3d 0%, #ff6b35 60%, #ff4757 100%);
   border: 2px solid #ffffff;
   box-shadow: 0 4px 12px rgba(255, 71, 87, 0.25), 0 2px 8px rgba(255, 107, 53, 0.2);
   box-sizing: border-box;
+  transition: left 200ms ease, right 200ms ease, width 200ms ease;
+}
+
+.search-action-fixed.expanded {
+  left: 0;
+  right: 0;
+  width: auto;
 }
 
 .category-tabs {
@@ -579,6 +818,21 @@ export default {
 .category-tabs-wrap {
   position: relative;
   margin-top: -10px; /* 整体下移一点，拉开与搜索框的间距 */
+}
+
+/* 展开态：隐藏除第一项外的其他tab，仅保留“全部”可见 */
+.category-tabs-wrap.expanded .category-tabs .category-tab:not(:first-child) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.category-action-fixed {
+  transition: left 200ms ease, right 200ms ease, width 200ms ease;
+}
+
+/* 展开态：按钮从“全部”右侧起始，延伸到容器右侧，宽度自动跟随 */
+.category-tabs-wrap.expanded .category-action-fixed {
+  width: auto;
 }
 
 /* 右侧预留空间，避免内容被固定按钮覆盖 */
@@ -606,9 +860,7 @@ export default {
 }
 
 .cards-container {
-  flex: 1;
-  height: calc(100% - 120px);
-  overflow: hidden;
+  overflow: hidden; /* 高度由模板中的动态 style 控制 */
 }
 
 /* 瀑布流网格布局 */
