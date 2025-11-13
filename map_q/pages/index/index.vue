@@ -13,6 +13,9 @@
       @map-error="handleMapError"
       @move-to-location="handleMoveToLocation"
       @refresh-location="getUserLocation"
+      @markertap="onMarkerTap"
+      @poi-tap="onPoiTap"
+      @poitap="onPoiTap"
       ref="mapBackground"
     />
     
@@ -29,6 +32,7 @@
       :is-loading="isLoading"
       :has-more-data="hasMoreData"
       :visible-card-indices="visibleCardIndices"
+      :selected-point="selectedPoint"
       @drag-start="handleDragStart"
       @drag="handleDrag"
       @drag-end="handleDragEnd"
@@ -39,6 +43,9 @@
       @media-tap="handleMediaTap"
       @content-tap="handleContentTap"
       @visible-cards-change="onVisibleCardsChange"
+      @close-point-detail="closePointDetail"
+      @navigate-to-point="navigateToPoint"
+      @right-action-tap="openCenterPointDetail"
     />
     <!-- 全局发布弹窗挂载点 -->
     <GlobalOverlayHost />
@@ -224,6 +231,56 @@ export default {
       updateMapMarkers(mapPoints.value)
     }
     
+    const selectedPoint = ref(null)
+
+    const onMarkerTap = (payload) => {
+      try {
+        const id = payload && (payload.markerId ?? (payload.detail && payload.detail.markerId))
+        let marker = payload && payload.marker
+        if (!marker && Array.isArray(mapConfig.markers)) {
+          marker = mapConfig.markers.find(m => String(m.id) === String(id)) || null
+        }
+        let point = null
+        if (marker && marker.customData && marker.customData.pointId) {
+          point = mapPoints.value.find(p => p._id === marker.customData.pointId) || null
+        }
+        if (!point && marker) {
+          point = { _id: `marker_${id}`, name: (marker.customData && marker.customData.name) || '位置', address: '', description: '', location: { type: 'Point', coordinates: [marker.longitude, marker.latitude] } }
+        }
+        selectedPoint.value = { point, marker }
+      } catch (err) {}
+    }
+
+    const onPoiTap = (payload) => {
+      try {
+        const m = payload && payload.marker
+        if (!m) return
+        const point = { _id: `poi_${Date.now()}`, name: (m.customData && m.customData.name) || '位置', address: '', description: '', location: { type: 'Point', coordinates: [m.longitude, m.latitude] } }
+        selectedPoint.value = { point, marker: m }
+      } catch (e) {}
+    }
+
+    const closePointDetail = () => { selectedPoint.value = null }
+
+    const navigateToPoint = () => {
+      try {
+        const m = selectedPoint.value && selectedPoint.value.marker
+        if (!m) return
+        uni.openLocation({ latitude: m.latitude, longitude: m.longitude, name: (selectedPoint.value.point && selectedPoint.value.point.name) || '位置' })
+      } catch (e) {}
+    }
+
+    const openCenterPointDetail = () => {
+      try {
+        const lat = mapConfig.latitude
+        const lng = mapConfig.longitude
+        if (typeof lat !== 'number' || typeof lng !== 'number') return
+        const marker = { latitude: lat, longitude: lng, customData: { name: '当前位置' } }
+        const point = { _id: `center_${Date.now()}`, name: '当前位置', address: '', description: '', location: { type: 'Point', coordinates: [lng, lat] } }
+        selectedPoint.value = { point, marker }
+      } catch (e) {}
+    }
+
     // 初始化
     const init = async () => {
       try {
@@ -307,6 +364,13 @@ export default {
       handleCardTap,
       handleMediaTap,
       handleContentTap,
+      // 选中点详情
+      selectedPoint,
+      onMarkerTap,
+      onPoiTap,
+      closePointDetail,
+      navigateToPoint,
+      openCenterPointDetail,
       
       // 错误处理
       showError,

@@ -1,178 +1,78 @@
 <template>
   <view 
     class="content-area" 
-    :class="{ collapsed: isCollapsed }"
+    :class="{ collapsed: isCollapsed, 'has-overlay': !!selectedPoint }"
     :style="{ height: height + 'px', bottom: (bottomOffset || 0) + 'px' }"
   >
     <!-- 拖动区域（包含拖动条和搜索框） -->
-    <view 
-      class="drag-area"
-      catchtouchmove="true"
-      @touchstart="onDragStart"
-      @touchmove.stop.prevent="onDrag"
-      @touchend="onDragEnd"
-      @touchcancel="onDragEnd"
-    >
-      <!-- 拖动条 -->
-      <view class="drag-handle" v-if="!isCollapsed">
-        <view class="drag-indicator"></view>
-      </view>
-      
-      <!-- 搜索框 -->
-      <view class="search-box" catchtouchmove="true" @touchstart="onDragStart" @touchmove.stop.prevent="onDrag" @touchend="onDragEnd" @touchcancel="onDragEnd">
-        <view class="search-input-wrapper" :class="{ collapsed: isCollapsed }" :style="isCollapsed ? collapsedSearchStyle : {}" @tap.stop="onSearchTap">
-          <text class="search-icon">🔍</text>
-          <input 
-            class="search-input" 
-            placeholder="搜索" 
-            confirm-type="search"
-            @input="onSearchInput"
-            @focus="onSearchFocus"
-          />
-        </view>
-        <!-- 折叠态：按钮保持在搜索框容器右侧（不嵌入输入框） -->
-        <view 
-          v-if="isCollapsed" 
-          class="search-action-fixed" 
-          :class="{ expanded: categoryActionExpanded }"
-          :style="categoryActionExpanded ? { left: (collapsedSearchWidth + collapsedGap) + 'px', right: '0px' } : {}"
-          catchtouchmove="true"
-          @tap.stop="onRightActionTap"
-          @touchstart="onDragStart"
-          @touchmove.stop.prevent="onDrag"
-          @touchend="onDragEnd"
-          @touchcancel="onDragEnd"
-        ></view>
-      </view>
-    </view>
+    <drag-search-bar
+      :is-collapsed="isCollapsed"
+      :collapsed-search-style="collapsedSearchStyle"
+      :category-action-expanded="categoryActionExpanded"
+      :collapsed-search-width="collapsedSearchWidth"
+      :collapsed-gap="collapsedGap"
+      :selected-point="selectedPoint"
+      @drag-start="onDragStart"
+      @drag="onDrag"
+      @drag-end="onDragEnd"
+      @search-input="onSearchInput"
+      @search-focus="onSearchFocus"
+      @search-tap="onSearchTap"
+      @right-action-tap="onRightActionTap"
+    />
     
     <!-- 分类选项卡（右侧按钮固定，可展开覆盖除“全部”外的区域） -->
-    <view class="category-tabs-wrap" v-if="!isCollapsed" :class="{ expanded: categoryActionExpanded }" catchtouchmove="true" @touchstart="onDragStart" @touchmove.stop.prevent="onDrag" @touchend="onDragEnd" @touchcancel="onDragEnd">
-      <scroll-view 
-        class="category-tabs" 
-        scroll-x 
-        show-scrollbar="false"
-      >
-        <view 
-          v-for="category in categories" 
-          :key="category.id"
-          :class="['category-tab', { active: category.id === activeCategory }]"
-          @tap="onCategoryChange(category.id)"
-        >
-          {{ category.name }}
-        </view>
-        <!-- 预留右侧空间，避免被固定按钮遮挡 -->
-        <view class="category-tabs-spacer"></view>
-      </scroll-view>
-      <!-- 右侧橙红色按钮（固定在最右侧；展开时覆盖除“全部”外的区域） -->
-      <view 
-        class="category-action-fixed" 
-        catchtouchmove="true"
-        @tap.stop="onRightActionTap"
-        @touchstart="onDragStart"
-        @touchmove.stop.prevent="onDrag"
-        @touchend="onDragEnd"
-        @touchcancel="onDragEnd"
-        :style="categoryActionExpanded ? { left: expandedLeft + 'px', right: '15px' } : {}"
-      ></view>
+    <category-tabs-bar
+      v-if="!isCollapsed"
+      :categories="categories"
+      :active-category="activeCategory"
+      :category-action-expanded="categoryActionExpanded"
+      :expanded-left="expandedLeft"
+      :selected-point="selectedPoint"
+      @drag-start="onDragStart"
+      @drag="onDrag"
+      @drag-end="onDragEnd"
+      @category-change="onCategoryChange"
+      @right-action-tap="onRightActionTap"
+    />
+
+    <view v-if="selectedPoint" class="point-detail-overlay" :style="{ top: topAreaHeight + 'px' }">
+      <point-detail :point="selectedPoint.point" :marker="selectedPoint.marker" @close="onPointDetailClose" @navigate="onPointNavigate" />
     </view>
     
     <!-- 卡片内容区 -->
-    <scroll-view 
-      class="cards-container"
-      scroll-y
-      @scrolltolower="onLoadMore"
-      @scroll="onScroll"
+    <cards-container
+      v-if="!isCollapsed && !selectedPoint"
       :scroll-top="scrollTop"
       :scroll-with-animation="scrollWithAnimation"
-      :style="{ height: cardsContainerHeight + 'px' }"
-      v-if="!isCollapsed"
-    >
-      <view class="cards-grid">
-        <!-- 左列卡片 -->
-        <view class="cards-column">
-          <!-- ServiceCardItem 分支 -->
-          <template v-if="useServiceCard">
-            <service-card-item
-              v-for="(item, index) in leftColumnData"
-              :key="'left-svc-' + (item._id || '') + '-' + index"
-              :index="index"
-              :card-data="item"
-              :height="getColumnItemHeight('left', index)"
-              column-type="left"
-              @media-tap="onMediaTap"
-              @content-tap="onContentTap"
-              @reserve="onReserve"
-            />
-          </template>
-          <!-- CardItem 分支 -->
-          <template v-else>
-            <card-item
-              v-for="(item, index) in leftColumnData"
-              :key="'left-base-' + (item._id || '') + '-' + index"
-              :index="index"
-              :card-data="item"
-              :height="getColumnItemHeight('left', index)"
-              column-type="left"
-              @media-tap="onMediaTap"
-              @content-tap="onContentTap"
-            />
-          </template>
-        </view>
-        
-        <!-- 右列卡片 -->
-        <view class="cards-column">
-          <!-- ServiceCardItem 分支 -->
-          <template v-if="useServiceCard">
-            <service-card-item
-              v-for="(item, index) in rightColumnData"
-              :key="'right-svc-' + (item._id || '') + '-' + index"
-              :index="leftColumnData.length + index"
-              :card-data="item"
-              :height="getColumnItemHeight('right', index)"
-              column-type="right"
-              @media-tap="onMediaTap"
-              @content-tap="onContentTap"
-              @reserve="onReserve"
-            />
-          </template>
-          <!-- CardItem 分支 -->
-          <template v-else>
-            <card-item
-              v-for="(item, index) in rightColumnData"
-              :key="'right-base-' + (item._id || '') + '-' + index"
-              :index="leftColumnData.length + index"
-              :card-data="item"
-              :height="getColumnItemHeight('right', index)"
-              column-type="right"
-              @media-tap="onMediaTap"
-              @content-tap="onContentTap"
-            />
-          </template>
-        </view>
-      </view>
-      
-      <!-- 加载更多 -->
-      <view class="loading-more" v-if="isLoading">
-        <text>加载中...</text>
-      </view>
-      
-      <!-- 加载完成提示 -->
-      <view class="loading-done" v-if="!hasMoreData && mapData.length > 0">
-        <text>已加载全部内容</text>
-      </view>
-    </scroll-view>
+      :cards-container-height="cardsContainerHeight"
+      :is-loading="isLoading"
+      :has-more-data="hasMoreData"
+      :left-column-data="leftColumnData"
+      :right-column-data="rightColumnData"
+      :use-service-card="useServiceCard"
+      :get-column-item-height="getColumnItemHeight"
+      @load-more="onLoadMore"
+      @scroll="onScroll"
+      @media-tap="onMediaTap"
+      @content-tap="onContentTap"
+      @reserve="onReserve"
+    />
   </view>
 </template>
 
 <script>
-import CardItem from '../card/CardItem.vue'
-import ServiceCardItem from '../card/ServiceCardItem.vue'
+import PointDetail from '../detail/PointDetail.vue'
+import DragSearchBar from './DragSearchBar.vue'
+import CategoryTabsBar from './CategoryTabsBar.vue'
+import CardsContainer from './CardsContainer.vue'
 
 export default {
   components: {
-    CardItem,
-    ServiceCardItem
+    PointDetail,
+    DragSearchBar,
+    CategoryTabsBar,
+    CardsContainer
   },
   props: {
     height: {
@@ -215,6 +115,10 @@ export default {
     cardComponent: {
       type: String,
       default: ''
+    },
+    selectedPoint: {
+      type: Object,
+      default: null
     }
   },
   // 在 data 中初始化为 false
@@ -311,6 +215,9 @@ export default {
       try {
         uni.setStorageSync(this.storageKeyCategoryAction, this.categoryActionExpanded)
       } catch (e) {}
+      if (!this.categoryActionExpanded && this.selectedPoint) {
+        this.$emit('close-point-detail')
+      }
     },
     // 监听分类变化，恢复该分类的滚动位置
     activeCategory(newCategory, oldCategory) { // 添加 oldCategory 参数
@@ -338,6 +245,15 @@ export default {
           this.scrollWithAnimation = true;
         }, 50); // 稍微缩短延迟，看是否改善体验
       });
+    },
+    // 联动：选中点时自动展开橙红按钮；取消选中时收起
+    selectedPoint(newVal) {
+      if (newVal) {
+        this.categoryActionExpanded = true
+        this.$nextTick(() => { this.updateExpandedLeft() })
+      } else {
+        this.categoryActionExpanded = false
+      }
     }
   },
   methods: {
@@ -357,6 +273,9 @@ export default {
       // 仍向父组件透传点击事件（如需外部处理）
       this.userToggledAction = true
       this.$emit('right-action-tap')
+      if (!next && this.selectedPoint) {
+        this.$emit('close-point-detail')
+      }
     },
 
     // 计算展开时的 left，使覆盖区域从“全部”按钮右侧开始
@@ -423,24 +342,17 @@ export default {
     
     // 分类切换事件
     onCategoryChange(categoryId) {
-      // 使用当前实际滚动位置，而不是 this.scrollTop
-      const currentScrollView = uni.createSelectorQuery().in(this).select('.cards-container');
-      currentScrollView.scrollOffset(data => {
-        // 保存当前分类的实际滚动位置
-        this.categoryScrollPositions[this.activeCategory] = data.scrollTop;
-        
-        // 触发分类切换事件前检查是否是首次访问新分类
-        if (!this.visitedCategories[categoryId]) {
-          // 如果是首次访问，不使用当前的滚动位置
-          this.visitedCategories[categoryId] = true;
-        }
-        
-        if (categoryId === 'all') {
-          this.categoryActionExpanded = false;
-        }
-        // 触发分类切换事件
-        this.$emit('category-change', categoryId);
-      }).exec();
+      const st = this.categoryScrollPositions[this.activeCategory] || 0
+      this.categoryScrollPositions[this.activeCategory] = st
+
+      if (!this.visitedCategories[categoryId]) {
+        this.visitedCategories[categoryId] = true
+      }
+
+      if (categoryId === 'all') {
+        this.categoryActionExpanded = false
+      }
+      this.$emit('category-change', categoryId)
     },
     
     // 拖拽事件处理
@@ -501,6 +413,12 @@ export default {
     onSearchTap() {
       this.categoryActionExpanded = false
       this.$emit('search-tap')
+    },
+    onPointDetailClose() {
+      this.$emit('close-point-detail')
+    },
+    onPointNavigate() {
+      this.$emit('navigate-to-point')
     },
     
     // 加载更多事件
@@ -907,5 +825,19 @@ export default {
   box-shadow: 0 4px 12px rgba(255, 71, 87, 0.25), 0 2px 8px rgba(255, 107, 53, 0.2);
   box-sizing: border-box;
   z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.category-action-text {
+  max-width: 100%;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding: 0 12px;
 }
 </style>

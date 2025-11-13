@@ -12,6 +12,8 @@
       @regionchange="onRegionChange"
       @updated="onMapUpdated"
       @error="onMapError"
+      @markertap="onMarkerTap"
+      @poitap="onPoiTap"
     ></map>
     <!-- 添加位置刷新按钮 -->
     <view class="location-btn" @tap="refreshLocation">
@@ -135,6 +137,23 @@ export default {
         this.hasInitialBounds = true;
         this.debouncedGetBounds();
       }
+    },
+    onMarkerTap(e) {
+      const id = (e && e.detail && (e.detail.markerId || e.detail.markerid)) || e.markerId || e.markerid || null
+      let marker = null
+      const list = (this.config && Array.isArray(this.config.markers)) ? this.config.markers : []
+      if (id != null) {
+        marker = list.find(m => String(m.id) === String(id)) || null
+      }
+      this.$emit('markertap', { markerId: id, marker })
+    },
+    onPoiTap(e) {
+      const detail = e && e.detail ? e.detail : {}
+      const latitude = detail.latitude || (detail.location && detail.location.lat) || null
+      const longitude = detail.longitude || (detail.location && detail.location.lng) || null
+      const name = detail.name || '位置'
+      const marker = (latitude && longitude) ? { latitude, longitude, customData: { name } } : null
+      this.$emit('poi-tap', { detail, marker })
     },
     
     // 地图区域变化事件
