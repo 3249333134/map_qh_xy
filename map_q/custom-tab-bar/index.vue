@@ -77,6 +77,8 @@ export default {
         return
       }
       if (index !== this.selectedIndex) {
+        try { uni.setStorageSync('contentArea.categoryActionExpanded', false) } catch (e) {}
+        try { uni.$emit('collapseExpandableBars') } catch (e2) {}
         uni.switchTab({ url: item.pagePath })
       }
     }

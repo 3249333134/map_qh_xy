@@ -2,7 +2,7 @@
   <view 
     class="content-area" 
     :class="{ collapsed: isCollapsed, 'has-overlay': !!selectedPoint }"
-    :style="{ height: height + 'px', bottom: (bottomOffset || 0) + 'px' }"
+    :style="{ height: contentAreaHeight + 'px', bottom: (bottomOffset || 0) + 'px' }"
   >
     <!-- 拖动区域（包含拖动条和搜索框） -->
     <drag-search-bar
@@ -23,7 +23,7 @@
     
     <!-- 分类选项卡（右侧按钮固定，可展开覆盖除“全部”外的区域） -->
     <category-tabs-bar
-      v-if="!isCollapsed"
+      v-if="!isCollapsed || categoryActionExpanded"
       :categories="categories"
       :active-category="activeCategory"
       :category-action-expanded="categoryActionExpanded"
@@ -36,13 +36,13 @@
       @right-action-tap="onRightActionTap"
     />
 
-    <view v-if="selectedPoint" class="point-detail-overlay" :style="{ top: topAreaHeight + 'px' }">
+    <view v-if="selectedPoint && !categoryActionExpanded" class="point-detail-overlay" :style="{ top: topAreaHeight + 'px' }">
       <point-detail :point="selectedPoint.point" :marker="selectedPoint.marker" @close="onPointDetailClose" @navigate="onPointNavigate" />
     </view>
     
     <!-- 卡片内容区 -->
     <cards-container
-      v-if="!isCollapsed && !selectedPoint"
+      v-if="!isCollapsed && !selectedPoint && !categoryActionExpanded"
       :scroll-top="scrollTop"
       :scroll-with-animation="scrollWithAnimation"
       :cards-container-height="cardsContainerHeight"
@@ -58,6 +58,14 @@
       @content-tap="onContentTap"
       @reserve="onReserve"
     />
+    <expanded-modules 
+      v-if="categoryActionExpanded"
+      :height="cardsContainerHeight"
+      :selected-point="selectedPoint"
+      @navigate="onPointNavigate"
+      @reserve="onReserve"
+      @item-tap="onItemTap"
+    />
   </view>
 </template>
 
@@ -66,13 +74,15 @@ import PointDetail from '../detail/PointDetail.vue'
 import DragSearchBar from './DragSearchBar.vue'
 import CategoryTabsBar from './CategoryTabsBar.vue'
 import CardsContainer from './CardsContainer.vue'
+import ExpandedModules from './ExpandedModules.vue'
 
 export default {
   components: {
     PointDetail,
     DragSearchBar,
     CategoryTabsBar,
-    CardsContainer
+    CardsContainer,
+    ExpandedModules
   },
   props: {
     height: {
@@ -150,7 +160,9 @@ export default {
       // 顶部区域实际高度（拖动区 + 分类栏），更精确计算内容区高度
       topAreaHeight: 0,
       // 为避免测量误差造成底部细缝，增加少量补偿
-      fillCompensation: 10
+      fillCompensation: 10,
+      isContentLocked: false,
+      lockedContentHeight: 0
     }
   },
   mounted() {
@@ -171,6 +183,17 @@ export default {
         }
       }
     } catch (e) {}
+    try {
+      if (uni && uni.$on) {
+        uni.$on('collapseExpandableBars', () => { this.categoryActionExpanded = false })
+      }
+    } catch (e2) {}
+  },
+  beforeDestroy() {
+    try { if (uni && uni.$off) uni.$off('collapseExpandableBars') } catch (e) {}
+  },
+  beforeUnmount() {
+    try { if (uni && uni.$off) uni.$off('collapseExpandableBars') } catch (e) {}
   },
   created() {
     // 假设默认分类是'all'，将其标记为已访问
@@ -193,7 +216,7 @@ export default {
       this.$nextTick(() => {
         this.updateTabsHeightApprox()
         this.updateTopAreaHeight()
-        if (!this.isCollapsed && this.categoryActionExpanded) {
+        if (this.categoryActionExpanded) {
           this.updateExpandedLeft()
         }
       })
@@ -202,7 +225,7 @@ export default {
     isCollapsed() {
       this.$nextTick(() => {
         this.updateTopAreaHeight()
-        if (!this.isCollapsed && this.categoryActionExpanded) {
+        if (this.categoryActionExpanded) {
           this.updateExpandedLeft()
         }
       })
@@ -215,6 +238,20 @@ export default {
       try {
         uni.setStorageSync(this.storageKeyCategoryAction, this.categoryActionExpanded)
       } catch (e) {}
+      if (this.categoryActionExpanded) {
+        this.isContentLocked = true
+        try {
+          const info = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
+          const wh = Number((info && info.windowHeight) || 0)
+          const maxH = wh > 0 ? wh * 0.67 : Number(this.height || 0)
+          this.lockedContentHeight = Math.max(Number(this.minContentHeight || 0), Math.floor(maxH))
+        } catch (e) {
+          this.lockedContentHeight = Number(this.height || 0)
+        }
+      } else {
+        this.isContentLocked = false
+        this.lockedContentHeight = 0
+      }
       if (!this.categoryActionExpanded && this.selectedPoint) {
         this.$emit('close-point-detail')
       }
@@ -288,9 +325,11 @@ export default {
           const wrapRect = res && res[0]
           const firstTabRect = res && res[1]
           if (wrapRect && firstTabRect) {
-            // wrap 的左内边距为 15px，tabs 的水平内边距为 9px
-            // 以第一项右缘为基准，再略加 4px 间距
-            const left = Math.max(0, (firstTabRect.right - wrapRect.left) + 4)
+            // 以第一项右缘为基准，并补上第一项的 margin-right（10px）
+            // 折叠/详情展开场景再额外增加间距，避免遮挡“全部”按钮
+            const baseGap = (this.isCollapsed || !!this.selectedPoint) ? 12 : 4
+            const marginRight = 10
+            const left = Math.max(0, (firstTabRect.right - wrapRect.left) + marginRight + baseGap)
             this.expandedLeft = left
           }
         })
@@ -320,12 +359,12 @@ export default {
       try {
         const q = uni.createSelectorQuery().in(this)
         q.select('.drag-area').boundingClientRect()
-        if (!this.isCollapsed) {
+        if (!this.isCollapsed || this.categoryActionExpanded) {
           q.select('.category-tabs-wrap').boundingClientRect()
         }
         q.exec(res => {
           const dragRect = res && res[0]
-          const tabsRect = (!this.isCollapsed) ? res && res[1] : null
+          const tabsRect = (!this.isCollapsed || this.categoryActionExpanded) ? res && res[1] : null
           const dragH = (dragRect && dragRect.height) ? dragRect.height : 0
           const tabsH = (tabsRect && tabsRect.height) ? tabsRect.height : 0
           this.topAreaHeight = Math.round(dragH + tabsH)
@@ -357,6 +396,7 @@ export default {
     
     // 拖拽事件处理
     onDragStart(e) {
+      if (this.isContentLocked) return
       const y = (e && (e.touches && e.touches[0] && e.touches[0].clientY))
         || (e && (e.changedTouches && e.changedTouches[0] && e.changedTouches[0].clientY))
         || (e && e.detail && e.detail.clientY)
@@ -372,6 +412,7 @@ export default {
       this.$emit('drag-start', ev)
     },
     onDrag(e) {
+      if (this.isContentLocked) return
       const y = (e && (e.touches && e.touches[0] && e.touches[0].clientY))
         || (e && (e.changedTouches && e.changedTouches[0] && e.changedTouches[0].clientY))
         || (e && e.detail && e.detail.clientY)
@@ -387,6 +428,7 @@ export default {
       this.$emit('drag', ev)
     },
     onDragEnd(e) {
+      if (this.isContentLocked) return
       const y = (e && (e.touches && e.touches[0] && e.touches[0].clientY))
         || (e && (e.changedTouches && e.changedTouches[0] && e.changedTouches[0].clientY))
         || (e && e.detail && e.detail.clientY)
@@ -446,6 +488,9 @@ export default {
     // 下方内容区域点击：只定位到地图
     onContentTap(data) {
       this.$emit('content-tap', data)
+    },
+    onItemTap(item) {
+      this.$emit('content-tap', { cardData: item })
     },
     
     // 卡片点击事件（保留兼容性）
@@ -594,6 +639,13 @@ export default {
     },
   },
   computed: {
+    contentAreaHeight() {
+      const H = Number(this.height || 0)
+      if (this.isContentLocked && this.lockedContentHeight) {
+        return Number(this.lockedContentHeight)
+      }
+      return H
+    },
     // 将数据分为左右两列
     leftColumnData() {
       return this.mapData ? this.mapData.filter((_, index) => index % 2 === 0) : [];
@@ -607,7 +659,7 @@ export default {
     },
     // 卡片滚动容器的动态高度：总高度 - 顶部区域（测量优先）
     cardsContainerHeight() {
-      const H = Number(this.height || 0)
+      const H = Number(this.contentAreaHeight || 0)
       const searchH = Number(this.searchBoxHeight || 0)
       const tabsApprox = Number(this.tabsHeightApprox || 50)
       const measuredTop = Number(this.topAreaHeight || 0)
@@ -618,7 +670,7 @@ export default {
     // 折叠态：当容器高度接近最小高度，仅显示搜索框
     isCollapsed() {
       const minH = Number(this.minContentHeight || 0)
-      return Number(this.height || 0) <= (minH + 1)
+      return Number(this.contentAreaHeight || 0) <= (minH + 1)
     }
     ,
     collapsedSearchStyle() {

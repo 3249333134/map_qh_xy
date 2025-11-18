@@ -24,17 +24,13 @@
       <view 
         v-if="isCollapsed" 
         class="search-action-fixed" 
-        :class="{ expanded: categoryActionExpanded }"
-        :style="categoryActionExpanded ? { left: (collapsedSearchWidth + collapsedGap) + 'px', right: '0px', width: 'auto' } : {}"
         catchtouchmove="true"
         @tap.stop="onRightActionTap"
         @touchstart="onDragStart"
         @touchmove.stop.prevent="onDrag"
         @touchend="onDragEnd"
         @touchcancel="onDragEnd"
-      >
-        <text v-if="categoryActionExpanded && selectedPoint" class="category-action-text">{{ (selectedPoint.point && selectedPoint.point.name) || '' }}</text>
-      </view>
+      />
     </view>
   </view>
 </template>
@@ -47,7 +43,8 @@ export default {
     categoryActionExpanded: { type: Boolean, default: false },
     collapsedSearchWidth: { type: Number, default: 76 },
     collapsedGap: { type: Number, default: 8 },
-    selectedPoint: { type: Object, default: null }
+    selectedPoint: { type: Object, default: null },
+    expandedLeft: { type: Number, default: 0 }
   },
   emits: ['drag-start','drag','drag-end','search-input','search-focus','search-tap','right-action-tap'],
   methods: {
@@ -57,7 +54,8 @@ export default {
     onSearchInput(e) { this.$emit('search-input', e) },
     onSearchFocus(e) { this.$emit('search-focus', e) },
     onSearchTap() { this.$emit('search-tap') },
-    onRightActionTap() { this.$emit('right-action-tap') }
+    onRightActionTap() { this.$emit('right-action-tap') },
+    onCloseTap() { this.$emit('right-action-tap') }
   }
 }
 </script>
@@ -74,4 +72,5 @@ export default {
 .search-action-fixed { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: 48px; height: 34px; border-radius: 10px; background: radial-gradient(circle at 50% 40%, #ff8a3d 0%, #ff6b35 60%, #ff4757 100%); border: 2px solid #ffffff; box-shadow: 0 4px 12px rgba(255, 71, 87, 0.25), 0 2px 8px rgba(255, 107, 53, 0.2); box-sizing: border-box; transition: left 200ms ease, right 200ms ease, width 200ms ease; display: flex; align-items: center; justify-content: center; }
 .search-action-fixed.expanded { left: 0; right: 0; width: auto; }
 .category-action-text { max-width: 100%; color: #fff; font-size: 14px; font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 0 12px; }
+.category-action-close { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #fff; font-size: 16px; line-height: 1; }
 </style>

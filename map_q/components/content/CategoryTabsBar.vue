@@ -22,6 +22,7 @@
       :style="categoryActionExpanded ? { left: (localExpandedLeft || expandedLeft) + 'px', right: '15px' } : {}"
     >
       <text v-if="categoryActionExpanded && selectedPoint" class="category-action-text">{{ (selectedPoint.point && selectedPoint.point.name) || '' }}</text>
+      <text v-if="categoryActionExpanded" class="category-action-close" @tap.stop="onCloseTap">❌</text>
     </view>
   </view>
 </template>
@@ -59,6 +60,7 @@ export default {
     onDragEnd(e) { this.$emit('drag-end', e) },
     onCategoryChange(id) { this.$emit('category-change', id) },
     onRightActionTap() { this.$emit('right-action-tap') },
+    onCloseTap() { this.$emit('right-action-tap') },
     updateExpandedLeft() {
       try {
         const q = uni.createSelectorQuery().in(this)
@@ -68,7 +70,9 @@ export default {
           const wrapRect = res && res[0]
           const firstTabRect = res && res[1]
           if (wrapRect && firstTabRect) {
-            const left = Math.max(0, (firstTabRect.right - wrapRect.left) + 4)
+            const baseGap = 4
+            const marginRight = 10
+            const left = Math.max(0, (firstTabRect.right - wrapRect.left) + marginRight + baseGap)
             this.localExpandedLeft = left
           }
         })
@@ -90,4 +94,5 @@ export default {
 .category-tab { display: inline-flex; align-items: center; height: 34px; padding: 0 15px; margin-right: 10px; font-size: 14px; border-radius: 17px; background-color: #f0f0f0; color: #666; }
 .category-tab.active { background-color: #2196F3; color: #fff; }
 .category-action-text { max-width: 100%; color: #fff; font-size: 14px; font-weight: 600; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 0 12px; }
+.category-action-close { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #fff; font-size: 16px; line-height: 1; }
 </style>

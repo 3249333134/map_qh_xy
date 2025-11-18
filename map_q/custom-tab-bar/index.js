@@ -92,6 +92,9 @@ Component({
             return;
         }
 
+        try { if (typeof uni !== 'undefined' && uni.setStorageSync) uni.setStorageSync('contentArea.categoryActionExpanded', false); } catch (e) {}
+        try { if (typeof uni !== 'undefined' && uni.$emit) uni.$emit('collapseExpandableBars'); } catch (e2) {}
+
         const setSelected = () => this.setData({ selected: index });
 
         if (typeof wx !== 'undefined' && wx.switchTab) {

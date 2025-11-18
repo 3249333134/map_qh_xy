@@ -107,7 +107,7 @@
 </template>
 
 <script>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import GlobalOverlayHost from '../../components/common/GlobalOverlayHost.vue'
 // 导入组件
@@ -267,6 +267,15 @@ const {
       buildUserLocationsFromFavorites()
     })
 
+    try {
+      if (uni && uni.$on) {
+        uni.$on('collapseExpandableBars', () => {
+          overlayExpanded.value = false
+          animateToPosition(positions.default)
+        })
+      }
+    } catch (e) {}
+
     // 页面展示时同步底部 TabBar 高亮为“我的”
     onShow(() => {
       try {
@@ -276,6 +285,10 @@ const {
           page.getTabBar().setData({ selected: 4 })
         }
       } catch (e) {}
+    })
+
+    onUnmounted(() => {
+      try { if (uni && uni.$off) uni.$off('collapseExpandableBars') } catch (e) {}
     })
 
     return {

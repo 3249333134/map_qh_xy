@@ -46,6 +46,8 @@
       @close-point-detail="closePointDetail"
       @navigate-to-point="navigateToPoint"
       @right-action-tap="openCenterPointDetail"
+      @lock-content-max="lockContentMax"
+      @restore-content-height="restoreContentHeight"
     />
     <!-- 全局发布弹窗挂载点 -->
     <GlobalOverlayHost />
@@ -60,6 +62,7 @@ import ContentArea from '../../components/content/ContentArea.vue'
 import GlobalOverlayHost from '../../components/common/GlobalOverlayHost.vue'
 import { useMapData } from './composables/useMapData.js'
 import { useLayout } from './composables/useLayout.js'
+import { LAYOUT_CONFIG } from './constants/layoutConfig.js'
 import { useCategory } from './composables/useCategory.js'
 import { useMapManager } from './composables/useMapManager.js'
  
@@ -281,6 +284,22 @@ export default {
       } catch (e) {}
     }
 
+    const lastContentHeightBeforeExpand = ref(0)
+    const lockContentMax = () => {
+      try {
+        lastContentHeightBeforeExpand.value = contentHeight.value
+        const sys = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
+        const screenH = sys.windowHeight
+        const maxH = screenH * (LAYOUT_CONFIG && LAYOUT_CONFIG.MAX_CONTENT_RATIO ? LAYOUT_CONFIG.MAX_CONTENT_RATIO : 0.67)
+        contentHeight.value = Math.max(minContentHeight.value, Math.min(maxH, screenH))
+      } catch (e) {}
+    }
+    const restoreContentHeight = () => {
+      if (lastContentHeightBeforeExpand.value) {
+        contentHeight.value = lastContentHeightBeforeExpand.value
+      }
+    }
+
     // 初始化
     const init = async () => {
       try {
@@ -364,6 +383,8 @@ export default {
       handleCardTap,
       handleMediaTap,
       handleContentTap,
+      lockContentMax,
+      restoreContentHeight,
       // 选中点详情
       selectedPoint,
       onMarkerTap,
@@ -417,3 +438,25 @@ export default {
   }
 }
 </style>
+    const lastContentHeightBeforeExpand = ref(0)
+    const { maxContentHeight } = useLayout()
+
+    const lockContentMax = () => {
+      try {
+        lastContentHeightBeforeExpand.value = contentHeight.value
+        // 锁定到最大内容高度比例
+        const systemInfo = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
+        const screenH = systemInfo.windowHeight
+        const maxH = screenH * (LAYOUT_CONFIG && LAYOUT_CONFIG.MAX_CONTENT_RATIO ? LAYOUT_CONFIG.MAX_CONTENT_RATIO : 0.67)
+        contentHeight.value = Math.max(minContentHeight.value, Math.min(maxH, screenH))
+      } catch (e) {}
+    }
+
+    const restoreContentHeight = () => {
+      if (lastContentHeightBeforeExpand.value) {
+        contentHeight.value = lastContentHeightBeforeExpand.value
+      }
+    }
+      lockContentMax,
+      restoreContentHeight,
+      lastContentHeightBeforeExpand,
