@@ -22,8 +22,10 @@ export default {
     
     // 初始化全局数据
     this.globalData = {
-      showPublishOverlay: false
+      showPublishOverlay: false,
+      QQ_MAP_KEY: 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K'
     }
+    try { uni.setStorageSync('QQ_MAP_KEY', 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K') } catch (e) {}
     
     // 监听全局发布按钮点击事件
     uni.$on('showPublishOverlay', () => {

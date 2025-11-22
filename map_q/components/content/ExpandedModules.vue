@@ -11,9 +11,11 @@
       </view>
     </view>
 
-    <scroll-view class="image-slider" scroll-x show-scrollbar="false">
-      <image v-for="img in images" :key="img" :src="img" class="slider-img" mode="aspectFill" @tap="onImageTap(img)" />
-    </scroll-view>
+    <swiper class="image-swiper" :indicator-dots="true" circular :autoplay="false">
+      <swiper-item v-for="(img, i) in galleryImages" :key="i">
+        <image :src="img" class="slide-img" mode="aspectFill" @tap="onImageTap(img)" />
+      </swiper-item>
+    </swiper>
 
     <view class="description">
       <text class="desc-text">{{ description }}</text>
@@ -94,13 +96,44 @@ export default {
           { id: 'p1', title: '城市更新计划', desc: '公示期 | 2025Q1' },
           { id: 'p2', title: '临展招募', desc: '申请中 | 截止3/31' }
         ]}
-      ]
+      ],
+      resolvedAddress: ''
     }
   },
   computed: {
     headerTitle() {
-      const n = this.selectedPoint && this.selectedPoint.point && this.selectedPoint.point.name
-      return n || '当前位置'
+      const p = this.selectedPoint && this.selectedPoint.point
+      const addr = p && (p.address || p.detailAddress || p.fullAddress)
+      if (addr && String(addr).trim()) return String(addr).trim()
+      if (this.resolvedAddress && String(this.resolvedAddress).trim()) return String(this.resolvedAddress).trim()
+      return '正在解析地址…'
+    },
+    galleryImages() {
+      const imgs = this.selectedPoint && this.selectedPoint.point && Array.isArray(this.selectedPoint.point.images) ? this.selectedPoint.point.images : []
+      return imgs.length ? imgs : this.images
+    }
+  },
+  watch: {
+    selectedPoint: {
+      handler(val) {
+        const p = val && val.point
+        const addr = p && (p.address || p.detailAddress || p.fullAddress)
+        if (addr && String(addr).trim()) { this.resolvedAddress = String(addr).trim(); return }
+        const coords = p && p.location && Array.isArray(p.location.coordinates) ? p.location.coordinates : null
+        if (coords && coords.length === 2) {
+          const [lng, lat] = coords
+          this.fetchReverseAddress(lat, lng)
+        } else {
+          const m = val && val.marker
+          if (m && typeof m.latitude === 'number' && typeof m.longitude === 'number') {
+            this.fetchReverseAddress(m.latitude, m.longitude)
+          } else {
+            this.resolvedAddress = ''
+          }
+        }
+      },
+      deep: true,
+      immediate: true
     }
   },
   methods: {
@@ -109,7 +142,61 @@ export default {
     onImageTap(img) { this.$emit('item-tap', { type: 'image', src: img }) },
     onItemTap(item) { this.$emit('item-tap', item) },
     onReserve(item) { this.$emit('reserve', { item }) },
-    onNavigate(item) { this.$emit('navigate', { item }) }
+    onNavigate(item) { this.$emit('navigate', { item }) },
+    fetchReverseAddress(lat, lng) {
+      try {
+        const app = (typeof getApp === 'function') ? getApp() : null
+        const envKey = (app && app.globalData && app.globalData.QQ_MAP_KEY) || uni.getStorageSync('QQ_MAP_KEY') || (typeof process !== 'undefined' && process.env && process.env.QQ_MAP_KEY) || ''
+        const qqKey = envKey || 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K'
+        if (qqKey) {
+          uni.request({
+            url: `https://apis.map.qq.com/ws/geocoder/v1/?location=${lat},${lng}&key=${qqKey}&get_poi=0`,
+            method: 'GET',
+            success: (res) => {
+              const c = res?.data?.result?.address_component
+              const txt = this.formatQQAddress(c) || res?.data?.result?.address || ''
+              this.resolvedAddress = txt || ''
+            },
+            fail: () => { this.requestNominatim(lat, lng) }
+          })
+          return
+        }
+        this.requestNominatim(lat, lng)
+      } catch (e) { this.resolvedAddress = '' }
+    },
+    requestNominatim(lat, lng) {
+      uni.request({
+        url: `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+        method: 'GET',
+        header: { 'Accept-Language': 'zh-CN' },
+        success: (res) => {
+          const a = res?.data?.address
+          const txt = this.formatNominatimAddress(a) || res?.data?.display_name || ''
+          this.resolvedAddress = txt || ''
+        },
+        fail: () => { this.resolvedAddress = '' }
+      })
+    },
+    formatQQAddress(c) {
+      if (!c) return ''
+      const province = c.province || ''
+      const city = c.city || ''
+      const district = c.district || ''
+      const street = c.street || ''
+      const streetNumber = c.street_number || ''
+      const town = c.town || ''
+      return `${province}${city}${district}${street}${streetNumber || ''}${town ? (' ' + town) : ''}`.trim()
+    },
+    formatNominatimAddress(a) {
+      if (!a) return ''
+      const province = a.province || a.state || ''
+      const city = a.city || a.town || a.village || ''
+      const district = a.county || a.state_district || ''
+      const road = a.road || ''
+      const residential = a.residential || a.suburb || a.neighbourhood || ''
+      const house = a.house_number || ''
+      return `${province}${city}${district}${road}${residential}${house}`.trim()
+    }
   }
 }
 </script>
@@ -120,8 +207,8 @@ export default {
 .header-title { font-size: 16px; font-weight: 600; color: #333; }
 .stats-row { margin-top: 6px; display: flex; align-items: center; color: #888; font-size: 12px; }
 .dot { margin: 0 6px; }
-.image-slider { display: flex; padding: 10px 10px 0; }
-.slider-img { width: 75%; height: 160px; border-radius: 12px; margin-right: 10px; background: #ddd; }
+.image-swiper { width: 100%; height: 180px; padding: 10px 10px 0; box-sizing: border-box; }
+.slide-img { width: 100%; height: 100%; border-radius: 12px; background: #ddd; }
 .description { padding: 8px 15px; }
 .desc-text { font-size: 13px; color: #555; line-height: 1.6; }
 .subtabs { display: flex; padding: 0 15px 10px; }
