@@ -88,6 +88,11 @@ export default {
 
 <style>
 .tabbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -95,6 +100,7 @@ export default {
   height: 86px;
   background-color: #ffffff;
   border-top: 1px solid #e6e6e6;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 .tabbar-item {
   flex: 1;

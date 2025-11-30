@@ -34,7 +34,7 @@ export function useServiceLayout() {
   const initLayout = () => {
     const systemInfo = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
     screenHeight.value = systemInfo.windowHeight
-    contentHeight.value = screenHeight.value * SERVICE_LAYOUT_CONFIG.INITIAL_CONTENT_RATIO
+    contentHeight.value = maxContentHeight.value
     // 读取底部 TabBar 高度，仅用 TabBar 本身高度避免出现额外空白
     try {
       const metrics = uni.getStorageSync('TABBAR_METRICS') || null

@@ -348,6 +348,7 @@ export default {
   flex-direction: column;
   padding-top: 0;
   position: relative;
+  overscroll-behavior-y: none;
 }
 
 /* 状态栏占位 */
@@ -548,6 +549,8 @@ export default {
   padding: 5px;
   /* 高度由内联样式控制，确保底部不越过TabBar */
   background: white;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .message-item-container {

@@ -46,7 +46,7 @@
     </ContentSection>
     
     <!-- 地图信息覆盖层 - 独立于ContentSection，不受transform影响 -->
-    <view class="map-info-overlay" :class="{ expanded: isOverlayExpanded }" v-if="isPageReady && activeModule === 'location'" :style="mapOverlayStyle">
+    <view class="map-info-overlay" :class="{ expanded: isOverlayExpanded, dragging: isDragging }" v-if="isPageReady && activeModule === 'location'" :style="mapOverlayStyle">
     <view class="overlay-header" @tap="handleOverlayTap" @click="handleOverlayTap">
     <text class="map-title">我的足迹地图</text>
     <text class="map-desc">我的内容轨迹 ({{ userLocations.length }}个地点)</text>
@@ -401,6 +401,11 @@ const {
   backface-visibility: hidden !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: all 0.25s ease;
+}
+
+.map-info-overlay.dragging {
+  transition: none !important;
+  will-change: top;
 }
 
 /* 展开时保持配色与透明度不变，仅改变占位尺寸（靠内联样式的 top/bottom 控制高度）*/
