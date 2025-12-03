@@ -467,8 +467,6 @@ export default {
   overscroll-behavior-y: none;
 }
 
-
-
 .error-toast {
   position: fixed;
   top: 20px;
