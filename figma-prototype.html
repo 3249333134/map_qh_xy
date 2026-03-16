@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地图应用 - Figma原型</title>
+    <style>
+        /* 重置和基础样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #e8f4fd 0%, #ffffff 100%);
+        }
+        
+        /* 地图背景区域 */
+        .map-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 375 812"><rect fill="%23e0f2fe"/><path fill="%23bae6fd" d="M0 100h375v200c-50 50-100 75-150 75s-100-25-150-75-75-25-75 0v-200z"/><circle fill="%237dd3fc" cx="187.5" cy="200" r="3"/><circle fill="%237dd3fc" cx="100" cy="150" r="2"/><circle fill="%237dd3fc" cx="275" cy="180" r="2"/></svg>') center/cover;
+            position: relative;
+        }
+        
+        /* 定位按钮 */
+        .location-btn {
+            position: absolute;
+            right: 16px;
+            bottom: 180px;
+            width: 44px;
+            height: 44px;
+            background: white;
+            border-radius: 22px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .location-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .location-btn::before {
+            content: "📍";
+            font-size: 20px;
+        }
+        
+        /* 内容区域 */
+        .content-area {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            height: 60vh;
+            background: white;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            box-shadow: 0 -2px 20px rgba(0,0,0,0.1);
+            z-index: 10;
+            transition: height 0.3s ease;
+        }
+        
+        .content-area.expanded {
+            height: 80vh;
+        }
+        
+        /* 拖动区域 */
+        .drag-area {
+            padding: 12px 16px;
+            cursor: grab;
+            user-select: none;
+        }
+        
+        .drag-area:active {
+            cursor: grabbing;
+        }
+        
+        .drag-handle {
+            display: flex;
+            justify-content: center;
+            padding: 8px 0;
+        }
+        
+        .drag-indicator {
+            width: 40px;
+            height: 5px;
+            background: #ddd;
+            border-radius: 3px;
+            transition: background 0.2s ease;
+        }
+        
+        .drag-area:hover .drag-indicator {
+            background: #bbb;
+        }
+        
+        /* 搜索框 */
+        .search-box {
+            margin-top: 8px;
+        }
+        
+        .search-input-wrapper {
+            display: flex;
+            align-items: center;
+            background: #f8f9fa;
+            border-radius: 20px;
+            padding: 0 16px;
+            height: 40px;
+            transition: all 0.2s ease;
+        }
+        
+        .search-input-wrapper:focus-within {
+            background: white;
+            box-shadow: 0 0 0 2px #2196F3;
+        }
+        
+        .search-icon {
+            margin-right: 10px;
+            font-size: 16px;
+            color: #999;
+        }
+        
+        .search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .search-input::placeholder {
+            color: #999;
+        }
+        
+        /* 分类选项卡 */
+        .category-tabs {
+            display: flex;
+            padding: 12px 16px;
+            overflow-x: auto;
+            border-bottom: 1px solid #eee;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .category-tabs::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .category-tab {
+            padding: 8px 16px;
+            margin-right: 8px;
+            font-size: 14px;
+            border-radius: 20px;
+            background: #f0f0f0;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            border: 2px solid transparent;
+        }
+        
+        .category-tab:hover {
+            background: #e8e8e8;
+        }
+        
+        .category-tab.active {
+            background: #2196F3;
+            color: white;
+            border-color: #1976D2;
+        }
+        
+        /* 卡片容器 */
+        .cards-container {
+            height: calc(100% - 200px);
+            overflow-y: auto;
+            padding: 12px 16px;
+        }
+        
+        .cards-grid {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .cards-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        /* 卡片样式 */
+        .card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 1px solid #f0f0f0;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+        
+        .card-media {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 180px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card-media::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.1);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        .card:hover .card-media::before {
+            opacity: 1;
+        }
+        
+        .card-content {
+            padding: 12px;
+        }
+        
+        .card-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 6px;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .card-author {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .card-location {
+            font-size: 12px;
+            color: #999;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .card-stats {
+            font-size: 12px;
+            color: #999;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .card-stats::before {
+            content: "❤️";
+            font-size: 11px;
+        }
+        
+        /* 加载状态 */
+        .loading-more {
+            text-align: center;
+            padding: 16px;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .loading-done {
+            text-align: center;
+            padding: 16px;
+            color: #999;
+            font-size: 12px;
+        }
+        
+        /* 错误提示 */
+        .error-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff4757;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 9999;
+            box-shadow: 0 4px 12px rgba(255,71,87,0.3);
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .content-area {
+                height: 65vh;
+            }
+            
+            .cards-grid {
+                gap: 6px;
+            }
+            
+            .cards-column {
+                gap: 6px;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .container {
+                max-width: 768px;
+                margin: 0 auto;
+                box-shadow: 0 0 40px rgba(0,0,0,0.1);
+            }
+            
+            .content-area {
+                border-radius: 20px;
+            }
+        }
+        
+        /* 标签说明 */
+        .figma-note {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: #2196F3;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            z-index: 10000;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <!-- Figma导入说明 -->
+    <div class="figma-note">Figma原型文件</div>
+    
+    <div class="container">
+        <!-- 地图背景 -->
+        <div class="map-background">
+            <!-- 定位按钮 -->
+            <div class="location-btn" title="定位到当前位置"></div>
+        </div>
+        
+        <!-- 内容区域 -->
+        <div class="content-area" id="contentArea">
+            <!-- 拖动区域 -->
+            <div class="drag-area">
+                <div class="drag-handle">
+                    <div class="drag-indicator"></div>
+                </div>
+            </div>
+            
+            <!-- 搜索框 -->
+            <div class="search-box">
+                <div class="search-input-wrapper">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" placeholder="搜索地点、商家、服务..." />
+                </div>
+            </div>
+            
+            <!-- 分类选项卡 -->
+            <div class="category-tabs">
+                <div class="category-tab active">全部</div>
+                <div class="category-tab">餐饮</div>
+                <div class="category-tab">购物</div>
+                <div class="category-tab">娱乐</div>
+                <div class="category-tab">服务</div>
+                <div class="category-tab">酒店</div>
+                <div class="category-tab">景点</div>
+            </div>
+            
+            <!-- 卡片内容区 -->
+            <div class="cards-container">
+                <div class="cards-grid">
+                    <!-- 左列卡片 -->
+                    <div class="cards-column">
+                        <div class="card" style="height: 240px;">
+                            <div class="card-media"></div>
+                            <div class="card-content">
+                                <div class="card-title">星巴克咖啡</div>
+                                <div class="card-author">Starbucks</div>
+                                <div class="card-footer">
+                                    <div class="card-location">朝阳区建国门外大街</div>
+                                    <div class="card-stats">128</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card" style="height: 200px;">
+                            <div class="card-media"></div>
+                            <div class="card-content">
+                                <div class="card-title">海底捞火锅</div>
+                                <div class="card-author">Haidilao</div>
+                                <div class="card-footer">
+                                    <div class="card-location">海淀区中关村大街</div>
+                                    <div class="card-stats">256</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card" style="height: 220px;">
+                            <div class="card-media"></div>
+                            <div class="card-content">
+                                <div class="card-title">万达影城</div>
+                                <div class="card-author">Wanda Cinema</div>
+                                <div class="card-footer">
+                                    <div class="card-location">东城区王府井大街</div>
+                                    <div class="card-stats">89</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 右列卡片 -->
+                    <div class="cards-column">
+                        <div class="card" style="height: 180px;">
+                            <div class="card-media"></div>
+                            <div class="card-content">
+                                <div class="card-title">肯德基</div>
+                                <div class="card-author">KFC</div>
+                                <div class="card-footer">
+                                    <div class="card-location">西城区西单北大街</div>
+                                    <div class="card-stats">167</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card" style="height: 260px;">
+                            <div class="card-media"></div>
+                            <div class="card-content">
+                                <div class="card-title">优衣库</div>
+                                <div class="card-author">UNIQLO</div>
+                                <div class="card-footer">
+                                    <div class="card-location">朝阳区三里屯路</div>
+                                    <div class="card-stats">342</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="card" style="height: 200px;">
+                            <div class="card-media"></div>
+                            <div class="card-content">
+                                <div class="card-title">北京烤鸭店</div>
+                                <div class="card-author">北京烤鸭</div>
+                                <div class="card-footer">
+                                    <div class="card-location">东城区前门大街</div>
+                                    <div class="card-stats">198</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 加载更多 -->
+                <div class="loading-more">
+                    <span>加载中...</span>
+                </div>
+                
+                <!-- 加载完成提示 -->
+                <div class="loading-done" style="display: none;">
+                    <span>已加载全部内容</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 交互脚本
+        document.addEventListener('DOMContentLoaded', function() {
+            const contentArea = document.getElementById('contentArea');
+            const dragArea = document.querySelector('.drag-area');
+            const categoryTabs = document.querySelectorAll('.category-tab');
+            const searchInput = document.querySelector('.search-input');
+            
+            let isDragging = false;
+            let startY = 0;
+            let startHeight = 0;
+            
+            // 分类切换
+            categoryTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    categoryTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // 模拟加载新数据
+                    const loadingMore = document.querySelector('.loading-more');
+                    const loadingDone = document.querySelector('.loading-done');
+                    loadingMore.style.display = 'block';
+                    loadingDone.style.display = 'none';
+                    
+                    setTimeout(() => {
+                        loadingMore.style.display = 'none';
+                    }, 1000);
+                });
+            });
+            
+            // 搜索功能
+            searchInput.addEventListener('input', function(e) {
+                const value = e.target.value;
+                if (value.length > 0) {
+                    console.log('搜索:', value);
+                }
+            });
+            
+            // 拖拽功能
+            dragArea.addEventListener('mousedown', handleDragStart);
+            dragArea.addEventListener('touchstart', handleDragStart);
+            
+            function handleDragStart(e) {
+                isDragging = true;
+                startY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+                startHeight = contentArea.offsetHeight;
+                document.body.style.cursor = 'grabbing';
+                
+                document.addEventListener('mousemove', handleDragMove);
+                document.addEventListener('mouseup', handleDragEnd);
+                document.addEventListener('touchmove', handleDragMove);
+                document.addEventListener('touchend', handleDragEnd);
+            }
+            
+            function handleDragMove(e) {
+                if (!isDragging) return;
+                
+                e.preventDefault();
+                const currentY = e.type.includes('mouse') ? e.clientY : e.touches[0].clientY;
+                const deltaY = startY - currentY;
+                const newHeight = startHeight + deltaY;
+                
+                const minHeight = 200;
+                const maxHeight = window.innerHeight * 0.85;
+                
+                if (newHeight >= minHeight && newHeight <= maxHeight) {
+                    contentArea.style.height = newHeight + 'px';
+                }
+            }
+            
+            function handleDragEnd() {
+                isDragging = false;
+                document.body.style.cursor = '';
+                
+                document.removeEventListener('mousemove', handleDragMove);
+                document.removeEventListener('mouseup', handleDragEnd);
+                document.removeEventListener('touchmove', handleDragMove);
+                document.removeEventListener('touchend', handleDragEnd);
+            }
+            
+            // 卡片点击
+            document.querySelectorAll('.card').forEach(card => {
+                card.addEventListener('click', function() {
+                    console.log('卡片被点击');
+                    // 模拟点击效果
+                    this.style.transform = 'scale(0.98)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                });
+            });
+            
+            // 定位按钮
+            document.querySelector('.location-btn').addEventListener('click', function() {
+                console.log('定位按钮被点击');
+                // 模拟定位动画
+                this.style.animation = 'pulse 1s ease-in-out';
+                setTimeout(() => {
+                    this.style.animation = '';
+                }, 1000);
+            });
+            
+            // 添加脉冲动画
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes pulse {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(1.2); }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            // 模拟滚动加载更多
+            document.querySelector('.cards-container').addEventListener('scroll', function() {
+                const { scrollTop, scrollHeight, clientHeight } = this;
+                if (scrollHeight - scrollTop - clientHeight < 50) {
+                    const loadingMore = document.querySelector('.loading-more');
+                    const loadingDone = document.querySelector('.loading-done');
+                    
+                    if (loadingMore.style.display !== 'none' && loadingDone.style.display === 'none') {
+                        setTimeout(() => {
+                            loadingMore.style.display = 'none';
+                            loadingDone.style.display = 'block';
+                        }, 1500);
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
