@@ -7,6 +7,9 @@
       @refresh-location="getUserLocation"
       @region-changed="onMapRegionChanged"
       @move-to-location="handleMoveToLocation"
+      @markertap="onMarkerTap"
+      @poi-tap="onPoiTap"
+      @poitap="onPoiTap"
       ref="mapBackground"
     />
     <!-- 可滑动区域 -->
@@ -22,6 +25,8 @@
       :has-more-data="hasMoreData"
       :visible-card-indices="visibleCardIndices"
       :is-dragging="isDragging"
+      :selected-point="selectedPoint"
+      storage-key-prefix="serviceContentArea"
       @drag-start="handleDragStart"
       @drag="handleDrag"
       @drag-end="handleDragEnd"
@@ -34,6 +39,9 @@
       @media-tap="handleMediaTap"
       @content-tap="handleContentTap"
       @reserve="handleReserve"
+      @close-point-detail="closePointDetail"
+      @navigate-to-point="navigateToPoint"
+      @right-action-tap="openCenterPointDetail"
     />
     <!-- 全局发布弹窗挂载点 -->
     <GlobalOverlayHost />
@@ -41,7 +49,7 @@
 </template>
 
 <script>
-import { onReady, onShow } from '@dcloudio/uni-app'
+import { onReady, onShow, onHide } from '@dcloudio/uni-app'
 import { ref } from 'vue'
 import MapBackground from '../../components/map/MapBackground.vue'
 import ContentArea from '../../components/content/ContentArea.vue'
@@ -49,6 +57,8 @@ import GlobalOverlayHost from '../../components/common/GlobalOverlayHost.vue'
 import { useServiceLayout } from './composables/useServiceLayout.js'
 import { useServiceCategory } from './composables/useServiceCategory.js'
 import { useServiceMapData } from './composables/useServiceMapData.js'
+
+console.log('=== 服务页脚本加载 ===')
 
 export default {
   components: {
@@ -99,7 +109,9 @@ export default {
       handleCardTap,
       handleVisibleCardsChange,
       onMapRegionChanged,
-      onSearchInput
+      onSearchInput,
+      saveMapState,
+      loadMapState
     } = useServiceMapData()
 
     // 地图组件引用（用于调用 moveToLocation）
@@ -163,6 +175,167 @@ export default {
       // uni.navigateTo({ url: `/pages/reserve/index?id=${cardData._id}` })
     }
 
+    // 选中点详情状态
+    const selectedPoint = ref(null)
+
+    // 标记点点击处理
+    const onMarkerTap = (payload) => {
+      try {
+        console.log('=== 服务页标记点点击开始 ===')
+        console.log('payload:', payload)
+        
+        const id = payload && (payload.markerId ?? (payload.detail && payload.detail.markerId))
+        console.log('markerId:', id)
+        
+        let marker = payload && payload.marker
+        console.log('payload中的marker:', marker)
+        
+        if (!marker && Array.isArray(mapConfig.markers)) {
+          console.log('mapConfig.markers:', mapConfig.markers)
+          marker = mapConfig.markers.find(m => String(m.id) === String(id)) || null
+          console.log('从mapConfig.markers中找到的marker:', marker)
+        }
+        
+        let point = null
+        if (marker && marker.customData && marker.customData.pointId) {
+          console.log('marker.customData:', marker.customData)
+          console.log('mapPoints.value:', mapPoints.value)
+          point = mapPoints.value.find(p => p._id === marker.customData.pointId) || null
+          console.log('根据pointId找到的point:', point)
+        }
+        
+        if (!point && marker) {
+          point = { _id: `marker_${id}`, name: (marker.customData && marker.customData.name) || '位置', address: '', description: '', location: { type: 'Point', coordinates: [marker.longitude, marker.latitude] } }
+          console.log('创建的默认point:', point)
+        }
+        
+        console.log('最终的point:', point)
+        selectedPoint.value = { point, marker }
+        console.log('selectedPoint已设置:', selectedPoint.value)
+        console.log('selectedPoint.value === null:', selectedPoint.value === null)
+        
+        if (marker) {
+          resolveAddressByCoords(marker.latitude, marker.longitude).then(addr => { 
+            if (addr && selectedPoint.value && selectedPoint.value.point) {
+              selectedPoint.value.point.address = addr 
+              console.log('地址解析完成:', addr)
+            }
+          })
+        }
+        console.log('=== 服务页标记点点击结束 ===')
+      } catch (err) {
+        console.error('标记点点击处理失败:', err)
+      }
+    }
+
+    // POI点击处理
+    const onPoiTap = (payload) => {
+      try {
+        const m = payload && payload.marker
+        if (!m) return
+        const point = { _id: `poi_${Date.now()}`, name: (m.customData && m.customData.name) || '位置', address: '', description: '', location: { type: 'Point', coordinates: [m.longitude, m.latitude] } }
+        selectedPoint.value = { point, marker: m }
+        resolveAddressByCoords(m.latitude, m.longitude).then(addr => { 
+          if (addr && selectedPoint.value && selectedPoint.value.point) {
+            selectedPoint.value.point.address = addr 
+          }
+        })
+      } catch (e) {
+        console.error('POI点击处理失败:', e)
+      }
+    }
+
+    // 关闭点详情
+    const closePointDetail = () => { 
+      selectedPoint.value = null 
+    }
+
+    // 获取QQ地图Key
+    const getQqMapKey = () => {
+      try {
+        const app = typeof getApp === 'function' ? getApp() : null
+        const envKey = (app && app.globalData && app.globalData.QQ_MAP_KEY) || uni.getStorageSync('QQ_MAP_KEY') || ''
+        const fallbackKey = 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K'
+        return envKey || fallbackKey
+      } catch (e) { 
+        return 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K' 
+      }
+    }
+
+    // 根据坐标解析地址
+    const resolveAddressByCoords = (lat, lng) => {
+      const key = getQqMapKey()
+      if (key) {
+        return new Promise((resolve) => {
+          uni.request({
+            url: `https://apis.map.qq.com/ws/geocoder/v1/?location=${lat},${lng}&key=${key}&get_poi=0`,
+            method: 'GET',
+            success: (res) => {
+              const c = res && res.data && res.data.result && res.data.result.address_component
+              const addr = res && res.data && res.data.result && res.data.result.address
+              const txt = [c && c.province, c && c.city, c && c.district, c && c.street, c && c.street_number].filter(Boolean).join('')
+              resolve(txt || addr || '')
+            },
+            fail: () => {
+              uni.request({
+                url: `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+                method: 'GET',
+                header: { 'Accept-Language': 'zh-CN' },
+                success: (res) => {
+                  const a = res && res.data && res.data.address
+                  const txt = [a && (a.province || a.state), a && (a.city || a.town || a.village), a && (a.county || a.state_district), a && a.road, a && (a.residential || a.suburb || a.neighbourhood), a && a.house_number].filter(Boolean).join('')
+                  resolve(txt || (res && res.data && res.data.display_name) || '')
+                },
+                fail: () => resolve('')
+              })
+            }
+          })
+        })
+      }
+      return new Promise((resolve) => {
+        uni.request({
+          url: `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+          method: 'GET',
+          header: { 'Accept-Language': 'zh-CN' },
+          success: (res) => {
+            const a = res && res.data && res.data.address
+            const txt = [a && (a.province || a.state), a && (a.city || a.town || a.village), a && (a.county || a.state_district), a && a.road, a && (a.residential || a.suburb || a.neighbourhood), a && a.house_number].filter(Boolean).join('')
+            resolve(txt || (res && res.data && res.data.display_name) || '')
+          },
+          fail: () => resolve('')
+        })
+      })
+    }
+
+    // 导航到点
+    const navigateToPoint = () => {
+      try {
+        const m = selectedPoint.value && selectedPoint.value.marker
+        if (!m) return
+        uni.openLocation({ 
+          latitude: m.latitude, 
+          longitude: m.longitude, 
+          name: (selectedPoint.value.point && selectedPoint.value.point.name) || '位置' 
+        })
+      } catch (e) {
+        console.error('导航失败:', e)
+      }
+    }
+
+    // 打开中心点详情
+    const openCenterPointDetail = () => {
+      try {
+        const lat = mapConfig.latitude
+        const lng = mapConfig.longitude
+        if (typeof lat !== 'number' || typeof lng !== 'number') return
+        const marker = { latitude: lat, longitude: lng, customData: { name: '当前位置' } }
+        const point = { _id: `center_${Date.now()}`, name: '当前位置', address: '', description: '', location: { type: 'Point', coordinates: [lng, lat] } }
+        selectedPoint.value = { point, marker }
+      } catch (e) {
+        console.error('打开中心点详情失败:', e)
+      }
+    }
+
     // 加载初始数据
     const loadInitialData = () => {
       console.log('加载初始数据')
@@ -195,13 +368,19 @@ export default {
     
     // 页面就绪时初始化
     onReady(() => {
+      console.log('服务页 onReady 触发')
       getUserLocation().then(() => {
         initLayout()
-        // 与首页一致：统一搜索框高度为 60
+        loadMapState()
         searchBoxHeight.value = 60
         loadInitialData()
-      }).catch(() => {
+        console.log('服务页初始化完成')
+        console.log('mapPoints 数据:', mapPoints.value)
+        console.log('mapConfig.markers:', mapConfig.markers)
+      }).catch((err) => {
+        console.error('服务页初始化失败:', err)
         initLayout()
+        loadMapState()
         searchBoxHeight.value = 60
         loadInitialData()
       })
@@ -216,6 +395,17 @@ export default {
           page.getTabBar().setData({ selected: 1 })
         }
       } catch (e) {}
+      // 页面显示时重置详情弹窗状态
+      selectedPoint.value = null
+      console.log('服务页 onShow - 清除详情弹窗状态')
+    })
+    
+    // 页面隐藏时保存服务页状态
+    onHide(() => {
+      saveMapState()
+      // 页面隐藏时清除详情弹窗状态
+      selectedPoint.value = null
+      console.log('服务页 onHide - 清除详情弹窗状态')
     })
     
     return {
@@ -231,6 +421,7 @@ export default {
       minContentHeight,
       minVisibleHeight,
       maxContentHeight,
+      initLayout,
       // 分类相关
       categories,
       activeCategory,
@@ -240,6 +431,8 @@ export default {
       hasMoreData,
       mapConfig,
       visibleCardIndices,
+      // 选中点详情
+      selectedPoint,
       // 方法
       // 事件处理函数，全部导出
       handleDragStart,
@@ -256,6 +449,15 @@ export default {
       handleCardTap,
       handleVisibleCardsChange,
       getUserLocation,
+      loadMapState,
+      saveMapState,
+      // 标记点点击处理
+      onMarkerTap,
+      onPoiTap,
+      closePointDetail,
+      navigateToPoint,
+      openCenterPointDetail,
+      loadInitialData,
       
     }
   }

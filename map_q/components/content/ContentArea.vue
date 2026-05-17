@@ -36,13 +36,27 @@
       @right-action-tap="onRightActionTap"
     />
 
-    <view v-if="selectedPoint && !categoryActionExpanded" class="point-detail-overlay" :style="{ top: topAreaHeight + 'px' }">
-      <point-detail :point="selectedPoint.point" :marker="selectedPoint.marker" @close="onPointDetailClose" @navigate="onPointNavigate" />
+    <view v-if="selectedPoint" class="point-detail-overlay" :style="{ top: topAreaHeight + 'px' }">
+      <service-point-detail 
+        v-if="useServiceCard" 
+        :point="selectedPoint.point" 
+        :marker="selectedPoint.marker" 
+        :services="mapData"
+        @close="onPointDetailClose" 
+        @navigate="onPointNavigate" 
+      />
+      <point-detail 
+        v-else 
+        :point="selectedPoint.point" 
+        :marker="selectedPoint.marker" 
+        @close="onPointDetailClose" 
+        @navigate="onPointNavigate" 
+      />
     </view>
     
     <!-- 卡片内容区 -->
     <cards-container
-      v-if="!isCollapsed && !selectedPoint && !categoryActionExpanded"
+      v-if="!isCollapsed && !categoryActionExpanded"
       :scroll-top="scrollTop"
       :scroll-with-animation="scrollWithAnimation"
       :cards-container-height="cardsContainerHeight"
@@ -71,6 +85,7 @@
 
 <script>
 import PointDetail from '../detail/PointDetail.vue'
+import ServicePointDetail from '../detail/ServicePointDetail.vue'
 import DragSearchBar from './DragSearchBar.vue'
 import CategoryTabsBar from './CategoryTabsBar.vue'
 import CardsContainer from './CardsContainer.vue'
@@ -79,6 +94,7 @@ import ExpandedModules from './ExpandedModules.vue'
 export default {
   components: {
     PointDetail,
+    ServicePointDetail,
     DragSearchBar,
     CategoryTabsBar,
     CardsContainer,
@@ -129,6 +145,11 @@ export default {
     selectedPoint: {
       type: Object,
       default: null
+    },
+    // 新增：自定义存储键前缀，用于区分不同页面
+    storageKeyPrefix: {
+      type: String,
+      default: 'contentArea'
     }
   },
   // 在 data 中初始化为 false
@@ -154,7 +175,6 @@ export default {
       collapsedButtonWidth: 48,
       userToggledAction: false,
       resetExpandOnExitCollapse: false,
-      storageKeyCategoryAction: 'contentArea.categoryActionExpanded',
       // 分类栏近似高度（含上下间距），用于计算内容区高度
       tabsHeightApprox: 50,
       // 顶部区域实际高度（拖动区 + 分类栏），更精确计算内容区高度
@@ -172,17 +192,9 @@ export default {
       this.updateTopAreaHeight()
     })
 
-    try {
-      const persisted = uni.getStorageSync(this.storageKeyCategoryAction)
-      if (typeof persisted === 'boolean') {
-        this.categoryActionExpanded = persisted
-        if (persisted) {
-          this.$nextTick(() => {
-            this.updateExpandedLeft()
-          })
-        }
-      }
-    } catch (e) {}
+    // 初始化时不读取 categoryActionExpanded，避免首页和服务页状态混淆
+    // 详情弹窗的显示完全由 selectedPoint prop 控制，不依赖存储状态
+    
     try {
       if (uni && uni.$on) {
         uni.$on('collapseExpandableBars', () => { this.categoryActionExpanded = false })
@@ -236,7 +248,8 @@ export default {
         this.updateTopAreaHeight()
       })
       try {
-        uni.setStorageSync(this.storageKeyCategoryAction, this.categoryActionExpanded)
+        const storageKeyCategoryAction = this.storageKeyPrefix + '.categoryActionExpanded'
+        uni.setStorageSync(storageKeyCategoryAction, this.categoryActionExpanded)
       } catch (e) {}
       if (this.categoryActionExpanded) {
         this.isContentLocked = true
@@ -285,6 +298,7 @@ export default {
     },
     // 联动：选中点时自动展开橙红按钮；取消选中时收起
     selectedPoint(newVal) {
+      console.log('ContentArea selectedPoint 变化:', newVal, 'useServiceCard:', this.useServiceCard)
       if (newVal) {
         this.categoryActionExpanded = true
         this.$nextTick(() => { this.updateExpandedLeft() })

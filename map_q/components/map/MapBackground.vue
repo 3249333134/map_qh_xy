@@ -139,12 +139,19 @@ export default {
       }
     },
     onMarkerTap(e) {
+      console.log('MapBackground onMarkerTap 触发:', e)
       const id = (e && e.detail && (e.detail.markerId || e.detail.markerid)) || e.markerId || e.markerid || null
+      console.log('解析的markerId:', id)
+      
       let marker = null
       const list = (this.config && Array.isArray(this.config.markers)) ? this.config.markers : []
+      console.log('mapConfig.markers:', list)
+      
       if (id != null) {
         marker = list.find(m => String(m.id) === String(id)) || null
       }
+      console.log('找到的marker:', marker)
+      
       this.$emit('markertap', { markerId: id, marker })
     },
     onPoiTap(e) {

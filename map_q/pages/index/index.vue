@@ -33,6 +33,7 @@
       :has-more-data="hasMoreData"
       :visible-card-indices="visibleCardIndices"
       :selected-point="selectedPoint"
+      storage-key-prefix="indexContentArea"
       @drag-start="handleDragStart"
       @drag="handleDrag"
       @drag-end="handleDragEnd"
@@ -56,7 +57,7 @@
  
 <script>
 import { onMounted, ref } from 'vue'
-import { onShow } from '@dcloudio/uni-app'
+import { onShow, onHide } from '@dcloudio/uni-app'
 import MapBackground from '../../components/map/MapBackground.vue'
 import ContentArea from '../../components/content/ContentArea.vue'
 import GlobalOverlayHost from '../../components/common/GlobalOverlayHost.vue'
@@ -116,7 +117,9 @@ export default {
       updateMapMarkers,
       getUserLocation,
       onMapRegionChanged: mapMgrRegionChanged,
-      handleVisibleCardsChange: mapMgrVisibleCardsChange
+      handleVisibleCardsChange: mapMgrVisibleCardsChange,
+      saveMapState,
+      loadMapState
     } = useMapManager()
     
     // 错误状态
@@ -173,9 +176,9 @@ export default {
       console.log('地图配置已更新:', locationData)
     }
  
-    // 上方媒体区域点击：跳转详情页并定位
+    // 上方媒体区域点击：跳转首页详情页并定位
     const handleMediaTap = async (data) => {
-      console.log('媒体区域点击，准备跳转详情页并定位:', data)
+      console.log('媒体区域点击，准备跳转首页详情页并定位:', data)
       const { cardData } = data
       if (cardData && cardData.location && cardData.location.coordinates && mapBackground.value) {
         const [longitude, latitude] = cardData.location.coordinates
@@ -188,15 +191,17 @@ export default {
       }
       if (cardData && cardData._id) {
         try {
+          // 使用首页专用存储保存点击的卡片数据
+          uni.setStorageSync('INDEX_LAST_ITEM', cardData)
           await uni.navigateTo({
-            url: `/pages/detail/index?id=${cardData._id}&title=${encodeURIComponent(cardData.name || cardData.title || '')}&author=${encodeURIComponent(cardData.author || '')}&likes=${cardData.likes || 0}`
+            url: `/pages/detail/index?id=${cardData._id}&title=${encodeURIComponent(cardData.name || cardData.title || '')}&author=${encodeURIComponent(cardData.author || '')}&likes=${cardData.likes || 0}&source=index`
           })
         } catch (error) {
-          console.error('跳转详情页失败:', error)
-          handleError(error, '跳转详情页')
+          console.error('跳转首页详情页失败:', error)
+          handleError(error, '跳转首页详情页')
         }
       } else {
-        console.warn('卡片数据不完整，无法跳转详情页')
+        console.warn('卡片数据不完整，无法跳转首页详情页')
       }
     }
     
@@ -251,8 +256,9 @@ export default {
           point = { _id: `marker_${id}`, name: (marker.customData && marker.customData.name) || '位置', address: '', description: '', location: { type: 'Point', coordinates: [marker.longitude, marker.latitude] } }
         }
         selectedPoint.value = { point, marker }
-        resolveAddressByCoords(lat, lng).then(addr => { if (addr && selectedPoint.value && selectedPoint.value.point) selectedPoint.value.point.address = addr })
-        resolveAddressByCoords(marker.latitude, marker.longitude).then(addr => { if (addr && selectedPoint.value && selectedPoint.value.point) selectedPoint.value.point.address = addr })
+        if (marker) {
+          resolveAddressByCoords(marker.latitude, marker.longitude).then(addr => { if (addr && selectedPoint.value && selectedPoint.value.point) selectedPoint.value.point.address = addr })
+        }
       } catch (err) {}
     }
 
@@ -361,16 +367,18 @@ export default {
         console.log('开始初始化首页...')
         // 1. 初始化布局
         initLayout()
-        // 2. 获取用户位置（可选）
+        // 2. 加载之前保存的首页状态
+        loadMapState()
+        // 3. 获取用户位置（可选）
         try {
           await getUserLocation()
           console.log('位置获取成功')
         } catch (error) {
           console.log('获取位置失败，使用默认位置:', error)
         }
-        // 3. 获取地图数据
+        // 4. 获取地图数据
         await fetchMapData(activeCategory.value, mapConfig)
-        // 4. 更新地图标记
+        // 5. 更新地图标记
         updateMapMarkers(mapPoints.value)
         console.log('首页初始化完成')
       } catch (error) {
@@ -393,6 +401,17 @@ export default {
           page.getTabBar().setData({ selected: 0 })
         }
       } catch (e) {}
+      // 页面显示时重置详情弹窗状态
+      selectedPoint.value = null
+      console.log('首页 onShow - 清除详情弹窗状态')
+    })
+    
+    // 页面隐藏时保存首页状态
+    onHide(() => {
+      saveMapState()
+      // 页面隐藏时清除详情弹窗状态
+      selectedPoint.value = null
+      console.log('首页 onHide - 清除详情弹窗状态')
     })
     
     return {
@@ -492,25 +511,3 @@ export default {
   }
 }
 </style>
-    const lastContentHeightBeforeExpand = ref(0)
-    const { maxContentHeight } = useLayout()
-
-    const lockContentMax = () => {
-      try {
-        lastContentHeightBeforeExpand.value = contentHeight.value
-        // 锁定到最大内容高度比例
-        const systemInfo = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
-        const screenH = systemInfo.windowHeight
-        const maxH = screenH * (LAYOUT_CONFIG && LAYOUT_CONFIG.MAX_CONTENT_RATIO ? LAYOUT_CONFIG.MAX_CONTENT_RATIO : 0.67)
-        contentHeight.value = Math.max(minContentHeight.value, Math.min(maxH, screenH))
-      } catch (e) {}
-    }
-
-    const restoreContentHeight = () => {
-      if (lastContentHeightBeforeExpand.value) {
-        contentHeight.value = lastContentHeightBeforeExpand.value
-      }
-    }
-      lockContentMax,
-      restoreContentHeight,
-      lastContentHeightBeforeExpand,

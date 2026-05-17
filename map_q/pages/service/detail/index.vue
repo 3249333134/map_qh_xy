@@ -228,7 +228,9 @@ export default {
       }
     }
   },
-  onLoad() {
+  onLoad(options) {
+    const source = options && options.source || ''
+    
     const ec = this.getOpenerEventChannel && this.getOpenerEventChannel()
     if (ec) {
       ec.on('service-item', ({ item }) => {
@@ -236,17 +238,27 @@ export default {
         this.serviceItem = normalized
         this.images = (normalized.images && normalized.images.length ? normalized.images : [ '/static/logo.png' ])
         uni.setNavigationBarTitle({ title: normalized.name || '服务详情' })
-        uni.setStorageSync('LAST_SERVICE_ITEM', normalized)
+        // 使用服务页专用存储
+        uni.setStorageSync('SERVICE_LAST_ITEM', normalized)
       })
     }
     if (!this.serviceItem._id) {
-      const cached = uni.getStorageSync('LAST_SERVICE_ITEM')
+      // 优先从服务页专用存储加载
+      const cached = uni.getStorageSync('SERVICE_LAST_ITEM')
       if (cached && cached._id) {
         this.serviceItem = cached
         this.images = (cached.images && cached.images.length ? cached.images : [ '/static/logo.png' ])
         uni.setNavigationBarTitle({ title: cached.name || '服务详情' })
       } else {
-        this.images = ['/static/logo.png']
+        // 兼容旧的存储方式
+        const oldCached = uni.getStorageSync('LAST_SERVICE_ITEM')
+        if (oldCached && oldCached._id) {
+          this.serviceItem = oldCached
+          this.images = (oldCached.images && oldCached.images.length ? oldCached.images : [ '/static/logo.png' ])
+          uni.setNavigationBarTitle({ title: oldCached.name || '服务详情' })
+        } else {
+          this.images = ['/static/logo.png']
+        }
       }
     }
 

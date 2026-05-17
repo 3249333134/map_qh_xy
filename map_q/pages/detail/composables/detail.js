@@ -289,6 +289,72 @@ export default function useDetail() {
     }
   };
 
+  // 当前页面来源
+  let source = '';
+  
+  // 加载详情数据
+  const loadDetailData = (id) => {
+    console.log('加载详情数据:', id);
+    
+    if (cardTitle) {
+      detailData.value.title = cardTitle;
+      detailData.value.content = cardTitle;
+    }
+    if (cardAuthor) {
+      detailData.value.authorName = cardAuthor;
+      detailData.value.userInfo.name = cardAuthor;
+    }
+    if (cardLikes) {
+      detailData.value.likeCount = cardLikes;
+    }
+  };
+  
+  // 从首页专用存储加载数据
+  const loadFromIndexStorage = () => {
+    try {
+      const item = uni.getStorageSync('INDEX_LAST_ITEM');
+      if (item && item._id) {
+        cardId = item._id;
+        cardTitle = item.name || item.title || '';
+        cardAuthor = item.author || '';
+        cardLikes = item.likes || 0;
+        detailData.value.title = cardTitle || detailData.value.title;
+        detailData.value.content = item.description || cardTitle || detailData.value.content;
+        detailData.value.authorName = cardAuthor || detailData.value.authorName;
+        detailData.value.userInfo.name = cardAuthor || detailData.value.userInfo.name;
+        detailData.value.likeCount = cardLikes || detailData.value.likeCount;
+        if (item.images && Array.isArray(item.images)) {
+          detailData.value.images = item.images;
+        }
+      }
+    } catch (e) {
+      console.warn('从首页存储加载数据失败:', e);
+    }
+  };
+  
+  // 从服务页专用存储加载数据
+  const loadFromServiceStorage = () => {
+    try {
+      const item = uni.getStorageSync('LAST_SERVICE_ITEM');
+      if (item && item._id) {
+        cardId = item._id;
+        cardTitle = item.name || item.title || '';
+        cardAuthor = item.author || '';
+        cardLikes = item.likes || 0;
+        detailData.value.title = cardTitle || detailData.value.title;
+        detailData.value.content = item.description || cardTitle || detailData.value.content;
+        detailData.value.authorName = cardAuthor || detailData.value.authorName;
+        detailData.value.userInfo.name = cardAuthor || detailData.value.userInfo.name;
+        detailData.value.likeCount = cardLikes || detailData.value.likeCount;
+        if (item.images && Array.isArray(item.images)) {
+          detailData.value.images = item.images;
+        }
+      }
+    } catch (e) {
+      console.warn('从服务页存储加载数据失败:', e);
+    }
+  };
+  
   // 初始化数据
   const initializeData = (options) => {
     if (options) {
@@ -298,9 +364,22 @@ export default function useDetail() {
         cardAuthor = decodeURIComponent(options.author || '');
         cardLikes = parseInt(options.likes || 0);
       }
-      
-      loadDetailData(cardId);
+      // 记录来源
+      source = options.source || '';
     }
+    
+    // 根据来源加载对应数据
+    if (source === 'index') {
+      loadFromIndexStorage();
+    } else if (source === 'service') {
+      loadFromServiceStorage();
+    } else {
+      // 默认尝试从两个存储中加载
+      loadFromIndexStorage();
+      loadFromServiceStorage();
+    }
+    
+    loadDetailData(cardId);
   };
 
   // 导出所有需要的数据和方法

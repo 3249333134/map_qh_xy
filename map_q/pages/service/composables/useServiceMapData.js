@@ -2,6 +2,9 @@ import { ref, reactive } from 'vue'
 import { MONGO_CONFIG } from '../../../utils/db.js'
 import { CATEGORY_MAP, MARKER_CONFIG } from '../constants/layoutConfig.js'
 
+// 服务页专用前缀，用于隔离本地存储
+const STORAGE_PREFIX = 'SERVICE_'
+
 export function useServiceMapData() {
   // 数据状态
   const mapPoints = ref([])
@@ -14,18 +17,25 @@ export function useServiceMapData() {
   const mapBounds = ref(null)
   const visibleCardIndices = ref([])
   
-  // 地图配置
+  // 地图配置 - 服务页独立状态
   const mapConfig = reactive({
     latitude: 30.572815,
     longitude: 104.066801,
     markers: [],
     scale: 18
   })
-  // 读取启动阶段缓存的定位作为初始坐标
-  const cachedLoc = uni.getStorageSync('USER_LOCATION')
+  // 读取服务页专属的缓存定位作为初始坐标
+  const cachedLoc = uni.getStorageSync(STORAGE_PREFIX + 'LOCATION')
   if (cachedLoc && typeof cachedLoc.latitude === 'number' && typeof cachedLoc.longitude === 'number') {
     mapConfig.latitude = cachedLoc.latitude
     mapConfig.longitude = cachedLoc.longitude
+  } else {
+    // 如果服务页没有缓存，使用全局缓存作为 fallback
+    const globalLoc = uni.getStorageSync('USER_LOCATION')
+    if (globalLoc && typeof globalLoc.latitude === 'number' && typeof globalLoc.longitude === 'number') {
+      mapConfig.latitude = globalLoc.latitude
+      mapConfig.longitude = globalLoc.longitude
+    }
   }
   
   // 获取地图数据
@@ -261,11 +271,9 @@ export function useServiceMapData() {
     mapConfig.markers = markers
   }
   
-  // 获取用户位置
-  // 方法：getUserLocation
+  // 获取用户位置 - 服务页专用，保存到服务页专属存储
   const getUserLocation = async () => {
     try {
-      // 先检查并尝试授权
       const setting = await uni.getSetting()
       const hasAuth = setting?.authSetting?.['scope.userLocation'] === true
       if (!hasAuth) {
@@ -275,26 +283,58 @@ export function useServiceMapData() {
           console.warn('用户未授权地理位置，使用默认坐标', authErr)
           mapConfig.latitude = 30.572269
           mapConfig.longitude = 104.066541
-          uni.setStorageSync('USER_LOCATION', { latitude: mapConfig.latitude, longitude: mapConfig.longitude })
+          uni.setStorageSync(STORAGE_PREFIX + 'LOCATION', { latitude: mapConfig.latitude, longitude: mapConfig.longitude })
           return { latitude: mapConfig.latitude, longitude: mapConfig.longitude }
         }
       }
 
-      // 已授权或授权成功后，获取位置
       const res = await uni.getLocation({
         type: 'wgs84',
         isHighAccuracy: true
       })
       mapConfig.latitude = res.latitude
       mapConfig.longitude = res.longitude
-      uni.setStorageSync('USER_LOCATION', { latitude: res.latitude, longitude: res.longitude })
+      // 保存到服务页专属存储
+      uni.setStorageSync(STORAGE_PREFIX + 'LOCATION', { latitude: res.latitude, longitude: res.longitude })
       return res
     } catch (error) {
       console.error('定位失败，使用默认位置:', error)
       mapConfig.latitude = 30.572269
       mapConfig.longitude = 104.066541
-      uni.setStorageSync('USER_LOCATION', { latitude: mapConfig.latitude, longitude: mapConfig.longitude })
+      uni.setStorageSync(STORAGE_PREFIX + 'LOCATION', { latitude: mapConfig.latitude, longitude: mapConfig.longitude })
       return { latitude: mapConfig.latitude, longitude: mapConfig.longitude }
+    }
+  }
+  
+  // 保存服务页地图状态到本地存储
+  const saveMapState = () => {
+    try {
+      const state = {
+        latitude: mapConfig.latitude,
+        longitude: mapConfig.longitude,
+        scale: mapConfig.scale,
+        visibleCardIndices: visibleCardIndices.value,
+        currentPage: currentPage.value
+      }
+      uni.setStorageSync(STORAGE_PREFIX + 'MAP_STATE', state)
+    } catch (e) {
+      console.warn('保存服务页地图状态失败:', e)
+    }
+  }
+  
+  // 从本地存储加载服务页地图状态
+  const loadMapState = () => {
+    try {
+      const state = uni.getStorageSync(STORAGE_PREFIX + 'MAP_STATE')
+      if (state) {
+        if (typeof state.latitude === 'number') mapConfig.latitude = state.latitude
+        if (typeof state.longitude === 'number') mapConfig.longitude = state.longitude
+        if (typeof state.scale === 'number') mapConfig.scale = state.scale
+        if (Array.isArray(state.visibleCardIndices)) visibleCardIndices.value = state.visibleCardIndices
+        if (typeof state.currentPage === 'number') currentPage.value = state.currentPage
+      }
+    } catch (e) {
+      console.warn('加载服务页地图状态失败:', e)
     }
   }
   
@@ -353,9 +393,10 @@ export function useServiceMapData() {
       mapConfig.longitude = lng
       mapConfig.scale = 16
     }
-    uni.setStorageSync('LAST_SERVICE_ITEM', item)
+    // 使用服务页专用存储保存点击的卡片数据
+    uni.setStorageSync(STORAGE_PREFIX + 'LAST_ITEM', item)
     uni.navigateTo({
-      url: '/pages/service/detail/index',
+      url: `/pages/service/detail/index?source=service`,
       success(res) {
         res.eventChannel && res.eventChannel.emit('service-item', { item })
       }
@@ -400,6 +441,8 @@ export function useServiceMapData() {
     openServiceDetail,
     handleVisibleCardsChange,
     onMapRegionChanged,
-    onSearchInput
+    onSearchInput,
+    saveMapState,
+    loadMapState
   }
 }
