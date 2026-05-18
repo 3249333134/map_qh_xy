@@ -16,6 +16,7 @@
       @markertap="onMarkerTap"
       @poi-tap="onPoiTap"
       @poitap="onPoiTap"
+      @show-track="onShowTrack"
       ref="mapBackground"
     />
     
@@ -43,7 +44,6 @@
       @card-tap="handleCardTap"
       @media-tap="handleMediaTap"
       @content-tap="handleContentTap"
-      @visible-cards-change="onVisibleCardsChange"
       @close-point-detail="closePointDetail"
       @navigate-to-point="navigateToPoint"
       @right-action-tap="openCenterPointDetail"
@@ -53,8 +53,8 @@
     <!-- 全局发布弹窗挂载点 -->
     <GlobalOverlayHost />
   </view>
- </template>
- 
+</template>
+
 <script>
 import { onMounted, ref } from 'vue'
 import { onShow, onHide } from '@dcloudio/uni-app'
@@ -66,7 +66,7 @@ import { useLayout } from './composables/useLayout.js'
 import { LAYOUT_CONFIG } from './constants/layoutConfig.js'
 import { useCategory } from './composables/useCategory.js'
 import { useMapManager } from './composables/useMapManager.js'
- 
+
 export default {
   name: 'IndexPage',
   components: {
@@ -76,9 +76,8 @@ export default {
   },
   
   setup() {
-    // 地图组件引用
     const mapBackground = ref(null)
-    // 数据 composables
+    
     const {
       mapPoints,
       isLoading,
@@ -89,7 +88,6 @@ export default {
       mapBounds
     } = useMapData()
     
-    // 布局 composables
     const {
       contentHeight,
       mapHeight,
@@ -103,14 +101,12 @@ export default {
       handleDragEnd
     } = useLayout()
     
-    // 分类 composables
     const {
       categories,
       activeCategory,
       handleCategoryChange: changeCategoryHandler
     } = useCategory()
     
-    // 地图管理 composables（对方法重命名，便于自定义包装）
     const {
       mapConfig,
       visibleCardIndices,
@@ -122,7 +118,6 @@ export default {
       loadMapState
     } = useMapManager()
     
-    // 错误状态
     const errorMessage = ref('')
     const showError = ref(false)
     
@@ -133,12 +128,10 @@ export default {
       setTimeout(() => { showError.value = false }, 3000)
     }
     
-    // 地图错误处理（确保在 setup 中定义并返回）
     const handleMapError = (msg) => {
       handleError(new Error(msg), '地图加载')
     }
     
-    // 分类切换
     const handleCategoryChange = async (categoryId) => {
       try {
         changeCategoryHandler(categoryId)
@@ -152,22 +145,18 @@ export default {
       }
     }
     
-    // 加载更多
     const loadMoreItems = () => {
       loadMore(activeCategory.value, mapConfig)
     }
     
-    // 搜索输入
     const onSearchInput = (searchText) => {
       console.log('搜索:', searchText)
     }
     
-    // 卡片点击
     const handleCardTap = (cardData) => {
       console.log('卡片点击:', cardData)
     }
- 
-    // 处理地图定位事件
+
     const handleMoveToLocation = (locationData) => {
       const { latitude, longitude, scale } = locationData
       mapConfig.latitude = latitude
@@ -175,11 +164,19 @@ export default {
       mapConfig.scale = scale
       console.log('地图配置已更新:', locationData)
     }
- 
-    // 上方媒体区域点击：跳转首页详情页并定位
+
     const handleMediaTap = async (data) => {
-      console.log('媒体区域点击，准备跳转首页详情页并定位:', data)
+      console.log('媒体区域点击:', data)
       const { cardData } = data
+      
+      if (cardData && cardData.type === 'track') {
+        console.log('点击轨迹卡片，准备在地图上显示轨迹')
+        if (cardData.location && cardData.location.coordinates && mapBackground.value) {
+          mapBackground.value.showTrack(cardData.location.coordinates, cardData.highEnergyPoints || [])
+        }
+        return
+      }
+      
       if (cardData && cardData.location && cardData.location.coordinates && mapBackground.value) {
         const [longitude, latitude] = cardData.location.coordinates
         try {
@@ -191,7 +188,6 @@ export default {
       }
       if (cardData && cardData._id) {
         try {
-          // 使用首页专用存储保存点击的卡片数据
           uni.setStorageSync('INDEX_LAST_ITEM', cardData)
           await uni.navigateTo({
             url: `/pages/detail/index?id=${cardData._id}&title=${encodeURIComponent(cardData.name || cardData.title || '')}&author=${encodeURIComponent(cardData.author || '')}&likes=${cardData.likes || 0}&source=index`
@@ -205,10 +201,18 @@ export default {
       }
     }
     
-    // 下方内容区域点击：只定位到地图
     const handleContentTap = async (data) => {
-      console.log('内容区域点击，准备定位到地图:', data)
+      console.log('内容区域点击:', data)
       const { cardData } = data
+      
+      if (cardData && cardData.type === 'track') {
+        console.log('点击轨迹卡片内容区域，准备在地图上显示轨迹')
+        if (cardData.location && cardData.location.coordinates && mapBackground.value) {
+          mapBackground.value.showTrack(cardData.location.coordinates, cardData.highEnergyPoints || [])
+        }
+        return
+      }
+      
       if (cardData && cardData.location && cardData.location.coordinates && mapBackground.value) {
         const [longitude, latitude] = cardData.location.coordinates
         try {
@@ -222,18 +226,25 @@ export default {
       }
     }
     
-    // 包装：地图区域变化（同步到 useMapData 的 mapBounds）
+    const onShowTrack = (polyline) => {
+      console.log('收到显示轨迹事件:', polyline)
+      if (!mapConfig.polyline || !Array.isArray(mapConfig.polyline)) {
+        mapConfig.polyline = []
+      }
+      mapConfig.polyline.length = 0
+      mapConfig.polyline.push(...polyline)
+      console.log('轨迹已设置到mapConfig:', mapConfig.polyline)
+    }
+    
     const onMapRegionChanged = (bounds) => {
       try {
         mapBounds.value = bounds
-        // 保留原管理器的处理（日志等）
         mapMgrRegionChanged(bounds)
       } catch (error) {
         handleError(error, '处理地图区域变化')
       }
     }
     
-    // 包装：可视卡片索引变化 -> 更新地图标记
     const onVisibleCardsChange = (indices) => {
       mapMgrVisibleCardsChange(indices)
       updateMapMarkers(mapPoints.value)
@@ -282,6 +293,7 @@ export default {
         return envKey || fallbackKey
       } catch (e) { return 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K' }
     }
+    
     const resolveAddressByCoords = (lat, lng) => {
       const key = getQqMapKey()
       if (key) {
@@ -355,30 +367,25 @@ export default {
         contentHeight.value = Math.max(minContentHeight.value, Math.min(maxH, screenH))
       } catch (e) {}
     }
+    
     const restoreContentHeight = () => {
       if (lastContentHeightBeforeExpand.value) {
         contentHeight.value = lastContentHeightBeforeExpand.value
       }
     }
 
-    // 初始化
     const init = async () => {
       try {
         console.log('开始初始化首页...')
-        // 1. 初始化布局
         initLayout()
-        // 2. 加载之前保存的首页状态
         loadMapState()
-        // 3. 获取用户位置（可选）
         try {
           await getUserLocation()
           console.log('位置获取成功')
         } catch (error) {
           console.log('获取位置失败，使用默认位置:', error)
         }
-        // 4. 获取地图数据
         await fetchMapData(activeCategory.value, mapConfig)
-        // 5. 更新地图标记
         updateMapMarkers(mapPoints.value)
         console.log('首页初始化完成')
       } catch (error) {
@@ -387,12 +394,10 @@ export default {
     }
     
     onMounted(() => { 
-      // 统一搜索框高度为 60，确保折叠态仅保留搜索框
       searchBoxHeight.value = 60
       init()
     })
     
-    // 页面展示时同步底部 TabBar 高亮为“首页”
     onShow(() => {
       try {
         const pages = getCurrentPages()
@@ -403,16 +408,13 @@ export default {
       } catch (e) {}
     })
     
-    // 页面隐藏时保存首页状态
     onHide(() => {
       saveMapState()
     })
     
     return {
-      // 组件引用
       mapBackground,
       
-      // 布局相关
       contentHeight,
       mapHeight,
       searchBoxHeight,
@@ -424,7 +426,6 @@ export default {
       handleDragEnd,
       initLayout,
       
-      // 地图相关
       mapConfig,
       visibleCardIndices,
       updateMapMarkers,
@@ -433,19 +434,16 @@ export default {
       onVisibleCardsChange,
       handleMoveToLocation,
       
-      // 数据相关
       mapPoints,
       isLoading,
       hasMoreData,
       fetchMapData,
       loadMore,
       
-      // 分类相关
       categories,
       activeCategory,
       handleCategoryChange,
       
-      // 事件处理
       loadMoreItems,
       onSearchInput,
       handleCardTap,
@@ -453,7 +451,6 @@ export default {
       handleContentTap,
       lockContentMax,
       restoreContentHeight,
-      // 选中点详情
       selectedPoint,
       onMarkerTap,
       onPoiTap,
@@ -461,16 +458,16 @@ export default {
       navigateToPoint,
       openCenterPointDetail,
       
-      // 错误处理
       showError,
       errorMessage,
       handleError,
-      handleMapError
+      handleMapError,
+      onShowTrack
     }
   }
 }
 </script>
- 
+
 <style scoped>
 .container {
   position: relative;

@@ -6,6 +6,7 @@
       :latitude="mapCenter.latitude"
       :longitude="mapCenter.longitude"
       :markers="(config && config.markers) || []"
+      :polyline="(config && config.polyline) || []"
       :scale="currentScale"
       show-location
       :subkey="mapKey"
@@ -44,7 +45,6 @@ export default {
       hasInitialBounds: false,
       retryCount: 0,
       maxRetries: 3,
-      // 新增：记录最近一次地图的缩放级别，避免写入computed
       lastScale: null
     }
   },
@@ -60,7 +60,6 @@ export default {
     }
   },
   methods: {
-    // 清理资源
     cleanup() {
       if (this.boundsFetchTimer) {
         clearTimeout(this.boundsFetchTimer);
@@ -70,7 +69,6 @@ export default {
       this.isInitialized = false;
     },
     
-    // 地图错误处理（合并到最终 methods 中，避免被覆盖）
     onMapError(e) {
       console.error('地图加载错误:', e)
       if (this.retryCount < this.maxRetries) {
@@ -83,29 +81,25 @@ export default {
       }
     },
     
-    // 初始化地图
     initializeMap() {
       try {
         this.mapContext = uni.createMapContext('map', this);
         console.log('地图上下文已创建:', this.mapContext);
         this.isInitialized = true;
         
-        // 初始化完成后延迟获取边界
         this.boundsFetchTimer = setTimeout(() => {
           this.getMapBounds();
-          this.hasInitialBounds = true; // 标记已获取初始边界
-        }, 1000); // 增加延迟确保地图完全加载
+          this.hasInitialBounds = true;
+        }, 1000);
       } catch (error) {
         console.error('地图初始化失败:', error);
       }
     },
     
     refreshLocation() {
-      // 允许父页面在刷新定位时拉起系统定位权限并更新 mapConfig
       this.$emit('refresh-location')
     },
 
-    // 添加地图定位方法
     moveToLocation(latitude, longitude, scale = 16) {
       if (!latitude || !longitude) {
         console.error('定位失败：缺少有效的经纬度坐标')
@@ -115,24 +109,115 @@ export default {
       console.log(`地图定位到坐标: ${latitude}, ${longitude}`)
       
       return new Promise((resolve) => {
-        // 触发父组件更新地图配置
         this.$emit('move-to-location', {
           latitude,
           longitude,
           scale
         })
         
-        // 等待地图更新完成
         setTimeout(() => {
           resolve({ latitude, longitude, scale })
         }, 300)
       })
     },
 
-    // 地图更新完成事件
+    showTrack(trackPoints, highEnergyPoints = []) {
+      if (!trackPoints || !Array.isArray(trackPoints) || trackPoints.length < 2) {
+        console.error('无效的轨迹数据')
+        return
+      }
+      
+      console.log('显示轨迹数据点数量:', trackPoints.length)
+      console.log('高能点数量:', highEnergyPoints.length)
+      
+      const points = trackPoints.map(point => ({
+        latitude: parseFloat(point[1]),
+        longitude: parseFloat(point[0])
+      }))
+      
+      console.log('转换后的points:', points)
+      
+      const polyline = [{
+        points: points,
+        color: '#667eea',
+        width: 8,
+        dottedLine: false,
+        arrowLine: true,
+        borderColor: '#5568d3',
+        borderWidth: 2
+      }]
+      
+      if (this.config && this.config.polyline) {
+        console.log('设置前的polyline:', this.config.polyline)
+        this.config.polyline.length = 0
+        this.config.polyline.push(...polyline)
+        console.log('设置后的polyline:', this.config.polyline)
+      }
+      
+      // 添加高能点标记
+      this.updateHighEnergyMarkers(highEnergyPoints)
+      
+      this.$emit('show-track', polyline)
+      
+      const lats = trackPoints.map(p => parseFloat(p[1]))
+      const lngs = trackPoints.map(p => parseFloat(p[0]))
+      const centerLat = (Math.max(...lats) + Math.min(...lats)) / 2
+      const centerLng = (Math.max(...lngs) + Math.min(...lngs)) / 2
+      const latRange = Math.max(...lats) - Math.min(...lats)
+      const lngRange = Math.max(...lngs) - Math.min(...lngs)
+      
+      // 根据范围计算合适的缩放级别
+      let scale = 16
+      const maxRange = Math.max(latRange, lngRange)
+      if (maxRange > 0.1) {
+        scale = 12
+      } else if (maxRange > 0.05) {
+        scale = 13
+      } else if (maxRange > 0.02) {
+        scale = 14
+      } else if (maxRange > 0.01) {
+        scale = 15
+      }
+      
+      console.log('轨迹范围:', { latRange, lngRange, maxRange, scale })
+      this.moveToLocation(centerLat, centerLng, scale)
+    },
+    
+    updateHighEnergyMarkers(highEnergyPoints) {
+      if (!highEnergyPoints || !Array.isArray(highEnergyPoints) || highEnergyPoints.length === 0) {
+        console.log('没有高能点数据')
+        return
+      }
+      
+      console.log('更新高能点标记:', highEnergyPoints)
+      
+      const markers = highEnergyPoints.map((point, index) => ({
+        id: `energy_${index}`,
+        latitude: parseFloat(point.coordinate[1]),
+        longitude: parseFloat(point.coordinate[0]),
+        width: 40,
+        height: 40,
+        iconPath: '',
+        callout: {
+          content: `${point.label}\n能量: ${point.energy}`,
+          fontSize: 12,
+          borderRadius: 6,
+          bgColor: '#ff6b6b',
+          color: '#ffffff',
+          padding: 8,
+          display: 'ALWAYS'
+        }
+      }))
+      
+      if (this.config && this.config.markers) {
+        this.config.markers.length = 0
+        this.config.markers.push(...markers)
+        console.log('高能点标记已设置:', this.config.markers)
+      }
+    },
+
     onMapUpdated() {
       console.log('地图更新完成');
-      // 只在初始化后的第一次更新获取边界，后续依赖regionchange事件
       if (this.isInitialized && !this.hasInitialBounds) {
         this.hasInitialBounds = true;
         this.debouncedGetBounds();
@@ -163,11 +248,9 @@ export default {
       this.$emit('poi-tap', { detail, marker })
     },
     
-    // 地图区域变化事件
     onRegionChange(e) {
       console.log('地图区域变化事件:', e);
       if (e.type === 'end' && (e.causedBy === 'drag' || e.causedBy === 'scale')) {
-        // 修复：记录缩放到数据字段，避免写入computed
         const newScale = e.scale || this.lastScale || this.currentScale
         this.lastScale = newScale
         console.log('地图缩放级别:', newScale)
@@ -175,10 +258,8 @@ export default {
       }
     },
     
-    // 防抖获取边界
     debouncedGetBounds() {
       const now = Date.now();
-      // 增加防抖时间到2000ms
       if (now - this.lastBoundsTime < 2000) { 
         console.log('防抖：跳过边界获取');
         return;
@@ -189,13 +270,11 @@ export default {
         clearTimeout(this.boundsFetchTimer);
       }
       
-      // 增加延迟时间，确保用户完全停止操作
       this.boundsFetchTimer = setTimeout(() => {
         this.getMapBounds();
       }, 1000);
     },
     
-    // 获取地图可视区域边界
     getMapBounds() {
       if (!this.isInitialized || !this.mapContext) {
         console.log('地图未初始化，跳过边界获取');
@@ -204,7 +283,6 @@ export default {
       
       console.log('开始获取地图区域...');
       
-      // 添加超时处理
       const timeoutId = setTimeout(() => {
         console.error('获取地图区域超时');
         this.handleBoundsFailure();
@@ -215,7 +293,6 @@ export default {
           clearTimeout(timeoutId);
           console.log('原始地图区域数据:', res);
           
-          // 验证返回的数据
           if (!res || !res.northeast || !res.southwest) {
             console.error('地图区域数据不完整:', res);
             this.handleBoundsFailure();
@@ -232,13 +309,11 @@ export default {
                 latitude: parseFloat(res.southwest.latitude),
                 longitude: parseFloat(res.southwest.longitude)
               },
-              // 修复：使用记录的缩放级别作为bounds的scale
               scale: this.lastScale || this.currentScale
             };
             
             console.log('处理后的地图可视区域:', bounds);
             
-            // 验证边界数据的合理性
             if (this.validateBounds(bounds)) {
               console.log('发送区域变化事件给父组件');
               this.$emit('region-changed', bounds);
@@ -258,7 +333,6 @@ export default {
       });
     },
     
-    // 验证边界数据
     validateBounds(bounds) {
       if (!bounds.northeast || !bounds.southwest) {
         console.error('边界数据缺失');
@@ -267,21 +341,18 @@ export default {
       
       const { northeast, southwest } = bounds;
       
-      // 检查数据类型
       if (isNaN(northeast.latitude) || isNaN(northeast.longitude) ||
           isNaN(southwest.latitude) || isNaN(southwest.longitude)) {
         console.error('边界数据包含非数字值:', bounds);
         return false;
       }
       
-      // 检查边界逻辑
       if (northeast.latitude <= southwest.latitude ||
           northeast.longitude <= southwest.longitude) {
         console.error('地图边界数据异常:', bounds);
         return false;
       }
       
-      // 检查边界范围是否合理（避免过大或过小的范围）
       const latDiff = northeast.latitude - southwest.latitude;
       const lngDiff = northeast.longitude - southwest.longitude;
       
@@ -293,7 +364,6 @@ export default {
       return true;
     },
     
-    // 处理边界获取失败
     handleBoundsFailure() {
       console.log('尝试使用fallback边界');
       const fallbackBounds = this.createFallbackBounds();
@@ -305,7 +375,6 @@ export default {
       }
     },
     
-    // 创建fallback边界（基于当前地图中心点，防御空值）
     createFallbackBounds() {
       const center = this.mapCenter
       if (!center || center.latitude == null || center.longitude == null ||

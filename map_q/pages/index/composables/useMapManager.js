@@ -10,6 +10,7 @@ export function useMapManager() {
     longitude: 104.066801,
     scale: 18,
     markers: [],
+    polyline: [],
     showLocation: true,
     enableOverlooking: false,
     enableZoom: true,
@@ -28,33 +29,27 @@ export function useMapManager() {
       return
     }
     
-    const markers = mapPoints.map((point, index) => {
-      const isVisible = visibleCardIndices.value.includes(index)
-      return {
-        id: index,
-        latitude: point.location.coordinates[1],
-        longitude: point.location.coordinates[0],
-        iconPath: '/static/marker.png',
-        width: 24,
-        height: 24,
-        customData: {
-          pointId: point._id,
-          name: point.name,
-          index: index,
-          isVisible: isVisible
-        },
-        callout: {
-          content: point.name,
-          color: '#000000',
-          fontSize: 12,
-          borderRadius: 4,
-          padding: 5,
-          display: 'BYCLICK'
-        }
-      }
+    // 过滤出有位置信息的点，排除轨迹类型
+    const validPoints = mapPoints.filter(point => {
+      return point.location && point.location.coordinates && point.type !== 'track'
     })
     
+    // 创建标记点数组
+    const markers = validPoints.map((point, index) => ({
+      id: index,
+      latitude: point.location.coordinates[1],
+      longitude: point.location.coordinates[0],
+      iconPath: '/static/map-marker.png',
+      width: 30,
+      height: 30,
+      customData: {
+        pointId: point._id,
+        name: point.name || point.title
+      }
+    }))
+    
     mapConfig.markers = markers
+    console.log('地图标记已更新:', markers.length)
   }
   
   // 获取用户位置
@@ -63,54 +58,64 @@ export function useMapManager() {
       uni.getLocation({
         type: 'gcj02',
         success: (res) => {
+          console.log('获取位置成功:', res)
           mapConfig.latitude = res.latitude
           mapConfig.longitude = res.longitude
           resolve(res)
         },
-        fail: reject
+        fail: (error) => {
+          console.warn('获取位置失败，使用默认位置:', error)
+          reject(error)
+        }
       })
     })
   }
   
-  // 处理地图区域变化
-  const onMapRegionChanged = (e) => {
-    // 处理地图区域变化逻辑
-    console.log('地图区域变化:', e)
+  // 地图区域变化处理
+  const onMapRegionChanged = (bounds) => {
+    console.log('地图区域变化:', bounds)
+    // 可以在这里添加更多区域变化相关的逻辑
   }
   
-  // 处理可视卡片变化
+  // 可视卡片变化处理
   const handleVisibleCardsChange = (indices) => {
     visibleCardIndices.value = indices
   }
   
-  // 保存首页地图状态到本地存储
+  // 保存地图状态到本地存储
   const saveMapState = () => {
     try {
       const state = {
         latitude: mapConfig.latitude,
         longitude: mapConfig.longitude,
-        scale: mapConfig.scale,
-        visibleCardIndices: visibleCardIndices.value
+        scale: mapConfig.scale
       }
-      uni.setStorageSync(STORAGE_PREFIX + 'MAP_STATE', state)
-    } catch (e) {
-      console.warn('保存首页地图状态失败:', e)
+      uni.setStorageSync(STORAGE_PREFIX + 'MAP_STATE', JSON.stringify(state))
+      console.log('地图状态已保存')
+    } catch (error) {
+      console.error('保存地图状态失败:', error)
     }
   }
   
-  // 从本地存储加载首页地图状态
+  // 从本地存储加载地图状态
   const loadMapState = () => {
     try {
-      const state = uni.getStorageSync(STORAGE_PREFIX + 'MAP_STATE')
-      if (state) {
-        if (typeof state.latitude === 'number') mapConfig.latitude = state.latitude
-        if (typeof state.longitude === 'number') mapConfig.longitude = state.longitude
-        if (typeof state.scale === 'number') mapConfig.scale = state.scale
-        if (Array.isArray(state.visibleCardIndices)) visibleCardIndices.value = state.visibleCardIndices
+      const stateStr = uni.getStorageSync(STORAGE_PREFIX + 'MAP_STATE')
+      if (stateStr) {
+        const state = JSON.parse(stateStr)
+        mapConfig.latitude = state.latitude || mapConfig.latitude
+        mapConfig.longitude = state.longitude || mapConfig.longitude
+        mapConfig.scale = state.scale || mapConfig.scale
+        console.log('地图状态已加载:', state)
       }
-    } catch (e) {
-      console.warn('加载首页地图状态失败:', e)
+    } catch (error) {
+      console.error('加载地图状态失败:', error)
     }
+  }
+  
+  // 清除轨迹
+  const clearTrack = () => {
+    mapConfig.polyline = []
   }
   
   return {
@@ -121,6 +126,7 @@ export function useMapManager() {
     onMapRegionChanged,
     handleVisibleCardsChange,
     saveMapState,
-    loadMapState
+    loadMapState,
+    clearTrack
   }
 }

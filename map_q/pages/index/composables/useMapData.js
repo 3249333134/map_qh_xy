@@ -136,20 +136,68 @@ export function useMapData() {
     
     for (let i = 0; i < count; i++) {
       const index = startIndex + i
-      mapPoints.value.push({
-        _id: `${activeCategory}_${currentPage.value}_${i}_${Date.now()}`,
-        name: `${prefix}地点 ${index + 1}`,
-        author: `用户${Math.floor(Math.random() * 1000)}`,
-        address: `${addressPrefix}测试地址 ${index + 1}`,
-        description: `这是一个${prefix}测试描述 ${index + 1}`,
-        location: {
-          type: 'Point',
-          coordinates: [
-            centerLng + (Math.random() - 0.5) * lngRange * 0.8,
-            centerLat + (Math.random() - 0.5) * latRange * 0.8
-          ]
+      
+      // 每5个卡片插入一个轨迹卡片
+      if ((index + 1) % 5 === 0) {
+        // 生成轨迹数据
+        const trackPoints = []
+        const trackCenterLat = centerLat + (Math.random() - 0.5) * latRange * 0.4
+        const trackCenterLng = centerLng + (Math.random() - 0.5) * lngRange * 0.4
+        const trackRadius = 0.003
+        
+        // 生成椭圆形轨迹点
+        for (let j = 0; j < 30; j++) {
+          const angle = (j / 30) * Math.PI * 2
+          const latOffset = Math.sin(angle) * trackRadius
+          const lngOffset = Math.cos(angle) * trackRadius * 1.5
+          trackPoints.push([
+            trackCenterLng + lngOffset,
+            trackCenterLat + latOffset
+          ])
         }
-      })
+        
+        // 生成3-5个高能点
+        const highEnergyPoints = []
+        const pointCount = Math.floor(Math.random() * 3) + 3 // 3-5个高能点
+        for (let k = 0; k < pointCount; k++) {
+          const pointIndex = Math.floor((k / pointCount) * trackPoints.length)
+          highEnergyPoints.push({
+            coordinate: trackPoints[pointIndex],
+            energy: Math.floor(Math.random() * 50) + 50, // 50-100的能量值
+            label: ['起点', '补给站', '观景台', '最高点', '终点'][k] || `关键点${k + 1}`
+          })
+        }
+        
+        mapPoints.value.push({
+          _id: `track_${activeCategory}_${currentPage.value}_${i}_${Date.now()}`,
+          type: 'track',
+          name: `${prefix}跑步路线 ${Math.floor(index / 5) + 1}`,
+          author: `跑者${Math.floor(Math.random() * 1000)}`,
+          distance: (Math.random() * 3 + 1).toFixed(1),
+          location: {
+            type: 'LineString',
+            coordinates: trackPoints
+          },
+          highEnergyPoints: highEnergyPoints,
+          likes: Math.floor(Math.random() * 500)
+        })
+      } else {
+        mapPoints.value.push({
+          _id: `${activeCategory}_${currentPage.value}_${i}_${Date.now()}`,
+          name: `${prefix}地点 ${index + 1}`,
+          author: `用户${Math.floor(Math.random() * 1000)}`,
+          address: `${addressPrefix}测试地址 ${index + 1}`,
+          description: `这是一个${prefix}测试描述 ${index + 1}`,
+          location: {
+            type: 'Point',
+            coordinates: [
+              centerLng + (Math.random() - 0.5) * lngRange * 0.8,
+              centerLat + (Math.random() - 0.5) * latRange * 0.8
+            ]
+          },
+          likes: Math.floor(Math.random() * 500)
+        })
+      }
     }
     
     hasMoreData.value = true

@@ -24,16 +24,26 @@
           />
         </template>
         <template v-else>
-          <card-item
-            v-for="(item, index) in leftColumnData"
-            :key="'left-base-' + (item._id || '') + '-' + index"
-            :index="index"
-            :card-data="item"
-            :height="getColumnItemHeight('left', index)"
-            column-type="left"
-            @media-tap="$emit('media-tap', $event)"
-            @content-tap="$emit('content-tap', $event)"
-          />
+          <template v-for="(item, index) in leftColumnData" :key="'left-base-' + (item._id || '') + '-' + index">
+            <track-card
+              v-if="item.type === 'track'"
+              :index="index"
+              :card-data="item"
+              :height="getColumnItemHeight('left', index)"
+              column-type="left"
+              @media-tap="$emit('media-tap', $event)"
+              @content-tap="$emit('content-tap', $event)"
+            />
+            <card-item
+              v-else
+              :index="index"
+              :card-data="item"
+              :height="getColumnItemHeight('left', index)"
+              column-type="left"
+              @media-tap="$emit('media-tap', $event)"
+              @content-tap="$emit('content-tap', $event)"
+            />
+          </template>
         </template>
       </view>
       <view class="cards-column">
@@ -51,16 +61,26 @@
           />
         </template>
         <template v-else>
-          <card-item
-            v-for="(item, index) in rightColumnData"
-            :key="'right-base-' + (item._id || '') + '-' + index"
-            :index="leftColumnData.length + index"
-            :card-data="item"
-            :height="getColumnItemHeight('right', index)"
-            column-type="right"
-            @media-tap="$emit('media-tap', $event)"
-            @content-tap="$emit('content-tap', $event)"
-          />
+          <template v-for="(item, index) in rightColumnData" :key="'right-base-' + (item._id || '') + '-' + index">
+            <track-card
+              v-if="item.type === 'track'"
+              :index="leftColumnData.length + index"
+              :card-data="item"
+              :height="getColumnItemHeight('right', index)"
+              column-type="right"
+              @media-tap="$emit('media-tap', $event)"
+              @content-tap="$emit('content-tap', $event)"
+            />
+            <card-item
+              v-else
+              :index="leftColumnData.length + index"
+              :card-data="item"
+              :height="getColumnItemHeight('right', index)"
+              column-type="right"
+              @media-tap="$emit('media-tap', $event)"
+              @content-tap="$emit('content-tap', $event)"
+            />
+          </template>
         </template>
       </view>
     </view>
@@ -72,9 +92,10 @@
 <script>
 import CardItem from '../card/CardItem.vue'
 import ServiceCardItem from '../card/ServiceCardItem.vue'
+import TrackCard from '../card/TrackCard.vue'
 
 export default {
-  components: { CardItem, ServiceCardItem },
+  components: { CardItem, ServiceCardItem, TrackCard },
   props: {
     scrollTop: { type: Number, default: 0 },
     scrollWithAnimation: { type: Boolean, default: true },
