@@ -170,14 +170,11 @@ export default {
       const { cardData } = data
       
       if (cardData && cardData.type === 'track') {
-        console.log('点击轨迹卡片，准备在地图上显示轨迹')
+        console.log('点击轨迹卡片媒体区域，显示轨迹并跳转详情页')
         if (cardData.location && cardData.location.coordinates && mapBackground.value) {
           mapBackground.value.showTrack(cardData.location.coordinates, cardData.highEnergyPoints || [])
         }
-        return
-      }
-      
-      if (cardData && cardData.location && cardData.location.coordinates && mapBackground.value) {
+      } else if (cardData && cardData.location && cardData.location.coordinates && mapBackground.value) {
         const [longitude, latitude] = cardData.location.coordinates
         try {
           await mapBackground.value.moveToLocation(latitude, longitude, 16)
@@ -186,6 +183,7 @@ export default {
           console.error('地图定位失败:', error)
         }
       }
+      
       if (cardData && cardData._id) {
         try {
           uni.setStorageSync('INDEX_LAST_ITEM', cardData)
@@ -206,7 +204,7 @@ export default {
       const { cardData } = data
       
       if (cardData && cardData.type === 'track') {
-        console.log('点击轨迹卡片内容区域，准备在地图上显示轨迹')
+        console.log('点击轨迹卡片内容区域，只在地图上显示轨迹')
         if (cardData.location && cardData.location.coordinates && mapBackground.value) {
           mapBackground.value.showTrack(cardData.location.coordinates, cardData.highEnergyPoints || [])
         }
