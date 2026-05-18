@@ -439,18 +439,11 @@ export default {
           page.getTabBar().setData({ selected: 1 })
         }
       } catch (e) {}
-      // 页面显示时重置详情弹窗状态
-      selectedPoint.value = null
-      isPageReady.value = false
-      console.log('服务页 onShow - 清除详情弹窗状态')
     })
     
     // 页面隐藏时保存服务页状态
     onHide(() => {
       saveMapState()
-      // 页面隐藏时清除详情弹窗状态
-      selectedPoint.value = null
-      console.log('服务页 onHide - 清除详情弹窗状态')
     })
     
     return {

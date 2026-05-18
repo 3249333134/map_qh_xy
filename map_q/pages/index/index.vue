@@ -401,17 +401,11 @@ export default {
           page.getTabBar().setData({ selected: 0 })
         }
       } catch (e) {}
-      // 页面显示时重置详情弹窗状态
-      selectedPoint.value = null
-      console.log('首页 onShow - 清除详情弹窗状态')
     })
     
     // 页面隐藏时保存首页状态
     onHide(() => {
       saveMapState()
-      // 页面隐藏时清除详情弹窗状态
-      selectedPoint.value = null
-      console.log('首页 onHide - 清除详情弹窗状态')
     })
     
     return {

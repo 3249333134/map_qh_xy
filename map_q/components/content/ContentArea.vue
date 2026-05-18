@@ -36,24 +36,6 @@
       @right-action-tap="onRightActionTap"
     />
 
-    <view v-if="selectedPoint" class="point-detail-overlay" :style="{ top: topAreaHeight + 'px' }">
-      <service-point-detail 
-        v-if="useServiceCard" 
-        :point="selectedPoint.point" 
-        :marker="selectedPoint.marker" 
-        :services="mapData"
-        @close="onPointDetailClose" 
-        @navigate="onPointNavigate" 
-      />
-      <point-detail 
-        v-else 
-        :point="selectedPoint.point" 
-        :marker="selectedPoint.marker" 
-        @close="onPointDetailClose" 
-        @navigate="onPointNavigate" 
-      />
-    </view>
-    
     <!-- 卡片内容区 -->
     <cards-container
       v-if="!isCollapsed && !categoryActionExpanded"
@@ -84,8 +66,6 @@
 </template>
 
 <script>
-import PointDetail from '../detail/PointDetail.vue'
-import ServicePointDetail from '../detail/ServicePointDetail.vue'
 import DragSearchBar from './DragSearchBar.vue'
 import CategoryTabsBar from './CategoryTabsBar.vue'
 import CardsContainer from './CardsContainer.vue'
@@ -93,8 +73,6 @@ import ExpandedModules from './ExpandedModules.vue'
 
 export default {
   components: {
-    PointDetail,
-    ServicePointDetail,
     DragSearchBar,
     CategoryTabsBar,
     CardsContainer,
@@ -470,13 +448,6 @@ export default {
       this.categoryActionExpanded = false
       this.$emit('search-tap')
     },
-    onPointDetailClose() {
-      this.$emit('close-point-detail')
-    },
-    onPointNavigate() {
-      this.$emit('navigate-to-point')
-    },
-    
     // 加载更多事件
     // 优化加载更多事件
     onLoadMore() {
