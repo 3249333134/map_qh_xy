@@ -292,23 +292,6 @@ export default function useDetail() {
   // 当前页面来源
   let source = '';
   
-  // 加载详情数据
-  const loadDetailData = (id) => {
-    console.log('加载详情数据:', id);
-    
-    if (cardTitle) {
-      detailData.value.title = cardTitle;
-      detailData.value.content = cardTitle;
-    }
-    if (cardAuthor) {
-      detailData.value.authorName = cardAuthor;
-      detailData.value.userInfo.name = cardAuthor;
-    }
-    if (cardLikes) {
-      detailData.value.likeCount = cardLikes;
-    }
-  };
-  
   // 从首页专用存储加载数据
   const loadFromIndexStorage = () => {
     try {
@@ -335,7 +318,7 @@ export default function useDetail() {
   // 从服务页专用存储加载数据
   const loadFromServiceStorage = () => {
     try {
-      const item = uni.getStorageSync('LAST_SERVICE_ITEM');
+      const item = uni.getStorageSync('SERVICE_LAST_ITEM');
       if (item && item._id) {
         cardId = item._id;
         cardTitle = item.name || item.title || '';
@@ -368,16 +351,14 @@ export default function useDetail() {
       source = options.source || '';
     }
     
-    // 根据来源加载对应数据
+    // 根据来源加载对应数据 - 严格隔离，不交叉加载
     if (source === 'index') {
       loadFromIndexStorage();
     } else if (source === 'service') {
       loadFromServiceStorage();
-    } else {
-      // 默认尝试从两个存储中加载
-      loadFromIndexStorage();
-      loadFromServiceStorage();
     }
+    // 如果没有明确来源，不自动加载任何存储数据，保持默认值
+    // 这样可以避免首页和服务页的状态互相干扰
     
     loadDetailData(cardId);
   };

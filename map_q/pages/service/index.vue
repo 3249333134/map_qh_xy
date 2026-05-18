@@ -50,7 +50,7 @@
 
 <script>
 import { onReady, onShow, onHide } from '@dcloudio/uni-app'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import MapBackground from '../../components/map/MapBackground.vue'
 import ContentArea from '../../components/content/ContentArea.vue'
 import GlobalOverlayHost from '../../components/common/GlobalOverlayHost.vue'
@@ -177,9 +177,24 @@ export default {
 
     // 选中点详情状态
     const selectedPoint = ref(null)
+    // 页面是否已完成初始化（用于防止地图初始化时误触 POI 点击事件）
+    const isPageReady = ref(false)
+    
+    // 监听 selectedPoint 变化，追踪是谁设置的
+    watch(selectedPoint, (newVal, oldVal) => {
+      console.log('=== selectedPoint 变化 ===')
+      console.log('旧值:', oldVal)
+      console.log('新值:', newVal)
+      console.log('调用栈:', new Error().stack)
+    }, { immediate: true, deep: true })
 
     // 标记点点击处理
     const onMarkerTap = (payload) => {
+      // 页面未初始化完成时不处理点击事件
+      if (!isPageReady.value) {
+        console.log('服务页未就绪，忽略标记点点击')
+        return
+      }
       try {
         console.log('=== 服务页标记点点击开始 ===')
         console.log('payload:', payload)
@@ -230,6 +245,11 @@ export default {
 
     // POI点击处理
     const onPoiTap = (payload) => {
+      // 页面未初始化完成时不处理点击事件
+      if (!isPageReady.value) {
+        console.log('服务页未就绪，忽略POI点击')
+        return
+      }
       try {
         const m = payload && payload.marker
         if (!m) return
@@ -324,6 +344,11 @@ export default {
 
     // 打开中心点详情
     const openCenterPointDetail = () => {
+      // 页面未初始化完成时不处理
+      if (!isPageReady.value) {
+        console.log('服务页未就绪，忽略打开中心点详情')
+        return
+      }
       try {
         const lat = mapConfig.latitude
         const lng = mapConfig.longitude
@@ -369,6 +394,9 @@ export default {
     // 页面就绪时初始化
     onReady(() => {
       console.log('服务页 onReady 触发')
+      // 强制重置 selectedPoint，确保页面打开时不显示详情弹窗
+      selectedPoint.value = null
+      console.log('服务页初始化 - 强制重置 selectedPoint:', selectedPoint.value)
       getUserLocation().then(() => {
         initLayout()
         loadMapState()
@@ -377,12 +405,28 @@ export default {
         console.log('服务页初始化完成')
         console.log('mapPoints 数据:', mapPoints.value)
         console.log('mapConfig.markers:', mapConfig.markers)
+        console.log('初始化完成时 selectedPoint:', selectedPoint.value)
+        // 标记页面初始化完成，允许处理点击事件
+        setTimeout(() => {
+          // 再次强制重置 selectedPoint，防止地图初始化过程中被设置
+          selectedPoint.value = null
+          console.log('服务页就绪前再次重置 selectedPoint:', selectedPoint.value)
+          isPageReady.value = true
+          console.log('服务页已就绪，开始接收点击事件')
+          console.log('就绪时 selectedPoint:', selectedPoint.value)
+        }, 2000) // 延长延迟时间，确保地图完全初始化
       }).catch((err) => {
         console.error('服务页初始化失败:', err)
         initLayout()
         loadMapState()
         searchBoxHeight.value = 60
         loadInitialData()
+        // 即使初始化失败也标记页面就绪（延迟后）
+        setTimeout(() => {
+          selectedPoint.value = null
+          isPageReady.value = true
+          console.log('服务页已就绪（异常路径），开始接收点击事件')
+        }, 2000)
       })
     })
     
@@ -397,6 +441,7 @@ export default {
       } catch (e) {}
       // 页面显示时重置详情弹窗状态
       selectedPoint.value = null
+      isPageReady.value = false
       console.log('服务页 onShow - 清除详情弹窗状态')
     })
     

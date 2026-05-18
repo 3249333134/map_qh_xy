@@ -382,10 +382,11 @@ export default {
       try {
         const item = m || {}
         if (item.type === 'service') {
-          uni.setStorageSync('LAST_SERVICE_ITEM', item)
-          uni.navigateTo({ url: '/pages/service/detail/index' })
+          uni.setStorageSync('SERVICE_LAST_ITEM', item)
+          uni.navigateTo({ url: '/pages/service/detail/index?source=service' })
         } else {
-          uni.navigateTo({ url: '/pages/detail/index' })
+          uni.setStorageSync('INDEX_LAST_ITEM', item)
+          uni.navigateTo({ url: '/pages/detail/index?source=index' })
         }
       } catch (e) {
         console.warn('跳转失败', e)
@@ -412,10 +413,11 @@ export default {
         const m = this.mapMarkers.find(mm => mm.id === markerId)
         if (!m) return
         if (m.type === 'service') {
-          uni.setStorageSync('LAST_SERVICE_ITEM', m)
-          uni.navigateTo({ url: '/pages/service/detail/index' })
+          uni.setStorageSync('SERVICE_LAST_ITEM', m)
+          uni.navigateTo({ url: '/pages/service/detail/index?source=service' })
         } else {
-          uni.navigateTo({ url: '/pages/detail/index' })
+          uni.setStorageSync('INDEX_LAST_ITEM', m)
+          uni.navigateTo({ url: '/pages/detail/index?source=index' })
         }
       } catch (err) {
         console.warn('callout 跳转失败', err)
