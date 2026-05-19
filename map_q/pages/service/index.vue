@@ -35,7 +35,7 @@
       @load-more="loadMoreItems"
       @card-tap="handleCardTap"
       @visible-cards-change="handleVisibleCardsChange"
-      card-component="ServiceCardItem"
+      
       @media-tap="handleMediaTap"
       @content-tap="handleContentTap"
       @reserve="handleReserve"
