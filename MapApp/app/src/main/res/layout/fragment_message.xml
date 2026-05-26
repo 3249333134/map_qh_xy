@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="#f8f9fa">
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="24dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="10dp"
+            android:paddingRight="100dp"
+            android:background="#f8f9fa">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_weight="1"
+                android:background="#e8e8e8"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingLeft="15dp"
+                android:paddingRight="15dp"
+                android:radius="18dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Search"
+                    android:textSize="14sp"
+                    android:textColor="#999999"
+                    android:layout_marginRight="8dp"/>
+
+                <EditText
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="1"
+                    android:hint="Search"
+                    android:textSize="14sp"
+                    android:textColor="#666"
+                    android:background="@null" />
+            </LinearLayout>
+
+            <View
+                android:id="@+id/add_btn"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginLeft="10dp"
+                android:background="#e8e8e8"
+                android:gravity="center"
+                android:radius="18dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="+"
+                    android:textSize="18sp"
+                    android:textColor="#333"
+                    android:textStyle="bold"/>
+            </View>
+        </LinearLayout>
+
+        <FrameLayout
+            android:id="@+id/add_menu_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#80000000"
+            android:visibility="gone"
+            android:layout_gravity="top|end">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="#fff"
+                android:orientation="vertical"
+                android:padding="15dp"
+                android:layout_marginTop="90dp"
+                android:layout_marginEnd="5dp"
+                android:radius="12dp">
+
+                <View
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="15dp"
+                    android:paddingLeft="50dp"
+                    android:paddingRight="50dp"
+                    android:background="#f0f0f0"
+                    android:layout_marginBottom="1px">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="添加朋友"
+                        android:textSize="14sp"
+                        android:textColor="#333"/>
+                </View>
+
+                <View
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="15dp"
+                    android:paddingLeft="50dp"
+                    android:paddingRight="50dp"
+                    android:background="#f0f0f0"
+                    android:layout_marginBottom="1px">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="发起群聊"
+                        android:textSize="14sp"
+                        android:textColor="#333"/>
+                </View>
+
+                <View
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="15dp"
+                    android:paddingLeft="50dp"
+                    android:paddingRight="50dp"
+                    android:background="#f0f0f0">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="扫一扫"
+                        android:textSize="14sp"
+                        android:textColor="#333"/>
+                </View>
+            </LinearLayout>
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
+            android:orientation="horizontal"
+            android:padding="10dp"
+            android:paddingLeft="20dp"
+            android:paddingRight="20dp"
+            android:background="#f8f9fa"
+            android:gravity="center">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="#f0f0f0"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:radius="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="频道与朋友"
+                    android:textSize="14sp"
+                    android:textColor="#333"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="#f0f0f0"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginLeft="10dp"
+                android:layout_marginRight="10dp"
+                android:radius="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="关注与粉丝"
+                    android:textSize="14sp"
+                    android:textColor="#333"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="#f0f0f0"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:radius="12dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="点赞与评论"
+                    android:textSize="14sp"
+                    android:textColor="#333"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="horizontal"
+            android:background="#fff">
+
+            <LinearLayout
+                android:id="@+id/bubble_list"
+                android:layout_width="60dp"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:padding="15dp"
+                android:paddingLeft="5dp"
+                android:paddingRight="5dp"
+                android:background="#fff"
+                android:divider="@drawable/divider"
+                android:showDividers="none">
+
+                <View
+                    android:id="@+id/bubble_1"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:background="#007AFF"
+                    android:gravity="center"
+                    android:radius="25dp"
+                    android:elevation="2dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="1"
+                        android:textSize="16sp"
+                        android:textColor="#fff"
+                        android:textStyle="bold"/>
+                </View>
+
+                <View
+                    android:id="@+id/bubble_2"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:background="#34C759"
+                    android:gravity="center"
+                    android:layout_marginTop="15dp"
+                    android:radius="25dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="2"
+                        android:textSize="16sp"
+                        android:textColor="#fff"
+                        android:textStyle="bold"/>
+                </View>
+
+                <View
+                    android:id="@+id/bubble_3"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:background="#FF9500"
+                    android:gravity="center"
+                    android:layout_marginTop="15dp"
+                    android:radius="25dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="3"
+                        android:textSize="16sp"
+                        android:textColor="#fff"
+                        android:textStyle="bold"/>
+                </View>
+
+                <View
+                    android:id="@+id/bubble_4"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:background="#FF3B30"
+                    android:gravity="center"
+                    android:layout_marginTop="15dp"
+                    android:radius="25dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="4"
+                        android:textSize="16sp"
+                        android:textColor="#fff"
+                        android:textStyle="bold"/>
+                </View>
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/message_list"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:padding="5dp"/>
+        </LinearLayout>
+
+    </LinearLayout>
+</layout>
