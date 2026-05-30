@@ -5,11 +5,28 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <View
+        <!-- 地图背景 -->
+        <FrameLayout
             android:id="@+id/map_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="#E8E8E8" />
+            android:background="#E8E8E8">
+            
+            <!-- 静态地图背景 -->
+            <ImageView
+                android:id="@+id/map_background"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:src="@drawable/map_background" />
+                
+            <!-- 地图标记容器 -->
+            <FrameLayout
+                android:id="@+id/markers_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+                
+        </FrameLayout>
 
         <ImageButton
             android:id="@+id/btn_location"
