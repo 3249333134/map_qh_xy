@@ -4,11 +4,11 @@ import { ref, reactive } from 'vue'
 const STORAGE_PREFIX = 'INDEX_'
 
 export function useMapManager() {
-  // 地图配置 - 添加完整配置，使用首页独立状态
+  // 地图配置 - 使用武汉工程大学坐标（与GIS-Smart-campus-master一致）
   const mapConfig = reactive({
-    latitude: 30.572815,
-    longitude: 104.066801,
-    scale: 18,
+    latitude: 30.518937,
+    longitude: 114.402672,
+    scale: 16,
     markers: [],
     polyline: [],
     showLocation: true,

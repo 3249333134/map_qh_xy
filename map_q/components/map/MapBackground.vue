@@ -137,15 +137,28 @@ export default {
       
       console.log('转换后的points:', points)
       
-      const polyline = [{
+      // 创建多条轨迹线，形成更丰富的视觉效果
+      const polyline = []
+      
+      // 主轨迹线 - 带有渐变效果
+      polyline.push({
         points: points,
         color: '#667eea',
-        width: 8,
+        width: 10,
         dottedLine: false,
         arrowLine: true,
-        borderColor: '#5568d3',
+        borderColor: '#764ba2',
         borderWidth: 2
-      }]
+      })
+      
+      // 添加阴影轨迹线
+      polyline.push({
+        points: points,
+        color: 'rgba(102, 126, 234, 0.3)',
+        width: 16,
+        dottedLine: false,
+        arrowLine: false
+      })
       
       if (this.config && this.config.polyline) {
         console.log('设置前的polyline:', this.config.polyline)
@@ -155,7 +168,7 @@ export default {
       }
       
       // 添加高能点标记
-      this.updateHighEnergyMarkers(highEnergyPoints)
+      this.updateHighEnergyMarkers(highEnergyPoints, points)
       
       this.$emit('show-track', polyline)
       
@@ -183,36 +196,82 @@ export default {
       this.moveToLocation(centerLat, centerLng, scale)
     },
     
-    updateHighEnergyMarkers(highEnergyPoints) {
-      if (!highEnergyPoints || !Array.isArray(highEnergyPoints) || highEnergyPoints.length === 0) {
-        console.log('没有高能点数据')
-        return
+    updateHighEnergyMarkers(highEnergyPoints, trackPoints) {
+      const markers = []
+      
+      // 添加起点标记
+      if (trackPoints && trackPoints.length > 0) {
+        markers.push({
+          id: 'start_point',
+          latitude: trackPoints[0].latitude,
+          longitude: trackPoints[0].longitude,
+          width: 30,
+          height: 30,
+          iconPath: '/static/marker.png',
+          callout: {
+            content: '起点',
+            fontSize: 12,
+            borderRadius: 8,
+            bgColor: '#4CAF50',
+            color: '#ffffff',
+            padding: 6,
+            display: 'ALWAYS'
+          }
+        })
       }
       
-      console.log('更新高能点标记:', highEnergyPoints)
+      // 添加终点标记
+      if (trackPoints && trackPoints.length > 1) {
+        markers.push({
+          id: 'end_point',
+          latitude: trackPoints[trackPoints.length - 1].latitude,
+          longitude: trackPoints[trackPoints.length - 1].longitude,
+          width: 30,
+          height: 30,
+          iconPath: '/static/marker-green.png',
+          callout: {
+            content: '终点',
+            fontSize: 12,
+            borderRadius: 8,
+            bgColor: '#f44336',
+            color: '#ffffff',
+            padding: 6,
+            display: 'ALWAYS'
+          }
+        })
+      }
       
-      const markers = highEnergyPoints.map((point, index) => ({
-        id: `energy_${index}`,
-        latitude: parseFloat(point.coordinate[1]),
-        longitude: parseFloat(point.coordinate[0]),
-        width: 40,
-        height: 40,
-        iconPath: '',
-        callout: {
-          content: `${point.label}\n能量: ${point.energy}`,
-          fontSize: 12,
-          borderRadius: 6,
-          bgColor: '#ff6b6b',
-          color: '#ffffff',
-          padding: 8,
-          display: 'ALWAYS'
-        }
-      }))
+      // 添加高能点标记
+      if (highEnergyPoints && Array.isArray(highEnergyPoints) && highEnergyPoints.length > 0) {
+        console.log('更新高能点标记:', highEnergyPoints)
+        
+        highEnergyPoints.forEach((point, index) => {
+          if (point.coordinate) {
+            markers.push({
+              id: `energy_${index}`,
+              latitude: parseFloat(point.coordinate[1]),
+              longitude: parseFloat(point.coordinate[0]),
+              width: 24,
+              height: 24,
+              iconPath: '',
+              callout: {
+                content: point.label || `途经点${index + 1}`,
+                fontSize: 11,
+                borderRadius: 6,
+                bgColor: '#2196F3',
+                color: '#ffffff',
+                padding: 4,
+                display: 'ALWAYS'
+              }
+            })
+          }
+        })
+      }
       
       if (this.config && this.config.markers) {
         this.config.markers.length = 0
         this.config.markers.push(...markers)
-        console.log('高能点标记已设置:', this.config.markers)
+        console.log('地图标记已设置:', this.config.markers)
       }
     },
 

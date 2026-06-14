@@ -1,5 +1,6 @@
 import { ref, reactive } from 'vue'
 import { MONGO_CONFIG } from '../../../utils/db.js'
+import { ROUTE_PLANNER } from '../../../utils/routePlanner.js'
 
 export function useMapData() {
   // 数据状态
@@ -96,8 +97,10 @@ export function useMapData() {
   
   // 生成测试数据
   const generateTestData = (activeCategory, mapConfig, isLoadMore = false) => {
+    // 完全清空所有旧数据，包括缓存
     if (!isLoadMore) {
       mapPoints.value = []
+      categoryData[activeCategory] = []
     }
     
     const count = 10
@@ -122,6 +125,7 @@ export function useMapData() {
     
     let centerLat, centerLng, latRange, lngRange
     
+    // 使用成都坐标
     if (mapBounds.value) {
       centerLat = (mapBounds.value.northeast.latitude + mapBounds.value.southwest.latitude) / 2
       centerLng = (mapBounds.value.northeast.longitude + mapBounds.value.southwest.longitude) / 2
@@ -139,47 +143,92 @@ export function useMapData() {
       
       // 每5个卡片插入一个轨迹卡片
       if ((index + 1) % 5 === 0) {
-        // 生成轨迹数据
-        const trackPoints = []
-        const trackCenterLat = centerLat + (Math.random() - 0.5) * latRange * 0.4
-        const trackCenterLng = centerLng + (Math.random() - 0.5) * lngRange * 0.4
-        const trackRadius = 0.003
+        // 获取真实道路路线
+        let trackPoints = []
+        let highEnergyPoints = []
+        let distanceKm = '0.00'
+        let duration = '0分钟'
         
-        // 生成椭圆形轨迹点
-        for (let j = 0; j < 30; j++) {
-          const angle = (j / 30) * Math.PI * 2
-          const latOffset = Math.sin(angle) * trackRadius
-          const lngOffset = Math.cos(angle) * trackRadius * 1.5
-          trackPoints.push([
-            trackCenterLng + lngOffset,
-            trackCenterLat + latOffset
-          ])
+        try {
+          console.log('正在调用路径规划API...')
+          const routeResult = await ROUTE_PLANNER.getFixedRoute()
+          
+          if (routeResult.success && routeResult.path.length > 0) {
+            trackPoints = routeResult.path
+            distanceKm = (routeResult.distance / 1000).toFixed(2)
+            const durationMinutes = Math.round(routeResult.duration / 60) || 30
+            duration = `${durationMinutes}分钟`
+            console.log('成功获取道路路线，点数:', trackPoints.length)
+          }
+        } catch (error) {
+          console.error('路径规划失败:', error)
         }
         
-        // 生成3-5个高能点
-        const highEnergyPoints = []
-        const pointCount = Math.floor(Math.random() * 3) + 3 // 3-5个高能点
-        for (let k = 0; k < pointCount; k++) {
-          const pointIndex = Math.floor((k / pointCount) * trackPoints.length)
+        // 如果真实路径规划失败，使用成都的简单备用路线
+        if (trackPoints.length === 0) {
+          console.log('使用备用路线（成都）')
+          const startLng = 104.056801
+          const startLat = 30.562815
+          const endLng = 104.076801
+          const endLat = 30.582815
+          
+          const totalPoints = 30
+          for (let j = 0; j < totalPoints; j++) {
+            const progress = j / (totalPoints - 1)
+            // 简单直线，不要圆圈
+            const lng = startLng + (endLng - startLng) * progress
+            const lat = startLat + (endLat - startLat) * progress
+            trackPoints.push([lng, lat])
+          }
+          
+          distanceKm = '2.50'
+          duration = '20分钟'
+        }
+        
+        // 生成起点、终点和途经点
+        highEnergyPoints = []
+        
+        if (trackPoints.length > 0) {
+          // 起点
           highEnergyPoints.push({
-            coordinate: trackPoints[pointIndex],
-            energy: Math.floor(Math.random() * 50) + 50, // 50-100的能量值
-            label: ['起点', '补给站', '观景台', '最高点', '终点'][k] || `关键点${k + 1}`
+            coordinate: trackPoints[0],
+            energy: 100,
+            label: '起点'
+          })
+          
+          // 途中关键点（3-4个）
+          const pointCount = Math.floor(Math.random() * 2) + 3
+          for (let k = 1; k <= pointCount; k++) {
+            const pointIndex = Math.floor((k / (pointCount + 1)) * trackPoints.length)
+            const labels = ['补给站', '观景台', '休息点', '打卡点', '特色点']
+            highEnergyPoints.push({
+              coordinate: trackPoints[Math.min(pointIndex, trackPoints.length - 1)],
+              energy: Math.floor(Math.random() * 60) + 40,
+              label: labels[(k - 1) % labels.length]
+            })
+          }
+          
+          // 终点
+          highEnergyPoints.push({
+            coordinate: trackPoints[trackPoints.length - 1],
+            energy: 100,
+            label: '终点'
           })
         }
         
         mapPoints.value.push({
           _id: `track_${activeCategory}_${currentPage.value}_${i}_${Date.now()}`,
           type: 'track',
-          name: `${prefix}跑步路线 ${Math.floor(index / 5) + 1}`,
-          author: `跑者${Math.floor(Math.random() * 1000)}`,
-          distance: (Math.random() * 3 + 1).toFixed(1),
+          name: `${prefix}路线 ${Math.floor(index / 5) + 1}`,
+          author: `用户${Math.floor(Math.random() * 1000)}`,
+          distance: distanceKm,
           location: {
             type: 'LineString',
             coordinates: trackPoints
           },
           highEnergyPoints: highEnergyPoints,
-          likes: Math.floor(Math.random() * 500)
+          likes: Math.floor(Math.random() * 500),
+          duration: duration
         })
       } else {
         mapPoints.value.push({
@@ -201,8 +250,9 @@ export function useMapData() {
     }
     
     hasMoreData.value = true
-    categoryData[activeCategory] = [...mapPoints.value]
-    categoryPages[activeCategory] = currentPage.value
+    // 不保存缓存数据，确保每次都重新生成
+    // categoryData[activeCategory] = [...mapPoints.value]
+    // categoryPages[activeCategory] = currentPage.value
   }
   
   // 加载更多数据
@@ -219,22 +269,9 @@ export function useMapData() {
     fetchMapData(activeCategory, mapConfig, true)
   }
   
-  // 切换分类
+  // 切换分类 - 禁用缓存，确保每次都重新生成数据
   const switchCategory = (newCategory) => {
-    // 保存当前分类数据
-    const currentCategory = Object.keys(categoryData).find(key => categoryData[key] === mapPoints.value)
-    if (currentCategory) {
-      categoryPages[currentCategory] = currentPage.value
-    }
-    
-    // 恢复新分类数据
-    if (categoryData[newCategory] && categoryData[newCategory].length > 0) {
-      mapPoints.value = [...categoryData[newCategory]]
-      currentPage.value = categoryPages[newCategory] || 1
-      return true // 表示有缓存数据
-    }
-    
-    // 重置分页
+    // 不使用缓存，强制重新生成数据
     currentPage.value = 1
     return false // 表示需要重新获取数据
   }

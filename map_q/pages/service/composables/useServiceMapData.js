@@ -1,6 +1,7 @@
 import { ref, reactive } from 'vue'
 import { MONGO_CONFIG } from '../../../utils/db.js'
 import { CATEGORY_MAP, MARKER_CONFIG } from '../constants/layoutConfig.js'
+import { ROUTE_PLANNER } from '../../../utils/routePlanner.js'
 
 // 服务页专用前缀，用于隔离本地存储
 const STORAGE_PREFIX = 'SERVICE_'
@@ -171,7 +172,7 @@ export function useServiceMapData() {
   }
   
   // 添加测试数据
-  const addTestData = (activeCategory, isLoadMore = false) => {
+  const addTestData = async (activeCategory, isLoadMore = false) => {
     if (!isLoadMore && currentPage.value === 1) {
       mapPoints.value = []
     }
@@ -219,25 +220,40 @@ export function useServiceMapData() {
       
       // 每5个卡片插入一个轨迹卡片
       if ((index + 1) % 5 === 0) {
-        // 生成轨迹数据
-        const trackPoints = []
-        const trackCenterLat = centerLat + (Math.random() - 0.5) * latRange * 0.4
-        const trackCenterLng = centerLng + (Math.random() - 0.5) * lngRange * 0.4
-        const trackRadius = 0.003
+        // 生成轨迹数据 - 真实道路规划
+        let trackPoints = []
+        let highEnergyPoints = []
+        let distance = (Math.random() * 3 + 1).toFixed(1)
         
-        // 生成椭圆形轨迹点
-        for (let j = 0; j < 30; j++) {
-          const angle = (j / 30) * Math.PI * 2
-          const latOffset = Math.sin(angle) * trackRadius
-          const lngOffset = Math.cos(angle) * trackRadius * 1.5
-          trackPoints.push([
-            trackCenterLng + lngOffset,
-            trackCenterLat + latOffset
-          ])
+        try {
+          // 获取真实道路路线
+          const routeResult = await ROUTE_PLANNER.getFixedRoute()
+          if (routeResult.success && routeResult.path.length > 0) {
+            trackPoints = routeResult.path
+            distance = (routeResult.distance / 1000).toFixed(2)
+          }
+        } catch (error) {
+          console.warn('真实路径规划失败，使用备用路线')
+        }
+        
+        // 如果真实路径规划失败，使用备用路线
+        if (trackPoints.length === 0) {
+          const startLng = centerLng - 0.01
+          const startLat = centerLat - 0.01
+          const endLng = centerLng + 0.01
+          const endLat = centerLat + 0.01
+          
+          const totalPoints = 30
+          for (let j = 0; j < totalPoints; j++) {
+            const progress = j / (totalPoints - 1)
+            const lng = startLng + (endLng - startLng) * progress
+            const lat = startLat + (endLat - startLat) * progress
+            trackPoints.push([lng, lat])
+          }
         }
         
         // 生成3-5个高能点
-        const highEnergyPoints = []
+        highEnergyPoints = []
         const pointCount = Math.floor(Math.random() * 3) + 3
         for (let k = 0; k < pointCount; k++) {
           const pointIndex = Math.floor((k / pointCount) * trackPoints.length)
@@ -253,7 +269,7 @@ export function useServiceMapData() {
           type: 'track',
           name: `${prefix}跑步路线 ${Math.floor(index / 5) + 1}`,
           author: `跑者${Math.floor(Math.random() * 1000)}`,
-          distance: (Math.random() * 3 + 1).toFixed(1),
+          distance: distance,
           location: {
             type: 'LineString',
             coordinates: trackPoints

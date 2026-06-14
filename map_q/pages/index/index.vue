@@ -66,6 +66,7 @@ import { useLayout } from './composables/useLayout.js'
 import { LAYOUT_CONFIG } from './constants/layoutConfig.js'
 import { useCategory } from './composables/useCategory.js'
 import { useMapManager } from './composables/useMapManager.js'
+import { ROUTE_PLANNER } from '../../utils/routePlanner.js'
 
 export default {
   name: 'IndexPage',
@@ -167,12 +168,39 @@ export default {
 
     const handleMediaTap = async (data) => {
       console.log('媒体区域点击:', data)
-      const { cardData } = data
+      let { cardData } = data
       
       if (cardData && cardData.type === 'track') {
-        console.log('点击轨迹卡片媒体区域，显示轨迹并跳转详情页')
-        if (cardData.location && cardData.location.coordinates && mapBackground.value) {
-          mapBackground.value.showTrack(cardData.location.coordinates, cardData.highEnergyPoints || [])
+        console.log('点击轨迹卡片媒体区域，重新规划真实道路路线')
+        try {
+          // 重新获取真实道路路线
+          const routeResult = await ROUTE_PLANNER.getFixedRoute()
+          if (routeResult.success && routeResult.path.length > 0) {
+            console.log('获取到真实道路路线，点数:', routeResult.path.length)
+            // 更新cardData中的路线数据
+            cardData = {
+              ...cardData,
+              location: {
+                ...cardData.location,
+                coordinates: routeResult.path
+              },
+              distance: (routeResult.distance / 1000).toFixed(2),
+              duration: Math.round(routeResult.duration / 60) + '分钟'
+            }
+            // 使用真实路线
+            if (mapBackground.value) {
+              mapBackground.value.showTrack(routeResult.path, cardData.highEnergyPoints || [])
+            }
+          } else if (cardData.location && cardData.location.coordinates && mapBackground.value) {
+            // 如果真实路线获取失败，使用原数据
+            mapBackground.value.showTrack(cardData.location.coordinates, cardData.highEnergyPoints || [])
+          }
+        } catch (error) {
+          console.error('获取真实道路路线失败:', error)
+          // 出错时使用原数据
+          if (cardData.location && cardData.location.coordinates && mapBackground.value) {
+            mapBackground.value.showTrack(cardData.location.coordinates, cardData.highEnergyPoints || [])
+          }
         }
       } else if (cardData && cardData.location && cardData.location.coordinates && mapBackground.value) {
         const [longitude, latitude] = cardData.location.coordinates
@@ -201,12 +229,39 @@ export default {
     
     const handleContentTap = async (data) => {
       console.log('内容区域点击:', data)
-      const { cardData } = data
+      let { cardData } = data
       
       if (cardData && cardData.type === 'track') {
-        console.log('点击轨迹卡片内容区域，只在地图上显示轨迹')
-        if (cardData.location && cardData.location.coordinates && mapBackground.value) {
-          mapBackground.value.showTrack(cardData.location.coordinates, cardData.highEnergyPoints || [])
+        console.log('点击轨迹卡片内容区域，重新规划真实道路路线')
+        try {
+          // 重新获取真实道路路线
+          const routeResult = await ROUTE_PLANNER.getFixedRoute()
+          if (routeResult.success && routeResult.path.length > 0) {
+            console.log('获取到真实道路路线，点数:', routeResult.path.length)
+            // 更新cardData中的路线数据
+            cardData = {
+              ...cardData,
+              location: {
+                ...cardData.location,
+                coordinates: routeResult.path
+              },
+              distance: (routeResult.distance / 1000).toFixed(2),
+              duration: Math.round(routeResult.duration / 60) + '分钟'
+            }
+            // 使用真实路线
+            if (mapBackground.value) {
+              mapBackground.value.showTrack(routeResult.path, cardData.highEnergyPoints || [])
+            }
+          } else if (cardData.location && cardData.location.coordinates && mapBackground.value) {
+            // 如果真实路线获取失败，使用原数据
+            mapBackground.value.showTrack(cardData.location.coordinates, cardData.highEnergyPoints || [])
+          }
+        } catch (error) {
+          console.error('获取真实道路路线失败:', error)
+          // 出错时使用原数据
+          if (cardData.location && cardData.location.coordinates && mapBackground.value) {
+            mapBackground.value.showTrack(cardData.location.coordinates, cardData.highEnergyPoints || [])
+          }
         }
         return
       }
@@ -376,6 +431,27 @@ export default {
       try {
         console.log('开始初始化首页...')
         initLayout()
+        
+        // 清除旧的地图轨迹数据
+        console.log('清除旧的地图轨迹...')
+        mapConfig.polyline = []
+        
+        // 清除本地存储的旧数据
+        try {
+          uni.removeStorageSync('INDEX_MAPPING_STATE')
+          uni.removeStorageSync('INDEX_LAST_ITEM')
+          // 清除所有以INDEX_开头的本地存储数据
+          const info = uni.getStorageInfoSync()
+          info.keys.forEach(key => {
+            if (key.startsWith('INDEX_')) {
+              uni.removeStorageSync(key)
+            }
+          })
+          console.log('旧的本地存储已清除')
+        } catch (e) {
+          console.warn('清除本地存储失败:', e)
+        }
+        
         loadMapState()
         try {
           await getUserLocation()
