@@ -1,0 +1,132 @@
+/* 发布按钮专用样式 - 更加突出的设计 */
+
+/* 基础容器样式 */
+.uni-tabbar__item:nth-child(3) {
+  position: relative !important;
+  z-index: 999 !important;
+  overflow: visible !important;
+}
+
+/* 发布按钮背景 - 更加突出的橙红色渐变 */
+.uni-tabbar__item:nth-child(3) .uni-tabbar__bd {
+  background: linear-gradient(135deg, #ff4757, #ff6b35, #f7931e) !important;
+  border-radius: 50% !important;
+  transform: translateY(-40px) scale(4) !important;
+  box-shadow: 
+    0 25px 60px rgba(255, 71, 87, 0.9), 
+    0 0 0 10px rgba(255, 107, 53, 0.3),
+    0 0 0 20px rgba(255, 107, 53, 0.1) !important;
+  width: 120px !important;
+  height: 120px !important;
+  padding: 35px !important;
+  border: 5px solid #fff !important;
+  z-index: 999 !important;
+  position: relative !important;
+  overflow: visible !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  animation: pulse 2s infinite !important;
+}
+
+/* 脉冲动画效果 */
+@keyframes pulse {
+  0% {
+    box-shadow: 
+      0 25px 60px rgba(255, 71, 87, 0.9), 
+      0 0 0 10px rgba(255, 107, 53, 0.3),
+      0 0 0 20px rgba(255, 107, 53, 0.1);
+  }
+  50% {
+    box-shadow: 
+      0 30px 70px rgba(255, 71, 87, 1), 
+      0 0 0 15px rgba(255, 107, 53, 0.4),
+      0 0 0 30px rgba(255, 107, 53, 0.2);
+  }
+  100% {
+    box-shadow: 
+      0 25px 60px rgba(255, 71, 87, 0.9), 
+      0 0 0 10px rgba(255, 107, 53, 0.3),
+      0 0 0 20px rgba(255, 107, 53, 0.1);
+  }
+}
+
+/* 图标样式 - 更加醒目 */
+.uni-tabbar__item:nth-child(3) .uni-tabbar__icon {
+  color: #fff !important;
+  font-size: 28px !important;
+  font-weight: bold !important;
+  filter: brightness(0) invert(1) drop-shadow(0 2px 4px rgba(0,0,0,0.3)) !important;
+  transform: scale(1.2) !important;
+}
+
+/* 文字样式 - 更加突出 */
+.uni-tabbar__item:nth-child(3) .uni-tabbar__item-text {
+  color: #ff4757 !important;
+  font-weight: 900 !important;
+  margin-top: 15px !important;
+  font-size: 14px !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+  transform: scale(1.1) !important;
+}
+
+/* 小程序环境兼容 */
+uni-tabbar .uni-tabbar__item:nth-child(3) {
+  position: relative !important;
+  z-index: 999 !important;
+  overflow: visible !important;
+}
+
+uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__bd {
+  background: linear-gradient(135deg, #ff4757, #ff6b35, #f7931e) !important;
+  border-radius: 50% !important;
+  transform: translateY(-40px) scale(4) !important;
+  box-shadow: 
+    0 25px 60px rgba(255, 71, 87, 0.9), 
+    0 0 0 10px rgba(255, 107, 53, 0.3),
+    0 0 0 20px rgba(255, 107, 53, 0.1) !important;
+  width: 120px !important;
+  height: 120px !important;
+  padding: 35px !important;
+  border: 5px solid #fff !important;
+  z-index: 999 !important;
+  position: relative !important;
+  overflow: visible !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  animation: pulse 2s infinite !important;
+}
+
+/* 微信小程序环境兼容 */
+.wx-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__bd {
+  background: linear-gradient(135deg, #ff4757, #ff6b35, #f7931e) !important;
+  border-radius: 50% !important;
+  transform: translateY(-40px) scale(4) !important;
+  box-shadow: 
+    0 25px 60px rgba(255, 71, 87, 0.9), 
+    0 0 0 10px rgba(255, 107, 53, 0.3),
+    0 0 0 20px rgba(255, 107, 53, 0.1) !important;
+  width: 120px !important;
+  height: 120px !important;
+  padding: 35px !important;
+  border: 5px solid #fff !important;
+  z-index: 999 !important;
+  position: relative !important;
+  overflow: visible !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  animation: pulse 2s infinite !important;
+}
+
+/* 悬停效果 */
+.uni-tabbar__item:nth-child(3):active .uni-tabbar__bd {
+  transform: translateY(-38px) scale(3.8) !important;
+  transition: transform 0.1s ease !important;
+}
+
+/* 确保其他导航项不受影响 */
+.uni-tabbar__item:not(:nth-child(3)) {
+  z-index: 1 !important;
+}

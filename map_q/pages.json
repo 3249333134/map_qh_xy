@@ -1,0 +1,109 @@
+{
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^ProfileSection$": "@/pages/my/components/ProfileSection.vue",
+      "^ContentSection$": "@/pages/my/components/ContentSection.vue",
+      "^LocationModule$": "@/pages/my/components/LocationModule.vue",
+      "^DateModule$": "@/pages/my/components/DateModule.vue",
+      "^FavoriteModule$": "@/pages/my/components/FavoriteModule.vue"
+    }
+  },
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "首页",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/detail/index",
+      "style": {
+        "navigationBarTitleText": "详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/service/index",
+      "style": {
+        "navigationBarTitleText": "服务",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/service/detail/index",
+      "style": {
+        "navigationBarTitleText": "服务详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/plus/index",
+      "style": {
+        "navigationBarTitleText": "发布",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/message/index",
+      "style": {
+        "navigationBarTitleText": "消息",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/my/index",
+      "style": {
+        "navigationBarTitleText": "我的",
+        "navigationStyle": "custom",
+        "navigationBarTextStyle": "black"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "uni-app",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#7A7E83",
+    "selectedColor": "#ffd700",
+    "borderStyle": "black",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "static/tabbar/home.png",
+        "selectedIconPath": "static/tabbar/home-active.png"
+      },
+      {
+        "pagePath": "pages/service/index",
+        "text": "服务",
+        "iconPath": "static/tabbar/service.png",
+        "selectedIconPath": "static/tabbar/service-active.png"
+      },
+      {
+        "pagePath": "pages/plus/index",
+        "text": "发布",
+        "iconPath": "static/tabbar/plus.png",
+        "selectedIconPath": "static/tabbar/plus-active.png"
+      },
+      {
+        "pagePath": "pages/message/index",
+        "text": "消息",
+        "iconPath": "static/tabbar/message.png",
+        "selectedIconPath": "static/tabbar/message-active.png"
+      },
+      {
+        "pagePath": "pages/my/index",
+        "text": "我的",
+        "iconPath": "static/tabbar/my.png",
+        "selectedIconPath": "static/tabbar/my-active.png"
+      }
+    ]
+  }
+}

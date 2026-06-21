@@ -1,0 +1,38 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- 外圈阴影 -->
+  <defs>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="8" flood-color="rgba(255, 71, 87, 0.4)" flood-opacity="1" stdDeviation="12"/>
+    </filter>
+    <radialGradient id="buttonGradient" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" style="stop-color:#ff6b7a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ff4757;stop-opacity:1" />
+    </radialGradient>
+  </defs>
+  
+  <!-- 主按钮圆形背景 -->
+  <circle cx="100" cy="100" r="85" 
+          fill="url(#buttonGradient)" 
+          stroke="#ffffff" 
+          stroke-width="8" 
+          filter="url(#shadow)"/>
+  
+  <!-- 内部高光效果 -->
+  <circle cx="100" cy="75" r="25" 
+          fill="rgba(255, 255, 255, 0.2)" 
+          opacity="0.6"/>
+  
+  <!-- 加号 - 垂直线 -->
+  <rect x="90" y="60" width="20" height="80" 
+        fill="#ffffff" 
+        rx="10" ry="10"/>
+  
+  <!-- 加号 - 水平线 -->
+  <rect x="60" y="90" width="80" height="20" 
+        fill="#ffffff" 
+        rx="10" ry="10"/>
+  
+  <!-- 中心小圆点增强效果 -->
+  <circle cx="100" cy="100" r="12" 
+          fill="rgba(255, 255, 255, 0.3)"/>
+</svg>
