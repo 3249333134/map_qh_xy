@@ -1,7 +1,7 @@
 <template>
   <scroll-view class="expanded-modules" scroll-y :style="{ height: height + 'px' }" @scroll="onScroll">
     <view class="modules-header">
-      <text class="header-title">{{ headerTitle }}</text>
+      <text class="header-title">{{ pointAddress || '正在解析地址…' }}</text>
       <view class="stats-row">
         <text class="stat">评分 4.8</text>
         <text class="dot">•</text>
@@ -101,12 +101,18 @@ export default {
     }
   },
   computed: {
-    headerTitle() {
+    pointName() {
+      const p = this.selectedPoint && this.selectedPoint.point
+      const name = p && (p.name || p.title || p.poiName)
+      if (name && String(name).trim()) return String(name).trim()
+      return '地点详情'
+    },
+    pointAddress() {
       const p = this.selectedPoint && this.selectedPoint.point
       const addr = p && (p.address || p.detailAddress || p.fullAddress)
       if (addr && String(addr).trim()) return String(addr).trim()
       if (this.resolvedAddress && String(this.resolvedAddress).trim()) return String(this.resolvedAddress).trim()
-      return '正在解析地址…'
+      return ''
     },
     galleryImages() {
       const imgs = this.selectedPoint && this.selectedPoint.point && Array.isArray(this.selectedPoint.point.images) ? this.selectedPoint.point.images : []
@@ -204,8 +210,8 @@ export default {
 <style scoped>
 .expanded-modules { width: 100%; box-sizing: border-box; background: #f8f8f8; }
 .modules-header { padding: 10px 15px; }
-.header-title { font-size: 16px; font-weight: 600; color: #333; }
-.stats-row { margin-top: 6px; display: flex; align-items: center; color: #888; font-size: 12px; }
+.header-title { font-size: 15px; font-weight: 500; color: #333; line-height: 1.5; }
+.stats-row { margin-top: 6px; display: flex; align-items: center; color: #999; font-size: 12px; }
 .dot { margin: 0 6px; }
 .image-swiper { width: 100%; height: 180px; padding: 10px 10px 0; box-sizing: border-box; }
 .slide-img { width: 100%; height: 100%; border-radius: 12px; background: #ddd; }

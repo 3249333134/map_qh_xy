@@ -103,7 +103,7 @@ export function useMapData() {
       categoryData[activeCategory] = []
     }
 
-    const count = 10
+    const count = 12
     const startIndex = mapPoints.value.length
 
     const prefixMap = {
@@ -138,11 +138,28 @@ export function useMapData() {
       lngRange = 0.02
     }
 
+    // 卡片类型循环模式：[type1, type2, type3, type4, type5, type6, ...]
+    // 类型: normal=普通, video=视频, article=文章, place=地点, event=活动, track=轨迹
+    const cardTypePattern = ['normal', 'video', 'article', 'place', 'event', 'normal', 'video', 'article', 'track', 'place', 'event', 'normal']
+    
+    const titlePrefixes = {
+      'hot': { normal: '热门打卡', video: '热门视频', article: '热门攻略', place: '热门地点', event: '热门活动', track: '热门路线' },
+      'exhibition': { normal: '展会推荐', video: '展会视频', article: '展会资讯', place: '展馆地址', event: '展会活动', track: '逛展路线' },
+      'personal': { normal: '个人分享', video: '生活视频', article: '心得笔记', place: '私密地点', event: '私人活动', track: '个人轨迹' },
+      'all': { normal: '推荐打卡', video: '精彩视频', article: '精选文章', place: '推荐地点', event: '推荐活动', track: '推荐路线' }
+    }
+
     for (let i = 0; i < count; i++) {
       const index = startIndex + i
+      const type = cardTypePattern[index % cardTypePattern.length]
+      const titles = titlePrefixes[activeCategory] || titlePrefixes['all']
 
-      // 每5个卡片插入一个轨迹卡片
-      if ((index + 1) % 5 === 0) {
+      // 生成随机坐标
+      const lng = centerLng + (Math.random() - 0.5) * lngRange * 0.8
+      const lat = centerLat + (Math.random() - 0.5) * latRange * 0.8
+
+      // 轨迹卡片单独处理
+      if (type === 'track') {
         // 获取真实道路路线
         let trackPoints = []
         let highEnergyPoints = []
@@ -175,10 +192,9 @@ export function useMapData() {
           const totalPoints = 30
           for (let j = 0; j < totalPoints; j++) {
             const progress = j / (totalPoints - 1)
-            // 简单直线，不要圆圈
-            const lng = startLng + (endLng - startLng) * progress
-            const lat = startLat + (endLat - startLat) * progress
-            trackPoints.push([lng, lat])
+            const lngP = startLng + (endLng - startLng) * progress
+            const latP = startLat + (endLat - startLat) * progress
+            trackPoints.push([lngP, latP])
           }
 
           distanceKm = '2.50'
@@ -219,7 +235,7 @@ export function useMapData() {
         mapPoints.value.push({
           _id: `track_${activeCategory}_${currentPage.value}_${i}_${Date.now()}`,
           type: 'track',
-          name: `${prefix}路线 ${Math.floor(index / 5) + 1}`,
+          name: `${titles.track} ${Math.floor(index / 6) + 1}`,
           author: `用户${Math.floor(Math.random() * 1000)}`,
           distance: distanceKm,
           location: {
@@ -227,26 +243,69 @@ export function useMapData() {
             coordinates: trackPoints
           },
           highEnergyPoints: highEnergyPoints,
-          likes: Math.floor(Math.random() * 500),
+          likes: Math.floor(Math.random() * 500) + 50,
           duration: duration
         })
-      } else {
-        mapPoints.value.push({
-          _id: `${activeCategory}_${currentPage.value}_${i}_${Date.now()}`,
-          name: `${prefix}地点 ${index + 1}`,
-          author: `用户${Math.floor(Math.random() * 1000)}`,
-          address: `${addressPrefix}测试地址 ${index + 1}`,
-          description: `这是一个${prefix}测试描述 ${index + 1}`,
-          location: {
-            type: 'Point',
-            coordinates: [
-              centerLng + (Math.random() - 0.5) * lngRange * 0.8,
-              centerLat + (Math.random() - 0.5) * latRange * 0.8
-            ]
-          },
-          likes: Math.floor(Math.random() * 500)
-        })
+        continue
       }
+
+      // 普通内容卡片数据
+      const baseData = {
+        _id: `${activeCategory}_${currentPage.value}_${i}_${Date.now()}`,
+        type: type,
+        name: `${titles[type]} ${(index % 10) + 1}`,
+        author: `用户${Math.floor(Math.random() * 1000)}`,
+        address: `${addressPrefix}测试地址 ${(index % 10) + 1}`,
+        description: `这是${titles[type]}的描述内容，包含了丰富的信息和详细的介绍。`,
+        location: {
+          type: 'Point',
+          coordinates: [lng, lat]
+        },
+        likes: Math.floor(Math.random() * 500) + 10
+      }
+
+      // 根据类型添加特定字段
+      switch (type) {
+        case 'video':
+          // 视频卡片：添加播放量、时长
+          baseData.plays = Math.floor(Math.random() * 50000) + 100
+          baseData.duration = Math.floor(Math.random() * 600) + 30 // 30秒到10分钟
+          baseData.cover = '' // 视频封面留空，使用渐变背景
+          break
+
+        case 'article':
+          // 文章卡片：添加阅读量、摘要
+          baseData.reads = Math.floor(Math.random() * 20000) + 50
+          baseData.summary = `本文介绍了${baseData.name}的相关内容，包含详细的步骤说明和实用技巧，帮助读者更好地了解和掌握...`
+          baseData.cover = '' // 文章封面留空，使用渐变背景
+          break
+
+        case 'place':
+          // 地点卡片：添加评分、标签
+          baseData.rating = (Math.random() * 1.5 + 3.5).toFixed(1)
+          baseData.tags = ['热门', '推荐', '必去', '拍照'].slice(0, Math.floor(Math.random() * 3) + 1)
+          baseData.address = `${addressPrefix}春熙路${(index % 5) + 1}号`
+          break
+
+        case 'event':
+          // 活动卡片：添加参与人数、时间
+          const now = Date.now()
+          const startOffset = Math.random() > 0.5 ? Math.random() * 7 * 24 * 60 * 60 * 1000 : -Math.random() * 7 * 24 * 60 * 60 * 1000
+          baseData.startTime = new Date(now + startOffset).toISOString()
+          baseData.endTime = new Date(now + startOffset + 3 * 60 * 60 * 1000).toISOString()
+          baseData.participants = Math.floor(Math.random() * 500) + 10
+          baseData.maxParticipants = Math.floor(Math.random() * 200) + 200
+          baseData.status = startOffset > 0 ? 'upcoming' : 'ongoing'
+          baseData.cover = '' // 活动封面留空，使用渐变背景
+          break
+
+        default:
+          // 普通卡片：添加封面图
+          baseData.cover = `https://picsum.photos/seed/${Date.now()}_${index}/400/300`
+          break
+      }
+
+      mapPoints.value.push(baseData)
     }
 
     hasMoreData.value = true

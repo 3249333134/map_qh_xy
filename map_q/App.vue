@@ -139,22 +139,130 @@ export default {
 </script>
 
 <style>
-/* 导入tabBar突出按钮样式 */
 @import url("/static/tabbar-plus-style.css");
 
-/* 全局样式 */
 page {
-  background-color: #f0f0f0;
+  background-color: #f8f8f8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 28rpx;
+  color: #1f2937;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/*每个页面公共css */
+:root {
+  --primary-color: #ff8a65;
+  --primary-gradient: linear-gradient(135deg, #ff8a65 0%, #ff7043 100%);
+  --primary-light: #fff8f5;
+  --primary-dark: #e65100;
+  
+  --secondary-blue: #5c6bc0;
+  --secondary-green: #66bb6a;
+  --secondary-purple: #8e24aa;
+  --secondary-orange: #ff8a65;
+  
+  --text-primary: #212121;
+  --text-secondary: #757575;
+  --text-tertiary: #bdbdbd;
+  --text-white: #ffffff;
+  
+  --bg-primary: #ffffff;
+  --bg-secondary: #fafafa;
+  --bg-tertiary: #f5f5f5;
+  --bg-card: rgba(255, 255, 255, 0.95);
+  
+  --border-color: transparent;
+  
+  --radius-sm: 6rpx;
+  --radius-md: 12rpx;
+  --radius-lg: 20rpx;
+  --radius-xl: 28rpx;
+  
+  --shadow-sm: 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
+  --shadow-md: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 6rpx 16rpx rgba(0, 0, 0, 0.06);
+}
+
+.card {
+  border-radius: var(--radius-md);
+  background-color: var(--bg-card);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-primary {
+  background: var(--primary-gradient);
+  color: var(--text-white);
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  box-shadow: 0 6rpx 14rpx rgba(255, 122, 69, 0.3);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.tag {
+  padding: 4rpx 12rpx;
+  border-radius: var(--radius-sm);
+  font-size: 20rpx;
+  font-weight: 600;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20rpx);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.5); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease;
+}
+
+.scale-in {
+  animation: scaleIn 0.3s ease;
+}
+
 .uni-tabbar__item {
-  color: #7A7E83;
+  color: #999;
 }
 
 .uni-tabbar__item.uni-tabbar__item--selected {
-  color: #ffd700;
-  font-weight: bold;
+  color: #ff8a65;
+  font-weight: 500;
 }
 
 .uni-tabbar__item-text {
@@ -166,5 +274,18 @@ page {
 .uni-tabbar__item--selected .uni-tabbar__item-text {
   transform: scale(1);
   transition: transform 0.2s ease;
+}
+
+image {
+  display: block;
+}
+
+view {
+  box-sizing: border-box;
+}
+
+text {
+  font-size: 28rpx;
+  line-height: 1.5;
 }
 </style>

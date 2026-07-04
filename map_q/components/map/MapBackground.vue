@@ -20,11 +20,27 @@
     <view class="location-btn" @tap="refreshLocation">
       <text class="location-icon">📍</text>
     </view>
+    <!-- 悬浮热点卡片 -->
+    <HotspotCardsContainer
+      :visible="showHotspots"
+      :items="hotspotItems"
+      :map-center="mapCenter"
+      :map-scale="currentScale"
+      :map-width="mapWidth"
+      :map-height="height"
+      :map-bounds="currentBounds"
+      :highlighted-id="highlightedHotspotId"
+      @card-tap="onHotspotCardTap"
+      @card-long-press="onHotspotCardLongPress"
+    />
   </view>
 </template>
 
 <script>
+import HotspotCardsContainer from './HotspotCardsContainer.vue'
+
 export default {
+  components: { HotspotCardsContainer },
   props: {
     height: {
       type: Number,
@@ -33,6 +49,14 @@ export default {
     config: {
       type: Object,
       required: true
+    },
+    showHotspots: {
+      type: Boolean,
+      default: false
+    },
+    hotspotItems: {
+      type: Array,
+      default: () => []
     }
   },
   data() {
@@ -45,7 +69,10 @@ export default {
       hasInitialBounds: false,
       retryCount: 0,
       maxRetries: 3,
-      lastScale: null
+      lastScale: null,
+      highlightedHotspotId: null,
+      mapWidth: 375,
+      currentBounds: null
     }
   },
   computed: {
@@ -307,6 +334,18 @@ export default {
       this.$emit('poi-tap', { detail, marker })
     },
     
+    onHotspotCardTap(item) {
+      this.$emit('hotspot-tap', item)
+    },
+    
+    onHotspotCardLongPress(item) {
+      this.$emit('hotspot-long-press', item)
+    },
+    
+    setHighlightedHotspot(id) {
+      this.highlightedHotspotId = id
+    },
+    
     onRegionChange(e) {
       console.log('地图区域变化事件:', e);
       if (e.type === 'end' && (e.causedBy === 'drag' || e.causedBy === 'scale')) {
@@ -375,6 +414,7 @@ export default {
             
             if (this.validateBounds(bounds)) {
               console.log('发送区域变化事件给父组件');
+              this.currentBounds = bounds;
               this.$emit('region-changed', bounds);
             } else {
               this.handleBoundsFailure();
@@ -428,6 +468,7 @@ export default {
       const fallbackBounds = this.createFallbackBounds();
       if (fallbackBounds && this.validateBounds(fallbackBounds)) {
         console.log('使用fallback边界:', fallbackBounds);
+        this.currentBounds = fallbackBounds;
         this.$emit('region-changed', fallbackBounds);
       } else {
         console.error('无法创建有效的fallback边界');
@@ -455,6 +496,14 @@ export default {
         },
         scale
       }
+    }
+  },
+  mounted() {
+    try {
+      const sys = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
+      this.mapWidth = sys.windowWidth || 375
+    } catch (e) {
+      this.mapWidth = 375
     }
   }
 }

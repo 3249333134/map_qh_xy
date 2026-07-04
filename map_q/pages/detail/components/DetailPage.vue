@@ -1,5 +1,9 @@
 <template>
   <view class="detail-page">
+    <!-- 图片轮播（放在最底层，延伸到顶部） -->
+    <ImageSlider :images="detailData.images" @preview="previewImage" />
+    
+    <!-- 顶部导航栏（透明覆盖在图片上） -->
     <Header 
       :userInfo="detailData.userInfo" 
       :isFollowing="isFollowing"
@@ -7,9 +11,6 @@
       @follow="toggleFollow"
       @share="shareContent"
     />
-    
-    <!-- 图片轮播 -->
-    <ImageSlider :images="detailData.images" @preview="previewImage" />
     
     <!-- 内容区域 -->
     <ContentArea 
@@ -170,5 +171,6 @@ export default {
   position: relative;
   min-height: 100vh;
   background-color: #f8f8f8;
+  overflow-x: hidden;
 }
 </style>

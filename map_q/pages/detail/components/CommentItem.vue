@@ -8,7 +8,7 @@
           <text class="comment-time">{{ comment.time }}</text>
           <!-- 星级：仅当有评分时展示，用有无评分代表是否使用过本服务 -->
           <view v-if="comment && comment.rating != null" class="comment-rating-inline" :aria-label="'评分' + comment.rating">
-            <text v-for="i in 5" :key="i" class="rating-star" :class="{ active: i <= Math.round(comment.rating) }">★</text>
+            <text v-for="i in 5" :key="i" class="rating-star" :class="{ active: i <= getRoundedRating(comment.rating) }">★</text>
           </view>
         </view>
         <view class="comment-right-section">
@@ -58,8 +58,10 @@ export default {
       required: true
     }
   },
-  emits: ['like', 'reply', 'reply-to-reply'],
   methods: {
+    getRoundedRating(rating) {
+      return Math.round(rating)
+    },
     onLike() {
       this.$emit('like', this.comment)
     },

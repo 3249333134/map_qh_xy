@@ -2,51 +2,55 @@ import { ref, computed } from 'vue'
 import { LAYOUT_CONFIG } from '../constants/layoutConfig.js'
 
 export function useLayout() {
-  // 布局状态
   const screenHeight = ref(0)
   const contentHeight = ref(0)
   const searchBoxHeight = ref(50)
-  // 底部偏移（TabBar 占位 + 安全区）
   const safeBottomOffset = ref(0)
   
-  // 拖拽状态
   const isDragging = ref(false)
   const dragStartY = ref(0)
   const dragStartHeight = ref(0)
   
-  // 计算属性
-  const mapHeight = computed(() => screenHeight.value - contentHeight.value)
+  const mapHeight = computed(() => screenHeight.value)
   
   const minContentHeight = computed(() => 
-    searchBoxHeight.value + LAYOUT_CONFIG.MARGIN
+    screenHeight.value * LAYOUT_CONFIG.MIN_CONTENT_RATIO
+  )
+  
+  const midContentHeight = computed(() => 
+    screenHeight.value * LAYOUT_CONFIG.INITIAL_CONTENT_RATIO
   )
   
   const maxContentHeight = computed(() => 
     screenHeight.value * LAYOUT_CONFIG.MAX_CONTENT_RATIO
   )
   
-  // 初始化布局
+  const currentMode = computed(() => {
+    const range = maxContentHeight.value - minContentHeight.value
+    const relativeHeight = contentHeight.value - minContentHeight.value
+    const ratio = relativeHeight / range
+    
+    if (ratio < LAYOUT_CONFIG.SNAP_THRESHOLD_LOW) return 'min'
+    if (ratio < LAYOUT_CONFIG.SNAP_THRESHOLD_HIGH) return 'mid'
+    return 'max'
+  })
+  
   const initLayout = () => {
     const systemInfo = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
     screenHeight.value = systemInfo.windowHeight
-    contentHeight.value = screenHeight.value * LAYOUT_CONFIG.INITIAL_CONTENT_RATIO
-    // 读取底部 TabBar 的占位高度（px），用于内容区域限位到底部蓝框区域
+    contentHeight.value = midContentHeight.value
     try {
       const metrics = uni.getStorageSync('TABBAR_METRICS') || null
-      // 只使用 TabBar 本身高度，避免与安全区双重抵消造成空白
       if (metrics && typeof metrics.tabHeightPx === 'number') {
         safeBottomOffset.value = metrics.tabHeightPx
       } else {
-        const tabPx = 86
-        safeBottomOffset.value = tabPx
+        safeBottomOffset.value = 86
       }
     } catch (e) {
-      const tabPx = 86
-      safeBottomOffset.value = tabPx
+      safeBottomOffset.value = 86
     }
   }
   
-  // 统一事件坐标读取
   const getClientY = (e) => {
     const d = (e && e.detail) ? e.detail : e || {}
     const t = (d && d.touches && d.touches[0]) ? d.touches[0]
@@ -59,7 +63,6 @@ export function useLayout() {
     return 0
   }
 
-  // 拖拽处理
   const handleDragStart = (e) => {
     isDragging.value = true
     dragStartY.value = getClientY(e)
@@ -83,42 +86,43 @@ export function useLayout() {
   
   const handleDragEnd = () => {
     isDragging.value = false
-    
-    const range = maxContentHeight.value - minContentHeight.value
-    const snapThresholds = {
-      min: minContentHeight.value + range * LAYOUT_CONFIG.SNAP_THRESHOLD_LOW,
-      max: minContentHeight.value + range * LAYOUT_CONFIG.SNAP_THRESHOLD_HIGH
-    }
-    
-    let newHeight
-    if (contentHeight.value < snapThresholds.min) {
-      newHeight = minContentHeight.value
-    } else if (contentHeight.value < snapThresholds.max) {
-      newHeight = screenHeight.value * LAYOUT_CONFIG.INITIAL_CONTENT_RATIO
+  }
+  
+  const toggleContentMode = () => {
+    const targetMode = currentMode.value === 'min' ? 'max' : 'min'
+    contentHeight.value = targetMode === 'min' 
+      ? minContentHeight.value 
+      : maxContentHeight.value
+  }
+  
+  const setContentMode = (mode) => {
+    if (mode === 'min') {
+      contentHeight.value = minContentHeight.value
+    } else if (mode === 'max') {
+      contentHeight.value = maxContentHeight.value
     } else {
-      newHeight = maxContentHeight.value
+      contentHeight.value = midContentHeight.value
     }
-    
-    contentHeight.value = newHeight
   }
   
   return {
-    // 状态
     screenHeight,
     contentHeight,
     searchBoxHeight,
     safeBottomOffset,
     isDragging,
     
-    // 计算属性
     mapHeight,
     minContentHeight,
+    midContentHeight,
     maxContentHeight,
+    currentMode,
     
-    // 方法
     initLayout,
     handleDragStart,
     handleDrag,
-    handleDragEnd
+    handleDragEnd,
+    toggleContentMode,
+    setContentMode
   }
 }

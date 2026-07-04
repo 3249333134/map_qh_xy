@@ -41,7 +41,6 @@ export default {
     loading: { type: Boolean, default: false },
     sortBy: { type: String, default: 'time' }
   },
-  emits: ['loadMore', 'toggleSort', 'likeComment', 'replyComment'],
   methods: {
     loadMoreComments() {
       if (!this.loading) this.$emit('loadMore')

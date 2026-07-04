@@ -26,6 +26,7 @@
       :visible-card-indices="visibleCardIndices"
       :is-dragging="isDragging"
       :selected-point="selectedPoint"
+      card-component="ServiceCardItem"
       storage-key-prefix="serviceContentArea"
       @drag-start="handleDragStart"
       @drag="handleDrag"

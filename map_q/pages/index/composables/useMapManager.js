@@ -3,6 +3,17 @@ import { ref, reactive } from 'vue'
 // 首页专用前缀，用于隔离本地存储
 const STORAGE_PREFIX = 'INDEX_'
 
+// 标记点类型配置 - 低饱和浅红 + 白色描边
+const MARKER_CONFIG = {
+  normal: { bgColor: '#ffffff', color: '#333' },
+  video: { bgColor: '#ffffff', color: '#333' },
+  article: { bgColor: '#ffffff', color: '#333' },
+  place: { bgColor: '#ffffff', color: '#333' },
+  event: { bgColor: '#ffffff', color: '#333' },
+  service: { bgColor: '#ffffff', color: '#333' },
+  track: { bgColor: '#ffffff', color: '#333' }
+}
+
 export function useMapManager() {
   // 地图配置 - 使用武汉工程大学坐标（与GIS-Smart-campus-master一致）
   const mapConfig = reactive({
@@ -16,7 +27,8 @@ export function useMapManager() {
     enableZoom: true,
     enableScroll: true,
     enableRotate: false,
-    showCompass: false
+    showCompass: false,
+    selectedMarkerId: null
   })
 
   // 可视卡片索引
@@ -43,22 +55,47 @@ export function useMapManager() {
       })
 
     // 创建标记点数组
-    const markers = validPoints.map(({ point, sourceIndex }) => ({
-      id: sourceIndex,
-      latitude: point.location.coordinates[1],
-      longitude: point.location.coordinates[0],
-      iconPath: '/static/marker.png',
-      width: 30,
-      height: 30,
-      customData: {
-        pointId: point._id,
-        name: point.name || point.title,
-        sourceIndex
+    const markers = validPoints.map(({ point, sourceIndex }) => {
+      const type = point.type || 'normal'
+      const config = MARKER_CONFIG[type] || MARKER_CONFIG.normal
+      const isSelected = mapConfig.selectedMarkerId === sourceIndex
+
+      return {
+        id: sourceIndex,
+        latitude: point.location.coordinates[1],
+        longitude: point.location.coordinates[0],
+        zIndex: isSelected ? 100 : sourceIndex,
+        customData: {
+          pointId: point._id,
+          name: point.name || point.title,
+          sourceIndex,
+          type
+        },
+        callout: {
+          content: point.name || point.title || '',
+          fontSize: 11,
+          borderRadius: 8,
+          bgColor: 'rgba(255, 255, 255, 0.92)',
+          color: '#555',
+          padding: 6,
+          display: 'BYCLICK',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
+        },
+        label: {
+          content: '',
+          fontSize: 0
+        }
       }
-    }))
+    })
 
     mapConfig.markers = markers
     console.log('地图标记已更新:', markers.length)
+  }
+
+  // 设置选中的标记点
+  const selectMarker = (markerId) => {
+    mapConfig.selectedMarkerId = markerId
+    updateMapMarkers([])
   }
 
   // 获取用户位置
@@ -136,6 +173,8 @@ export function useMapManager() {
     handleVisibleCardsChange,
     saveMapState,
     loadMapState,
-    clearTrack
+    clearTrack,
+    selectMarker,
+    MARKER_CONFIG
   }
 }

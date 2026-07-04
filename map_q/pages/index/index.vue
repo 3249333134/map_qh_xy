@@ -20,6 +20,28 @@
       ref="mapBackground"
     />
 
+    <!-- 测试卡片 -->
+    <view 
+      v-if="isHotspotMode"
+      style="position: fixed; left: 50px; top: 100px; width: 70px; height: 90px; background: blue; z-index: 9999; pointer-events: auto;"
+    >
+      <text style="color: white; font-size: 12px; padding: 10px;">测试卡片</text>
+    </view>
+
+    <!-- 悬浮热点卡片（地图热点模式） -->
+    <HotspotCardsContainer
+      :visible="isHotspotMode"
+      :items="hotspotItems"
+      :map-center="mapCenter"
+      :map-scale="mapScale"
+      :map-width="windowWidth"
+      :map-height="mapHeight"
+      :map-bounds="mapBoundsData"
+      :highlighted-id="highlightedHotspotId"
+      @card-tap="onHotspotTap"
+      @card-long-press="onHotspotLongPress"
+    />
+
     <!-- 内容区域 -->
     <content-area
       :height="contentHeight"
@@ -34,6 +56,7 @@
       :has-more-data="hasMoreData"
       :visible-card-indices="visibleCardIndices"
       :selected-point="selectedPoint"
+      :highlighted-card-id="highlightedCardId"
       storage-key-prefix="indexContentArea"
       @drag-start="handleDragStart"
       @drag="handleDrag"
@@ -57,9 +80,10 @@
 </template>
 
 <script>
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed, watch } from 'vue'
 import { onShow, onHide } from '@dcloudio/uni-app'
 import MapBackground from '../../components/map/MapBackground.vue'
+import HotspotCardsContainer from '../../components/map/HotspotCardsContainer.vue'
 import ContentArea from '../../components/content/ContentArea.vue'
 import GlobalOverlayHost from '../../components/common/GlobalOverlayHost.vue'
 import { useMapData } from './composables/useMapData.js'
@@ -73,6 +97,7 @@ export default {
   name: 'IndexPage',
   components: {
     MapBackground,
+    HotspotCardsContainer,
     ContentArea,
     GlobalOverlayHost
   },
@@ -119,6 +144,26 @@ export default {
       saveMapState,
       loadMapState
     } = useMapManager()
+
+    const windowWidth = ref(375)
+    const mapBoundsData = ref(null)
+    const highlightedHotspotId = ref(null)
+
+    const mapCenter = computed(() => ({
+      latitude: mapConfig.latitude || 30.5728,
+      longitude: mapConfig.longitude || 104.0668
+    }))
+
+    const mapScale = computed(() => mapConfig.scale || 16)
+
+    const onMapRegionChanged = (bounds) => {
+      mapBoundsData.value = bounds
+      mapMgrRegionChanged(bounds)
+    }
+
+    const onHotspotLongPress = (item) => {
+      uni.vibrateShort && uni.vibrateShort({ type: 'light' })
+    }
 
     const errorMessage = ref('')
     const showError = ref(false)
@@ -174,8 +219,18 @@ export default {
       if (cardData && cardData.type === 'track') {
         console.log('点击轨迹卡片媒体区域，重新规划真实道路路线')
         try {
+          let start = null
+          let end = null
+          if (cardData.location &&
+              cardData.location.type === 'LineString' &&
+              cardData.location.coordinates &&
+              cardData.location.coordinates.length >= 2) {
+            const coords = cardData.location.coordinates
+            start = coords[0]
+            end = coords[coords.length - 1]
+          }
           // 重新获取真实道路路线
-          const routeResult = await ROUTE_PLANNER.getFixedRoute()
+          const routeResult = await ROUTE_PLANNER.getFixedRoute(start, end)
           if (routeResult.success && routeResult.path.length > 0) {
             console.log('获取到真实道路路线，点数:', routeResult.path.length)
             // 更新cardData中的路线数据
@@ -185,7 +240,7 @@ export default {
                 ...cardData.location,
                 coordinates: routeResult.path
               },
-              distance: (routeResult.distance / 1000).toFixed(2),
+              distance: routeResult.distance,
               duration: Math.round(routeResult.duration / 60) + '分钟'
             }
             // 使用真实路线
@@ -217,7 +272,7 @@ export default {
         try {
           uni.setStorageSync('INDEX_LAST_ITEM', cardData)
           await uni.navigateTo({
-            url: `/pages/detail/index?id=${cardData._id}&title=${encodeURIComponent(cardData.name || cardData.title || '')}&author=${encodeURIComponent(cardData.author || '')}&likes=${cardData.likes || 0}&source=index`
+            url: `/pages/detail/index?id=${cardData._id}&title=${encodeURIComponent(cardData.name || cardData.title || '')}&author=${encodeURIComponent(cardData.author || '')}&likes=${cardData.likes || 0}&source=index&type=${cardData.type || ''}`
           })
         } catch (error) {
           console.error('跳转首页详情页失败:', error)
@@ -235,8 +290,18 @@ export default {
       if (cardData && cardData.type === 'track') {
         console.log('点击轨迹卡片内容区域，重新规划真实道路路线')
         try {
+          let start = null
+          let end = null
+          if (cardData.location &&
+              cardData.location.type === 'LineString' &&
+              cardData.location.coordinates &&
+              cardData.location.coordinates.length >= 2) {
+            const coords = cardData.location.coordinates
+            start = coords[0]
+            end = coords[coords.length - 1]
+          }
           // 重新获取真实道路路线
-          const routeResult = await ROUTE_PLANNER.getFixedRoute()
+          const routeResult = await ROUTE_PLANNER.getFixedRoute(start, end)
           if (routeResult.success && routeResult.path.length > 0) {
             console.log('获取到真实道路路线，点数:', routeResult.path.length)
             // 更新cardData中的路线数据
@@ -246,7 +311,7 @@ export default {
                 ...cardData.location,
                 coordinates: routeResult.path
               },
-              distance: (routeResult.distance / 1000).toFixed(2),
+              distance: routeResult.distance,
               duration: Math.round(routeResult.duration / 60) + '分钟'
             }
             // 使用真实路线
@@ -290,21 +355,44 @@ export default {
       console.log('轨迹已设置到mapConfig:', mapConfig.polyline)
     }
 
-    const onMapRegionChanged = (bounds) => {
-      try {
-        mapBounds.value = bounds
-        mapMgrRegionChanged(bounds)
-      } catch (error) {
-        handleError(error, '处理地图区域变化')
-      }
-    }
-
     const onVisibleCardsChange = (indices) => {
       mapMgrVisibleCardsChange(indices)
       updateMapMarkers(mapPoints.value)
     }
 
     const selectedPoint = ref(null)
+
+    const highlightedCardId = ref(null)
+
+    const isHotspotMode = ref(true)
+
+    const hotspotItems = computed(() => {
+      return mapPoints.value || []
+    })
+
+    const checkHotspotMode = () => {
+      try {
+        const sys = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
+        const screenH = sys.windowHeight
+        const minRatio = LAYOUT_CONFIG && LAYOUT_CONFIG.MIN_CONTENT_RATIO ? LAYOUT_CONFIG.MIN_CONTENT_RATIO : 0.18
+        const threshold = screenH * (minRatio + 0.12)
+        isHotspotMode.value = contentHeight.value < threshold
+      } catch (e) {
+        isHotspotMode.value = false
+      }
+    }
+
+    const onHotspotTap = (item) => {
+      try {
+        if (!item) return
+        uni.setStorageSync('INDEX_LAST_ITEM', item)
+        uni.navigateTo({
+          url: `/pages/detail/index?type=${item.type || 'normal'}`
+        })
+      } catch (e) {
+        console.warn('跳转详情失败:', e)
+      }
+    }
 
     const onMarkerTap = (payload) => {
       try {
@@ -314,8 +402,10 @@ export default {
           marker = mapConfig.markers.find(m => String(m.id) === String(id)) || null
         }
         let point = null
+        let cardId = null
         if (marker && marker.customData && marker.customData.pointId) {
           point = mapPoints.value.find(p => p._id === marker.customData.pointId) || null
+          cardId = marker.customData.pointId
         }
         if (!point && marker) {
           point = { _id: `marker_${id}`, name: (marker.customData && marker.customData.name) || '位置', address: '', description: '', location: { type: 'Point', coordinates: [marker.longitude, marker.latitude] } }
@@ -323,6 +413,20 @@ export default {
         selectedPoint.value = { point, marker }
         if (marker) {
           resolveAddressByCoords(marker.latitude, marker.longitude).then(addr => { if (addr && selectedPoint.value && selectedPoint.value.point) selectedPoint.value.point.address = addr })
+        }
+        if (cardId) {
+          highlightedCardId.value = cardId
+          setTimeout(() => {
+            highlightedCardId.value = null
+          }, 3000)
+          try {
+            const sys = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
+            const screenH = sys.windowHeight
+            const midH = screenH * (LAYOUT_CONFIG && LAYOUT_CONFIG.INITIAL_CONTENT_RATIO ? LAYOUT_CONFIG.INITIAL_CONTENT_RATIO : 0.55)
+            if (contentHeight.value < midH) {
+              contentHeight.value = midH
+            }
+          } catch (e) {}
         }
       } catch (err) {}
     }
@@ -405,10 +509,78 @@ export default {
         const lat = mapConfig.latitude
         const lng = mapConfig.longitude
         if (typeof lat !== 'number' || typeof lng !== 'number') return
-        const marker = { latitude: lat, longitude: lng, customData: { name: '当前位置' } }
-        const point = { _id: `center_${Date.now()}`, name: '当前位置', address: '', description: '', location: { type: 'Point', coordinates: [lng, lat] } }
+        const marker = { latitude: lat, longitude: lng }
+        const point = { _id: `center_${Date.now()}`, name: '正在定位...', address: '', description: '', location: { type: 'Point', coordinates: [lng, lat] } }
         selectedPoint.value = { point, marker }
+        
+        resolveAddressByCoords(lat, lng).then(addr => {
+          if (addr && selectedPoint.value && selectedPoint.value.point) {
+            selectedPoint.value.point.address = addr
+          }
+        })
+        
+        fetchPointNameByCoords(lat, lng).then(name => {
+          if (name && selectedPoint.value && selectedPoint.value.point) {
+            selectedPoint.value.point.name = name
+          }
+        })
       } catch (e) {}
+    }
+
+    const fetchPointNameByCoords = (lat, lng) => {
+      return new Promise((resolve) => {
+        try {
+          const app = (typeof getApp === 'function') ? getApp() : null
+          const envKey = (app && app.globalData && app.globalData.QQ_MAP_KEY) || uni.getStorageSync('QQ_MAP_KEY') || ''
+          if (envKey) {
+            uni.request({
+              url: `https://apis.map.qq.com/ws/geocoder/v1/?location=${lat},${lng}&key=${envKey}&get_poi=1`,
+              method: 'GET',
+              success: (res) => {
+                const poi = res && res.data && res.data.result && res.data.result.address_reference && res.data.result.address_reference.landmark_l2
+                const name = poi && poi.title
+                if (name) {
+                  resolve(name)
+                  return
+                }
+                const formatted = res && res.data && res.data.result && res.data.result.formatted_addresses && res.data.result.formatted_addresses.recommend
+                if (formatted) {
+                  resolve(formatted.split(/市|区|县/)[0] || formatted)
+                  return
+                }
+                resolve('当前位置')
+              },
+              fail: () => {
+                uni.request({
+                  url: `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+                  method: 'GET',
+                  header: { 'Accept-Language': 'zh-CN' },
+                  success: (res) => {
+                    const a = res && res.data && res.data.address
+                    const name = a && (a.attraction || a.building || a.hamlet || a.village || a.town || a.city)
+                    resolve(name || '当前位置')
+                  },
+                  fail: () => resolve('当前位置')
+                })
+              }
+            })
+            return
+          }
+          uni.request({
+            url: `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+            method: 'GET',
+            header: { 'Accept-Language': 'zh-CN' },
+            success: (res) => {
+              const a = res && res.data && res.data.address
+              const name = a && (a.attraction || a.building || a.hamlet || a.village || a.town || a.city)
+              resolve(name || '当前位置')
+            },
+            fail: () => resolve('当前位置')
+          })
+        } catch (e) {
+          resolve('当前位置')
+        }
+      })
     }
 
     const lastContentHeightBeforeExpand = ref(0)
@@ -470,8 +642,16 @@ export default {
 
     onMounted(() => {
       searchBoxHeight.value = 60
+      try {
+        const sys = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
+        windowWidth.value = sys.windowWidth || 375
+      } catch (e) {}
       init()
     })
+
+    watch(contentHeight, () => {
+      checkHotspotMode()
+    }, { immediate: true })
 
     onShow(() => {
       try {
@@ -527,6 +707,7 @@ export default {
       lockContentMax,
       restoreContentHeight,
       selectedPoint,
+      highlightedCardId,
       onMarkerTap,
       onPoiTap,
       closePointDetail,
@@ -537,7 +718,19 @@ export default {
       errorMessage,
       handleError,
       handleMapError,
-      onShowTrack
+      onShowTrack,
+
+      isHotspotMode,
+      hotspotItems,
+      onHotspotTap,
+
+      windowWidth,
+      mapBoundsData,
+      highlightedHotspotId,
+      mapCenter,
+      mapScale,
+      onMapRegionChanged,
+      onHotspotLongPress
     }
   }
 }

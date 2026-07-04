@@ -1,8 +1,8 @@
 <template>
   <view
-    class="card map-card"
+    class="card article-card"
     :style="{ '--card-height': height + 'rpx' }">
-    <!-- 卡片上半部分：点击进入详情页并定位 -->
+    <!-- 上半部分：文章封面（横向长图） -->
     <view
       class="card-media"
       @tap="handleMediaTap"
@@ -12,26 +12,35 @@
         class="card-cover"
         :src="coverImage"
         mode="aspectFill"
+        @error="onCoverError"
       />
       <view v-else class="cover-placeholder">
-        <text class="cover-placeholder-text">暂无封面</text>
+        <view class="placeholder-icon">📝</view>
+        <text class="placeholder-text">文章</text>
       </view>
-      <view class="media-heat">{{ heatText }}</view>
+      <!-- 文章标识 -->
+      <view class="article-badge">
+        <text class="badge-icon">文</text>
+      </view>
+      <!-- 已读标记 -->
+      <view v-if="isRead" class="read-mark">已读</view>
     </view>
-    <!-- 卡片下半部分：点击只定位到地图 -->
+
+    <!-- 下半部分：文章信息 -->
     <view
       class="card-content"
       @tap="handleContentTap"
       @click="handleContentTap">
       <view class="card-title">{{ cardTitle }}</view>
-      <view class="card-author">{{ cardAuthor }}</view>
-      <view v-if="descriptionText" class="card-description">{{ descriptionText }}</view>
+      <view class="card-excerpt">{{ excerptText }}</view>
       <view class="card-footer">
-        <view class="card-location">
-          <text class="footer-label">距</text>
-          <text class="footer-text">{{ locationText }}</text>
+        <view class="card-author">
+          <text class="author-name">{{ cardAuthor }}</text>
         </view>
-        <!-- 交互按钮区域 -->
+        <view class="card-stats">
+          <text class="stat-text">{{ readCountText }}</text>
+        </view>
+        <!-- 交互按钮 -->
         <view class="card-actions" @tap.stop="preventBubble" @click.stop="preventBubble">
           <view class="action-btn" :class="{ active: isLiked }" @tap.stop="handleLike" @click.stop="handleLike">
             <text class="action-icon">{{ isLiked ? '♥' : '♡' }}</text>
@@ -51,11 +60,11 @@
 import { useInteraction } from '../../utils/interaction.js'
 
 export default {
-  name: 'CardItem',
+  name: 'ArticleCard',
   props: {
     height: {
       type: Number,
-      default: 200
+      default: 280
     },
     columnType: {
       type: String,
@@ -73,58 +82,46 @@ export default {
   data() {
     return {
       isLiked: false,
-      isFavorited: false
+      isFavorited: false,
+      isRead: false,
+      coverLoadFailed: false
     }
   },
   computed: {
+    cardId() {
+      return this.cardData && (this.cardData._id || this.cardData.id || this.index)
+    },
     cardTitle() {
       return this.cardData && (this.cardData.name || this.cardData.title) ?
-        (this.cardData.name || this.cardData.title) : '标题占位符'
+        (this.cardData.name || this.cardData.title) : '文章标题'
     },
     cardAuthor() {
-      return this.cardData && this.cardData.author ? this.cardData.author : '作者占位符'
+      return this.cardData && this.cardData.author ? this.cardData.author : '作者'
     },
-    locationText() {
-      if (this.cardData && this.cardData.location && this.cardData.location.coordinates) {
-        const [lng, lat] = this.cardData.location.coordinates
-        return `${lat.toFixed(2)}, ${lng.toFixed(2)}`
-      }
-      return this.cardData && this.cardData.address ? this.cardData.address : '未知位置'
+    excerptText() {
+      const text = this.cardData && (this.cardData.description || this.cardData.excerpt || this.cardData.summary)
+      return text ? String(text).substring(0, 60) + '...' : '点击查看全文'
     },
     coverImage() {
+      if (this.coverLoadFailed) return ''
       const data = this.cardData || {}
       const candidates = [
         data.cover,
         data.coverUrl,
-        data.coverImage,
         data.thumbnail,
         data.thumb,
-        data.image,
-        data.imageUrl,
-        data.photo,
-        data.picture
+        data.image
       ]
       if (Array.isArray(data.images)) candidates.push(data.images[0])
-      if (Array.isArray(data.photos)) candidates.push(data.photos[0])
-      if (Array.isArray(data.media)) {
-        const first = data.media[0]
-        candidates.push(typeof first === 'string' ? first : first && (first.url || first.src))
-      }
       const found = candidates.find(item => typeof item === 'string' && item.trim())
       return found || ''
     },
-    heatText() {
-      const likes = Number(this.cardData && this.cardData.likes)
-      if (Number.isFinite(likes) && likes > 300) return '高热'
-      if (Number.isFinite(likes) && likes > 120) return '推荐'
-      return '附近'
-    },
-    descriptionText() {
-      const text = this.cardData && this.cardData.description
-      return text ? String(text) : ''
-    },
-    cardId() {
-      return this.cardData && (this.cardData._id || this.cardData.id || this.index)
+    readCountText() {
+      const count = Number(this.cardData && this.cardData.reads || this.cardData && this.cardData.views || 0)
+      if (count >= 10000) {
+        return (count / 10000).toFixed(1) + '万阅读'
+      }
+      return count + '阅读'
     },
     likesCount() {
       const likes = Number(this.cardData && this.cardData.likes)
@@ -137,12 +134,36 @@ export default {
   },
   created() {
     this.checkInteractionStatus()
+    this.checkReadStatus()
   },
   methods: {
     checkInteractionStatus() {
       const interaction = useInteraction()
       this.isLiked = interaction.isLiked(this.cardId)
       this.isFavorited = interaction.isFavorited(this.cardId)
+    },
+    checkReadStatus() {
+      try {
+        const readIds = uni.getStorageSync('READ_ARTICLES') || []
+        this.isRead = readIds.includes(this.cardId)
+      } catch (e) {
+        this.isRead = false
+      }
+    },
+    onCoverError() {
+      this.coverLoadFailed = true
+    },
+    markAsRead() {
+      try {
+        const readIds = uni.getStorageSync('READ_ARTICLES') || []
+        if (!readIds.includes(this.cardId)) {
+          readIds.push(this.cardId)
+          uni.setStorageSync('READ_ARTICLES', readIds)
+        }
+        this.isRead = true
+      } catch (e) {
+        console.error('标记已读失败:', e)
+      }
     },
     handleLike() {
       const interaction = useInteraction()
@@ -152,21 +173,17 @@ export default {
       const interaction = useInteraction()
       this.isFavorited = interaction.toggleFavorite(this.cardId, this.cardData)
     },
-    preventBubble() {
-      // 阻止事件冒泡
-    },
-    // 上方媒体区域点击：进入详情页并定位
+    preventBubble() {},
     handleMediaTap() {
-      console.log('上方媒体区域被点击，准备跳转详情页并定位')
+      console.log('文章卡片媒体区域被点击')
+      this.markAsRead()
       this.$emit('media-tap', {
         cardData: this.cardData,
         index: this.index
       })
     },
-
-    // 下方内容区域点击：只定位到地图
     handleContentTap() {
-      console.log('下方内容区域被点击，准备定位到地图')
+      console.log('文章卡片内容区域被点击')
       this.$emit('content-tap', {
         cardData: this.cardData,
         index: this.index
@@ -177,7 +194,7 @@ export default {
 </script>
 
 <style>
-.card.map-card {
+.article-card {
   margin-bottom: 8rpx;
   border-radius: 12rpx;
   background-color: transparent;
@@ -185,10 +202,9 @@ export default {
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
-  position: relative;
 }
 
-.card.map-card .card-media {
+.article-card .card-media {
   position: relative;
   height: var(--card-height, 280rpx);
   width: 100%;
@@ -197,49 +213,74 @@ export default {
   background: #f8f8f8;
 }
 
-.card-cover {
+.article-card .card-cover {
   width: 100%;
   height: 100%;
   display: block;
-}
-
-.media-heat {
-  position: absolute;
-  bottom: 8rpx;
-  right: 8rpx;
-  padding: 0 10rpx;
-  border-radius: 12rpx;
-  display: flex;
-  align-items: center;
-  font-size: 18rpx;
-  font-weight: 400;
-  line-height: 30rpx;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.5);
 }
 
 .cover-placeholder {
   width: 100%;
   height: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background: #f8f8f8;
 }
 
-.cover-placeholder-text {
+.placeholder-icon {
+  font-size: 52rpx;
+  margin-bottom: 8rpx;
+  opacity: 0.3;
   color: #ccc;
-  font-size: 22rpx;
+  filter: grayscale(1);
 }
 
-.card.map-card .card-content {
+.placeholder-text {
+  color: #ccc;
+  font-size: 20rpx;
+}
+
+.read-mark {
+  position: absolute;
+  top: 10rpx;
+  right: 10rpx;
+  padding: 4rpx 10rpx;
+  border-radius: 6rpx;
+  background: rgba(255, 255, 255, 0.95);
+  color: #999;
+  font-size: 18rpx;
+}
+
+.article-badge {
+  position: absolute;
+  bottom: 8rpx;
+  right: 8rpx;
+  padding: 0 10rpx;
+  border-radius: 12rpx;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30rpx;
+}
+
+.badge-icon {
+  color: #fff;
+  font-size: 18rpx;
+  font-weight: 400;
+  line-height: 30rpx;
+}
+
+.article-card .card-content {
   padding: 10rpx;
   width: 100%;
   box-sizing: border-box;
   cursor: pointer;
 }
 
-.card.map-card .card-title {
+.article-card .card-title {
   width: 100%;
   color: #000;
   font-size: 26rpx;
@@ -252,19 +293,24 @@ export default {
   overflow: hidden;
 }
 
-.card.map-card .card-author {
-  display: flex;
-  align-items: center;
-  color: #999;
-  font-size: 20rpx;
-  line-height: 26rpx;
-  margin-bottom: 4rpx;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.article-card .card-excerpt {
+  display: none;
 }
 
-.card-author::before {
+.article-card .card-footer {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.article-card .card-author {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+}
+
+.article-card .card-author::before {
   content: '';
   width: 32rpx;
   height: 32rpx;
@@ -274,70 +320,67 @@ export default {
   flex-shrink: 0;
 }
 
-.card-description {
-  display: none;
+.author-name {
+  color: #999;
+  font-size: 20rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.card.map-card .card-footer {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.card.map-card .card-location {
-  display: none;
-}
-
-.card-actions {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
+.article-card .card-stats {
   flex-shrink: 0;
 }
 
-.action-btn {
+.stat-text {
+  font-size: 20rpx;
+  color: #999;
+}
+
+.article-card .card-actions {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  flex-shrink: 0;
+}
+
+.article-card .action-btn {
   display: flex;
   align-items: center;
   gap: 4rpx;
   transition: all 0.2s;
 }
 
-.action-btn:active {
+.article-card .action-btn:active {
   opacity: 0.7;
 }
 
-.action-icon {
+.article-card .action-icon {
   font-size: 24rpx;
   color: #999;
   line-height: 1;
 }
 
-.action-btn.active .action-icon {
-  color: #ff2442;
-}
-
-.action-text {
+.article-card .action-text {
   font-size: 20rpx;
   color: #999;
 }
 
-.action-btn.active .action-text {
+.article-card .action-btn.active .action-icon {
   color: #ff2442;
 }
 
-.action-btn.active {
+.article-card .action-btn.active .action-text {
+  color: #ff2442;
+}
+
+.article-card .action-btn.active {
   animation: popIn 0.3s ease;
 }
 
 @keyframes popIn {
-  0% {
-    transform: scale(0.8);
-  }
-  50% {
-    transform: scale(1.1);
-  }
-  100% {
-    transform: scale(1);
-  }
+  0% { transform: scale(0.8); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
 }
 </style>

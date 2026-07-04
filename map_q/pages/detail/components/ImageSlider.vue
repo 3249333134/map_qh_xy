@@ -15,7 +15,7 @@
       <swiper-item v-for="(image, index) in slides" :key="index">
         <image
           :src="image"
-          mode="aspectFit"
+          mode="aspectFill"
           class="slide-image"
           @click="previewImage(index)"
         ></image>
@@ -97,7 +97,7 @@ export default {
 .image-slider {
   position: relative;
   width: 100%;
-  height: 720rpx; /* 放大展示区域，如需更大/更小可调整 */
+  height: 900rpx;
   background-color: #f5f5f5;
 }
 .swiper {
@@ -107,7 +107,6 @@ export default {
 .slide-image {
   width: 100%;
   height: 100%;
-  /* aspectFit 会在容器内完整展示图片，不裁剪；两侧或上下可能留空 */
 }
 .image-count {
   position: absolute;

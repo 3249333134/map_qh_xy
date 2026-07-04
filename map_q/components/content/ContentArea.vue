@@ -4,40 +4,42 @@
     :class="{ collapsed: isCollapsed, 'has-overlay': !!selectedPoint }"
     :style="{ height: contentAreaHeight + 'px', bottom: (bottomOffset || 0) + 'px' }"
   >
-    <!-- 拖动区域（包含拖动条和搜索框） -->
-    <drag-search-bar
-      :is-collapsed="isCollapsed"
-      :collapsed-search-style="collapsedSearchStyle"
-      :category-action-expanded="categoryActionExpanded"
-      :collapsed-search-width="collapsedSearchWidth"
-      :collapsed-gap="collapsedGap"
-      :selected-point="selectedPoint"
-      @drag-start="onDragStart"
-      @drag="onDrag"
-      @drag-end="onDragEnd"
-      @search-input="onSearchInput"
-      @search-focus="onSearchFocus"
-      @search-tap="onSearchTap"
-      @right-action-tap="onRightActionTap"
-    />
-    
-    <!-- 分类选项卡（右侧按钮固定，可展开覆盖除“全部”外的区域） -->
-    <category-tabs-bar
-      v-if="!isCollapsed || categoryActionExpanded"
-      :categories="categories"
-      :active-category="activeCategory"
-      :category-action-expanded="categoryActionExpanded"
-      :expanded-left="expandedLeft"
-      :selected-point="selectedPoint"
-      @drag-start="onDragStart"
-      @drag="onDrag"
-      @drag-end="onDragEnd"
-      @category-change="onCategoryChange"
-      @right-action-tap="onRightActionTap"
-    />
+    <!-- 白色背景容器 -->
+    <view class="content-inner">
+      <!-- 拖动区域（包含拖动条和搜索框） -->
+      <drag-search-bar
+        :is-collapsed="isCollapsed"
+        :collapsed-search-style="collapsedSearchStyle"
+        :category-action-expanded="categoryActionExpanded"
+        :collapsed-search-width="collapsedSearchWidth"
+        :collapsed-gap="collapsedGap"
+        :selected-point="selectedPoint"
+        @drag-start="onDragStart"
+        @drag="onDrag"
+        @drag-end="onDragEnd"
+        @search-input="onSearchInput"
+        @search-focus="onSearchFocus"
+        @search-tap="onSearchTap"
+        @right-action-tap="onRightActionTap"
+      />
+      
+      <!-- 分类选项卡（右侧按钮固定，可展开覆盖除“全部”外的区域） -->
+      <category-tabs-bar
+        v-if="!isCollapsed || categoryActionExpanded"
+        :categories="categories"
+        :active-category="activeCategory"
+        :category-action-expanded="categoryActionExpanded"
+        :expanded-left="expandedLeft"
+        :selected-point="selectedPoint"
+        @drag-start="onDragStart"
+        @drag="onDrag"
+        @drag-end="onDragEnd"
+        @category-change="onCategoryChange"
+        @right-action-tap="onRightActionTap"
+      />
 
-    <!-- 卡片内容区 -->
-    <cards-container
+      <!-- 卡片内容区 -->
+      <cards-container
       v-if="!isCollapsed && !categoryActionExpanded"
       :scroll-top="scrollTop"
       :scroll-with-animation="scrollWithAnimation"
@@ -48,11 +50,14 @@
       :right-column-data="rightColumnData"
       :use-service-card="useServiceCard"
       :get-column-item-height="getColumnItemHeight"
+      :highlighted-card-id="highlightedCardId"
       @load-more="onLoadMore"
       @scroll="onScroll"
       @media-tap="onMediaTap"
       @content-tap="onContentTap"
       @reserve="onReserve"
+      @scroll-to-card="onScrollToCard"
+      ref="cardsContainerRef"
     />
     <expanded-modules 
       v-if="categoryActionExpanded"
@@ -62,6 +67,7 @@
       @reserve="onReserve"
       @item-tap="onItemTap"
     />
+    </view>
   </view>
 </template>
 
@@ -115,7 +121,6 @@ export default {
       type: Boolean,
       default: true
     },
-    // 新增：控制使用哪种卡片组件（服务页传递 "ServiceCardItem"）
     cardComponent: {
       type: String,
       default: ''
@@ -124,10 +129,13 @@ export default {
       type: Object,
       default: null
     },
-    // 新增：自定义存储键前缀，用于区分不同页面
     storageKeyPrefix: {
       type: String,
       default: 'contentArea'
+    },
+    highlightedCardId: {
+      type: [String, Number],
+      default: null
     }
   },
   // 在 data 中初始化为 false
@@ -137,30 +145,25 @@ export default {
       rightColumnHeights: {},
       scrollTop: 0,
       isScrollLocked: false,
-      // 为每个分类保存滚动位置
       categoryScrollPositions: {},
       scrollWithAnimation: true,
-      // 添加一个对象来跟踪哪些分类已经被访问过
       visitedCategories: {},
-      // 添加加载更多的防抖定时器
       loadMoreTimer: null,
-      // 分类右侧按钮展开态（覆盖除“全部”外的区域）
       categoryActionExpanded: false,
-      // 展开时的左起始位置（紧贴“全部”按钮右缘）
       expandedLeft: 0,
       collapsedSearchWidth: 76,
       collapsedGap: 8,
       collapsedButtonWidth: 48,
       userToggledAction: false,
       resetExpandOnExitCollapse: false,
-      // 分类栏近似高度（含上下间距），用于计算内容区高度
       tabsHeightApprox: 50,
-      // 顶部区域实际高度（拖动区 + 分类栏），更精确计算内容区高度
       topAreaHeight: 0,
-      // 为避免测量误差造成底部细缝，增加少量补偿
       fillCompensation: 10,
       isContentLocked: false,
-      lockedContentHeight: 0
+      lockedContentHeight: 0,
+      highlightedCardId: null,
+      cardsContainerRef: null,
+      highlightTimer: null
     }
   },
   mounted() {
@@ -282,6 +285,15 @@ export default {
         this.$nextTick(() => { this.updateExpandedLeft() })
       } else {
         this.categoryActionExpanded = false
+      }
+    },
+    highlightedCardId(newVal) {
+      this.highlightedCardId = newVal
+      if (newVal) {
+        if (this.highlightTimer) clearTimeout(this.highlightTimer)
+        this.highlightTimer = setTimeout(() => {
+          this.highlightedCardId = null
+        }, 3000)
       }
     }
   },
@@ -675,12 +687,21 @@ export default {
 .content-area {
   position: absolute;
   left: 0;
+  bottom: 0;
   width: 100%;
   z-index: 10;
-  background-color: #f8f8f8;
+  background-color: transparent;
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
   overflow: hidden;
+}
+
+.content-inner {
+  width: 100%;
+  height: 100%;
+  background-color: #f8f8f8;
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
 }
 

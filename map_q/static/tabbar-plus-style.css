@@ -14,25 +14,19 @@ uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon,
 .uni-tabbar-item:nth-child(3) .uni-tabbar__icon,
 .uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar-item__icon {
   position: relative !important;
-  transform: translateY(-15px) !important;
-  width: 60px !important;
-  height: 60px !important;
-  aspect-ratio: 1 / 1 !important;              /* 强制等宽高 */
-  border-radius: 50% !important;               /* 圆角 */
-  clip-path: circle(50% at 50% 50%) !important;/* 进一步裁剪为正圆 */
-  overflow: visible !important;                 /* 避免被父容器裁剪 */
+  transform: translateY(-12px) !important;
+  width: 52px !important;
+  height: 52px !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 50% !important;
+  clip-path: circle(50% at 50% 50%) !important;
+  overflow: visible !important;
   box-sizing: border-box !important;
-  background: radial-gradient(circle at 50% 40%, #ff8a3d 0%, #ff6b35 60%, #ff4757 100%) !important;
-  border: 3px solid #ffffff !important;
+  background: #ff8a65 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow:
-    0 4px 12px rgba(255, 71, 87, 0.3),
-    0 2px 8px rgba(255, 107, 53, 0.2),
-    0 0 20px rgba(247, 147, 30, 0.1),
-    0 8px 32px rgba(0, 0, 0, 0.1) !important;
-  animation: tabbar-pulse 2s infinite !important;
+  box-shadow: 0 2px 8px rgba(255, 138, 101, 0.3) !important;
 }
 
 /* 隐藏原始图标，使用自定义样式 - 多重选择器 */
@@ -51,7 +45,7 @@ uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon::after,
 .uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar-item__icon::after {
   content: "➕" !important;
   color: white !important;
-  font-size: 32px !important;
+  font-size: 28px !important;
   font-weight: normal !important;
   line-height: 1 !important;
   position: absolute !important;
@@ -116,15 +110,15 @@ uni-tabbar .uni-tabbar__item:nth-child(3).uni-tabbar__item--selected .uni-tabbar
   .uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon,
   uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon,
   .uni-tabbar-item:nth-child(3) .uni-tabbar__icon {
-    width: 55px !important;
-    height: 55px !important;
-    transform: translateY(-12px) !important;
+    width: 48px !important;
+    height: 48px !important;
+    transform: translateY(-10px) !important;
   }
   
   .uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon::after,
   uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon::after,
   .uni-tabbar-item:nth-child(3) .uni-tabbar__icon::after {
-    font-size: 28px !important;
+    font-size: 24px !important;
   }
   
   .uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__item-text,
@@ -140,15 +134,15 @@ uni-tabbar .uni-tabbar__item:nth-child(3).uni-tabbar__item--selected .uni-tabbar
   .uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon,
   uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon,
   .uni-tabbar-item:nth-child(3) .uni-tabbar__icon {
-    width: 65px !important;
-    height: 65px !important;
-    transform: translateY(-18px) !important;
+    width: 56px !important;
+    height: 56px !important;
+    transform: translateY(-14px) !important;
   }
   
   .uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon::after,
   uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon::after,
   .uni-tabbar-item:nth-child(3) .uni-tabbar__icon::after {
-    font-size: 36px !important;
+    font-size: 30px !important;
   }
   
   .uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__item-text,

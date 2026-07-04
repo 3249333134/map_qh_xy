@@ -2,7 +2,9 @@
   <view class="header">
     <view class="nav-bar">
       <view class="nav-left" @tap="goBack">
-        <text class="icon-back">‹</text>
+        <view class="back-btn">
+          <text class="icon-back">‹</text>
+        </view>
       </view>
       <view class="nav-center">
         <view class="user-info">
@@ -11,10 +13,12 @@
         </view>
       </view>
       <view class="nav-right">
-        <view class="follow-btn" :class="{ followed: userInfo.isFollowed }" @tap="toggleFollow">
-          <text class="follow-text">{{ userInfo.isFollowed ? '已关注' : '关注' }}</text>
+        <view class="follow-btn" :class="{ followed: isFollowing }" @tap="toggleFollow">
+          <text class="follow-text">{{ isFollowing ? '已关注' : '关注' }}</text>
         </view>
-        <text class="share-icon" @tap="share">⤴</text>
+        <view class="share-btn" @tap="share">
+          <text class="share-icon">⤴</text>
+        </view>
       </view>
     </view>
   </view>
@@ -27,9 +31,12 @@ export default {
     userInfo: {
       type: Object,
       required: true
+    },
+    isFollowing: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['back', 'follow', 'share'],
   methods: {
     goBack() {
       this.$emit('back')
@@ -51,87 +58,105 @@ export default {
   left: 0;
   right: 0;
   z-index: 100;
-  background: #ffffff;
-  padding-top: calc(var(--status-bar-height) + 29px);
+  background: transparent;
+  padding-top: var(--status-bar-height);
 }
 
 .nav-bar {
   display: flex;
   align-items: center;
-  height: 44px;
-  padding: 0 16px;
+  height: 88rpx;
+  padding: 0 24rpx;
+}
+
+.nav-left {
+  flex-shrink: 0;
+}
+
+.back-btn {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+}
+
+.icon-back {
+  color: #ffffff;
+  font-size: 48rpx;
+  position: relative;
+  top: -4rpx;
+  font-weight: 300;
 }
 
 .nav-center {
   flex: 1;
   display: flex;
-  justify-content: flex-start;
-  align-items: flex-end;
-  margin-left: 0;
-  padding-left: 8px;
-  padding-bottom: 4px;
-}
-
-.nav-right {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  padding-bottom: 4px;
+  justify-content: center;
+  align-items: center;
 }
 
 .user-info {
   display: flex;
   align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8rpx 20rpx;
+  border-radius: 32rpx;
 }
 
 .avatar {
-  width: 39px;
-  height: 39px;
-  border-radius: 16px;
-  margin-right: 8px;
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  margin-right: 12rpx;
   flex-shrink: 0;
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
 }
 
 .username {
-  color: #000000;
-  font-size: 16px;
+  color: #ffffff;
+  font-size: 26rpx;
   font-weight: 500;
 }
 
 .nav-right {
   display: flex;
   align-items: center;
-  gap: 12px;
-  height: 100%;
-  margin-right: 80px;
+  gap: 16rpx;
+  flex-shrink: 0;
 }
 
 .follow-btn {
-  background: rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(0, 0, 0, 0.2);
-  border-radius: 16px;
-  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 24rpx;
+  padding: 8rpx 20rpx;
 }
 
 .follow-btn.followed {
-  background: rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.15);
 }
 
-/* 修复：使用类选择器替代标签选择器 */
 .follow-text {
-  color: #000000;
-  font-size: 14px;
+  color: #ffffff;
+  font-size: 24rpx;
 }
 
-.icon-back {
-  color: #000000;
-  font-size: 36px;
-  position: relative;
-  top: -2px;
+.share-btn {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
 }
 
 .share-icon {
-  color: #000000;
-  font-size: 20px;
+  color: #ffffff;
+  font-size: 28rpx;
 }
 </style>

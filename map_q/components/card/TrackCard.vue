@@ -21,21 +21,12 @@
         <view v-if="startPoint" class="map-marker start-marker" :style="{ left: startPoint.x + 'px', top: startPoint.y + 'px' }"></view>
         <!-- 终点标记 -->
         <view v-if="endPoint" class="map-marker end-marker" :style="{ left: endPoint.x + 'px', top: endPoint.y + 'px' }"></view>
-        <!-- 途经点标记 -->
-        <view
-          v-for="(point, index) in wayPoints"
-          :key="index"
-          class="map-marker way-marker"
-          :style="{ left: point.x + 'px', top: point.y + 'px' }"
-        ></view>
       </view>
       <!-- 叠加信息 -->
       <view class="track-overlay">
-        <view class="track-icon">线</view>
-        <view class="track-info">
-          <text class="track-distance">{{ locationText }}</text>
-          <text class="track-duration">{{ durationText }}</text>
-        </view>
+        <text class="track-distance">{{ locationText }}</text>
+        <view class="overlay-dot"></view>
+        <text class="track-duration">{{ durationText }}</text>
       </view>
     </view>
     <!-- 卡片下半部分 -->
@@ -46,9 +37,14 @@
       <view class="card-author">{{ cardAuthor }}</view>
       <view class="card-footer">
         <view class="card-location">{{ pointSummary }}</view>
-        <view class="card-stats">
-          <text class="track-badge">迹</text>
-          <text class="likes">{{ cardStats }}</text>
+        <!-- 交互按钮 -->
+        <view class="card-actions" @tap.stop="preventBubble">
+          <view class="action-btn" :class="{ active: isLiked }" @tap.stop="handleLike">
+            <text class="action-icon">{{ isLiked ? '♥' : '♡' }}</text>
+          </view>
+          <view class="action-btn" :class="{ active: isFavorited }" @tap.stop="handleFavorite">
+            <text class="action-icon">{{ isFavorited ? '★' : '☆' }}</text>
+          </view>
         </view>
       </view>
     </view>
@@ -57,6 +53,7 @@
 
 <script>
 import { ROUTE_PLANNER } from '../../utils/routePlanner.js'
+import { useInteraction } from '../../utils/interaction.js'
 
 export default {
   name: 'TrackCard',
@@ -85,10 +82,17 @@ export default {
       startPoint: null,
       endPoint: null,
       wayPoints: [],
-      realTrackPoints: []
+      realTrackPoints: [],
+      realDistance: null,
+      realDuration: null,
+      isLiked: false,
+      isFavorited: false
     }
   },
   computed: {
+    cardId() {
+      return this.cardData && (this.cardData._id || this.cardData.id || this.index)
+    },
     cardTitle() {
       return this.cardData && (this.cardData.name || this.cardData.title) ?
         (this.cardData.name || this.cardData.title) : '轨迹路线'
@@ -96,19 +100,20 @@ export default {
     cardAuthor() {
       return this.cardData && this.cardData.author ? this.cardData.author : '用户'
     },
-    cardStats() {
-      if (this.cardData && this.cardData.likes) {
-        return `${this.cardData.likes} 赞`
-      }
-      return '0 赞'
-    },
     locationText() {
+      if (this.realDistance !== null) {
+        return `${this.realDistance}km`
+      }
       if (this.cardData && this.cardData.distance) {
         return `${this.cardData.distance}km`
       }
       return '未知距离'
     },
     durationText() {
+      if (this.realDuration !== null) {
+        const mins = Math.round(this.realDuration / 60)
+        return `${mins}分钟`
+      }
       return (this.cardData && this.cardData.duration) ? this.cardData.duration : '路线预览'
     },
     pointSummary() {
@@ -147,6 +152,9 @@ export default {
       deep: true
     }
   },
+  created() {
+    this.checkInteractionStatus()
+  },
   mounted() {
     this.$nextTick(async () => {
       await this.fetchRealTrack()
@@ -154,14 +162,45 @@ export default {
     })
   },
   methods: {
+    checkInteractionStatus() {
+      const interaction = useInteraction()
+      this.isLiked = interaction.isLiked(this.cardId)
+      this.isFavorited = interaction.isFavorited(this.cardId)
+    },
+    handleLike() {
+      const interaction = useInteraction()
+      this.isLiked = interaction.toggleLike(this.cardId, this.cardData)
+    },
+    handleFavorite() {
+      const interaction = useInteraction()
+      this.isFavorited = interaction.toggleFavorite(this.cardId, this.cardData)
+    },
+    preventBubble() {},
     async fetchRealTrack() {
       if (this.realTrackPoints.length > 0) return
       try {
         console.log('轨迹卡片正在获取真实道路路线...')
-        const routeResult = await ROUTE_PLANNER.getFixedRoute()
+
+        let start = null
+        let end = null
+
+        // 从cardData的location中提取起点和终点
+        if (this.cardData &&
+            this.cardData.location &&
+            this.cardData.location.type === 'LineString' &&
+            this.cardData.location.coordinates &&
+            this.cardData.location.coordinates.length >= 2) {
+          const coords = this.cardData.location.coordinates
+          start = coords[0]
+          end = coords[coords.length - 1]
+        }
+
+        const routeResult = await ROUTE_PLANNER.getFixedRoute(start, end)
         if (routeResult.success && routeResult.path.length > 0) {
           console.log('轨迹卡片获取到真实道路路线，点数:', routeResult.path.length)
           this.realTrackPoints = routeResult.path
+          this.realDistance = routeResult.distance
+          this.realDuration = routeResult.duration
         }
       } catch (error) {
         console.error('轨迹卡片获取真实道路路线失败:', error)
@@ -322,7 +361,7 @@ export default {
 }
 
 .track-card .card-content {
-  padding: 18rpx;
+  padding: 16rpx;
   width: 100%;
   box-sizing: border-box;
 }
@@ -393,56 +432,32 @@ export default {
   height: 22rpx;
 }
 
-/* 途经点标记 */
-.way-marker {
-  background: #0ea5e9;
-  width: 14rpx;
-  height: 14rpx;
-  border-width: 3rpx;
-}
-
 /* 叠加信息层 */
 .track-overlay {
   position: absolute;
   left: 12rpx;
-  right: 12rpx;
   bottom: 12rpx;
-  min-height: 54rpx;
-  border-radius: 27rpx;
-  background: rgba(255, 255, 255, 0.9);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 14rpx;
-  box-sizing: border-box;
-  box-shadow: 0 8rpx 18rpx rgba(15, 23, 42, 0.1);
-}
-
-.track-card .track-icon {
-  flex: 0 0 auto;
-  width: 34rpx;
-  height: 34rpx;
-  border-radius: 17rpx;
-  color: #fff;
-  background: #0ea5e9;
-  font-size: 20rpx;
-  font-weight: 700;
-  line-height: 34rpx;
-  text-align: center;
-}
-
-.track-info {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  gap: 8rpx;
+  gap: 10rpx;
+  padding: 6rpx 14rpx;
+  border-radius: 20rpx;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 4rpx 12rpx rgba(15, 23, 42, 0.1);
 }
 
 .track-distance {
   color: #0f172a;
-  font-size: 24rpx;
+  font-size: 23rpx;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.overlay-dot {
+  width: 6rpx;
+  height: 6rpx;
+  border-radius: 3rpx;
+  background: #cbd5e1;
 }
 
 .track-duration {
@@ -452,23 +467,23 @@ export default {
 }
 
 .track-card .card-title {
-  font-size: 29rpx;
+  font-size: 28rpx;
   font-weight: 700;
-  line-height: 38rpx;
-  margin-bottom: 8rpx;
+  line-height: 36rpx;
+  margin-bottom: 6rpx;
   width: 100%;
   color: #1f2937;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
 .track-card .card-author {
-  font-size: 23rpx;
+  font-size: 22rpx;
   color: #64748b;
-  line-height: 30rpx;
-  margin-bottom: 12rpx;
+  line-height: 28rpx;
+  margin-bottom: 10rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -482,29 +497,6 @@ export default {
   width: 100%;
 }
 
-.track-card .card-stats {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-}
-
-.track-card .track-badge {
-  background: #e0f2fe;
-  color: #0284c7;
-  font-size: 21rpx;
-  font-weight: 700;
-  padding: 4rpx 10rpx;
-  border-radius: 999rpx;
-  min-width: 32rpx;
-  text-align: center;
-}
-
-.track-card .likes {
-  font-size: 22rpx;
-  color: #64748b;
-  white-space: nowrap;
-}
-
 .track-card .card-location {
   min-width: 0;
   flex: 1;
@@ -515,15 +507,42 @@ export default {
   white-space: nowrap;
 }
 
-/* Compatibility for older rendered badge markup */
-.track-card .track-badge.legacy {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
-  font-size: 22rpx;
-  font-weight: 600;
-  padding: 4rpx 12rpx;
+/* 交互按钮 */
+.track-card .card-actions {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  flex-shrink: 0;
+}
+
+.track-card .action-btn {
+  width: 32rpx;
+  height: 32rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 8rpx;
-  min-width: 40rpx;
-  text-align: center;
+  transition: all 0.2s;
+}
+
+.track-card .action-btn:active {
+  transform: scale(0.9);
+}
+
+.track-card .action-icon {
+  font-size: 26rpx;
+  color: #d1d5db;
+  line-height: 1;
+}
+
+.track-card .action-btn.active .action-icon {
+  color: #ef4444;
+  animation: popIn 0.3s ease;
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.5); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
 }
 </style>

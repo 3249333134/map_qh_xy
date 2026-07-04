@@ -12,7 +12,7 @@
         <text class="count">{{ likeCount }}</text>
       </view>
       <view class="action-btn" @tap="handleCollect">
-        <text class="icon" :class="{ favorited: isCollected }">☆</text>
+        <text class="icon" :class="{ liked: isCollected }">{{ isCollected ? '★' : '☆' }}</text>
         <text class="count">{{ collectCount }}</text>
       </view>
       <view class="action-btn" @tap="handleOpenComment">
@@ -37,7 +37,6 @@ export default {
       default: () => ({ avatar: '/static/logo.png' })
     }
   },
-  emits: ['like', 'collect', 'share', 'comment'],
   data() {
     return {
       tabHeightRpx: 100,
@@ -123,7 +122,6 @@ export default {
 }
 .action-btn { display: flex; align-items: center; gap: 6px; }
 .icon { font-size: 18px; color: #999; }
-.icon.liked { color: #ff4757; }
-.icon.favorited { color: #ffb400; }
+.icon.liked { color: #ef4444; }
 .count { font-size: 12px; color: #666; }
 </style>
