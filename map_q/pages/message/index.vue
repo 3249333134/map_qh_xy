@@ -1,209 +1,193 @@
 <template>
   <view class="message-page">
-    <!-- 顶部占位：使用自定义导航栏总高度（状态栏+导航栏） -->
     <view class="status-bar" :style="{ height: topOffset + 'px' }"></view>
 
-    <!-- 搜索栏 -->
-    <view class="search-container">
-      <view class="search-bar">
-        <text class="search-icon">🔍</text>
-        <text class="search-placeholder">搜索消息/联系人</text>
+    <view class="top-area" :style="{ paddingRight: rightPadding + 'rpx' }">
+      <view class="search-bar" :class="{ active: isSearching }" @click="enterSearch">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="#9A9A9A" stroke-width="2" stroke-linecap="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input
+          v-if="isSearching"
+          class="search-input"
+          v-model="searchKeyword"
+          focus
+          placeholder="搜索消息/联系人"
+          confirm-type="search"
+        />
+        <text v-else class="search-placeholder">搜索消息/联系人</text>
+        <view v-if="searchKeyword" class="clear-search" @click.stop="searchKeyword = ''">
+          <svg viewBox="0 0 16 16" fill="none" stroke="#999" stroke-width="1.8" stroke-linecap="round">
+            <line x1="4" y1="4" x2="12" y2="12"></line>
+            <line x1="12" y1="4" x2="4" y2="12"></line>
+          </svg>
+        </view>
       </view>
-      <view class="add-btn" @click="showAddMenu = !showAddMenu">
-        <text class="add-icon">+</text>
-      </view>
+      <text v-if="isSearching" class="cancel-search" @click="leaveSearch">取消</text>
+      <template v-else>
+        <view class="round-tool" @click="showAddMenu = !showAddMenu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </view>
+        <view class="more-dots" @click="showAddMenu = !showAddMenu">
+          <svg viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="4" r="1.6" fill="#6C6C6C"></circle>
+            <circle cx="10" cy="10" r="1.6" fill="#6C6C6C"></circle>
+            <circle cx="10" cy="16" r="1.6" fill="#6C6C6C"></circle>
+          </svg>
+        </view>
+        <view class="user-entry" @click="showToast('联系人资料')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#777" stroke-width="1.7" stroke-linecap="round">
+            <circle cx="12" cy="8" r="4"></circle>
+            <path d="M5 21v-1c0-3.2 3.1-5.8 7-5.8s7 2.6 7 5.8v1"></path>
+          </svg>
+        </view>
+      </template>
     </view>
 
-    <!-- 添加菜单浮层 -->
-    <view
-      v-if="showAddMenu"
-      class="add-menu-overlay"
-      :style="{ paddingTop: (topOffset + 52) + 'px' }"
-      @click="showAddMenu = false"
-    >
+    <view v-if="showAddMenu" class="add-menu-mask" :style="{ paddingTop: (topOffset + 56) + 'px' }" @click="showAddMenu = false">
       <view class="add-menu" @click.stop>
-        <view class="menu-item" @click="addFriend">
-          <text class="menu-icon">👤</text>
-          <text class="menu-text">添加朋友</text>
-        </view>
-        <view class="menu-item" @click="createGroup">
-          <text class="menu-icon">👥</text>
-          <text class="menu-text">发起群聊</text>
-        </view>
-        <view class="menu-item" @click="scanQR">
-          <text class="menu-icon">📷</text>
-          <text class="menu-text">扫一扫</text>
-        </view>
-        <view class="menu-item" @click="createChannel">
-          <text class="menu-icon">🔔</text>
-          <text class="menu-text">创建频道</text>
-        </view>
-        <view class="menu-item" @click="nearbyPeople">
-          <text class="menu-icon">📍</text>
-          <text class="menu-text">附近的人</text>
+        <view v-for="item in addActions" :key="item.label" class="menu-item" @click="onAddAction(item.label)">
+          <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.8" stroke-linecap="round" v-html="item.icon"></svg>
+          <text>{{ item.label }}</text>
         </view>
       </view>
     </view>
 
-    <!-- 三个Tab切换栏 -->
-    <view class="tab-bar">
+    <view v-if="!isSearching" class="tab-bar">
       <view
         v-for="(tab, index) in tabs"
-        :key="index"
+        :key="tab"
         class="tab-item"
         :class="{ active: activeTab === index }"
         @click="switchTab(index)"
       >
-        <text class="tab-text">{{ tab }}</text>
+        <text>{{ tab }}</text>
       </view>
-      <view class="tab-indicator" :style="{ transform: 'translateX(' + (activeTab * 100) + '%)' }">
+      <view class="tab-indicator" :style="{ transform: 'translateX(' + activeTab * 100 + '%)' }">
         <view class="indicator-line"></view>
       </view>
     </view>
 
-    <!-- 主要内容区域 -->
-    <view class="main-content">
-      <!-- 左侧气泡频道栏 -->
-      <view class="bubble-list" :style="{ height: listHeight + 'px' }">
-        <scroll-view class="bubble-scroll" scroll-y show-scrollbar="false">
-          <!-- 固定频道 -->
-          <view
-            v-for="bubble in currentTabData.fixed"
-            :key="'fixed-' + bubble.id"
-            class="bubble-item"
-            :class="{ active: selectedBubble === bubble.id }"
-            :style="{ backgroundColor: bubble.color }"
-            @click="selectBubble(bubble.id)"
-          >
-            <text v-if="bubble.pinned" class="bubble-pin">📌</text>
-            <text class="bubble-icon">{{ bubble.icon }}</text>
-            <view v-if="bubble.unread" class="bubble-badge">
-              <text class="badge-text">{{ bubble.unread > 99 ? '99+' : bubble.unread }}</text>
-            </view>
-            <text v-if="bubble.muted" class="bubble-muted">🔇</text>
-            <view v-if="selectedBubble === bubble.id" class="bubble-bar"></view>
+    <view v-if="isSearching" class="search-panel" :style="{ height: searchHeight + 'px' }">
+      <view v-if="!searchKeyword" class="search-hints">
+        <text class="section-title">最近搜索</text>
+        <view class="hint-tags">
+          <text v-for="item in recentSearches" :key="item" class="hint-tag" @click="searchKeyword = item">{{ item }}</text>
+        </view>
+      </view>
+      <view v-else-if="searchResults.length" class="search-results">
+        <view v-for="item in searchResults" :key="item.id" class="result-item" @click="openConversation(item)">
+          <view class="result-avatar" :style="{ background: item.avatarColor }">
+            <text>{{ item.avatarText }}</text>
           </view>
+          <view class="result-copy">
+            <text class="result-name">{{ item.name }}</text>
+            <text class="result-preview">{{ item.preview }}</text>
+          </view>
+          <text class="result-time">{{ item.time }}</text>
+        </view>
+      </view>
+      <view v-else class="empty-state">
+        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="#C9C9C9" stroke-width="1.4" stroke-linecap="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <text class="empty-title">没有找到相关消息</text>
+        <text class="empty-desc">换个关键词试试看</text>
+      </view>
+    </view>
 
-          <!-- 分割线 + 用户频道（可拖拽，仅Tab1） -->
-          <template v-if="currentTabData.user.length">
-            <view class="bubble-divider"></view>
-            <view
-              v-for="(bubble, index) in currentTabData.user"
-              :key="'user-' + bubble.id"
-              class="bubble-item draggable"
-              :class="{ active: selectedBubble === bubble.id, dragging: dragIndex === index }"
-              :style="{
-                backgroundColor: bubble.color,
-                transform: dragIndex === index
-                  ? `translateY(${dragOffset}px) scale(1.1)`
-                  : (selectedBubble === bubble.id ? 'scale(1.1)' : 'none')
-              }"
-              @click="selectBubble(bubble.id)"
-              @touchstart="startDrag($event, index)"
-              @touchmove="onDrag($event)"
-              @touchend="endDrag"
-            >
-              <text v-if="bubble.pinned" class="bubble-pin">📌</text>
-              <text class="bubble-icon">{{ bubble.icon }}</text>
-              <view v-if="bubble.unread" class="bubble-badge">
-                <text class="badge-text">{{ bubble.unread > 99 ? '99+' : bubble.unread }}</text>
-              </view>
-              <text v-if="bubble.muted" class="bubble-muted">🔇</text>
-              <view v-if="selectedBubble === bubble.id" class="bubble-bar"></view>
+    <view v-else class="main-content">
+      <view class="channel-rail" :style="{ height: listHeight + 'px' }">
+        <scroll-view class="channel-scroll" scroll-y show-scrollbar="false">
+          <view
+            v-for="channel in currentTabData.channels"
+            :key="channel.id"
+            class="channel-dot"
+            :class="{ active: selectedBubble === channel.id, dragging: dragId === channel.id }"
+            :style="{ background: channel.bgColor }"
+            @click="selectBubble(channel.id)"
+            @longpress="startChannelHint(channel)"
+          >
+            <view class="channel-icon" :style="{ color: channel.iconColor }">
+              <svg v-if="channel.svgIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" v-html="channel.svgIcon"></svg>
+              <text v-else>{{ channel.iconChar }}</text>
             </view>
-          </template>
+            <view v-if="channel.unread" class="channel-badge">
+              <text>{{ channel.unread > 99 ? '99+' : channel.unread }}</text>
+            </view>
+            <view v-if="selectedBubble === channel.id" class="channel-active-bar"></view>
+          </view>
         </scroll-view>
-
-        <!-- 底部固定频道 -->
-        <template v-if="currentTabData.bottom.length">
-          <view class="bubble-divider"></view>
-          <view
-            v-for="bubble in currentTabData.bottom"
-            :key="'bottom-' + bubble.id"
-            class="bubble-item bottom"
-            :class="{ active: selectedBubble === bubble.id }"
-            :style="{ backgroundColor: bubble.color }"
-            @click="selectBubble(bubble.id)"
-          >
-            <text class="bubble-icon">{{ bubble.icon }}</text>
-            <view v-if="selectedBubble === bubble.id" class="bubble-bar"></view>
-          </view>
-        </template>
+        <view class="rail-add" @click="showToast('添加频道')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="2" stroke-linecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </view>
       </view>
 
-      <!-- 右侧消息列表 -->
       <scroll-view
-        class="message-list"
+        class="conversation-list"
         scroll-y
-        show-scrollbar="false"
-        scroll-with-animation
         refresher-enabled
         :refresher-triggered="isRefreshing"
         @refresherrefresh="onRefresh"
         :style="{ height: listHeight + 'px' }"
+        show-scrollbar="false"
       >
-        <!-- 刷新提示条 -->
         <view v-if="refreshTip" class="refresh-tip">{{ refreshTip }}</view>
 
-        <!-- 空状态 -->
         <view v-if="currentMessages.length === 0" class="empty-state">
-          <text class="empty-icon">✉️</text>
-          <text class="empty-text">暂无消息</text>
-          <view class="empty-btn">去发现看看 ></view>
+          <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="#C9C9C9" stroke-width="1.4" stroke-linecap="round">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path>
+          </svg>
+          <text class="empty-title">暂无消息</text>
+          <view class="empty-action" @click="showToast('去发现看看')">去发现看看</view>
         </view>
 
-        <!-- 消息项列表 -->
         <view
           v-for="(message, index) in currentMessages"
-          :key="(selectedBubble) + '-' + index"
-          class="message-item-container"
+          :key="message.id"
+          class="conversation-row"
+          :class="{ pinned: message.pinned }"
           @touchstart="startSwipe($event, index)"
           @touchmove="onSwipe($event)"
           @touchend="endSwipe"
           @longpress="onMessageLongPress(index)"
+          @click="openConversation(message)"
         >
-          <!-- 头像固定不动 -->
-          <view class="message-avatar" :style="{ backgroundColor: message.avatar }">
-            <text class="avatar-text">{{ message.name.charAt(0) }}</text>
+          <view class="conversation-avatar" :style="{ background: message.avatarColor }">
+            <svg v-if="message.avatarIcon" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" v-html="message.avatarIcon"></svg>
+            <text v-else>{{ message.avatarText }}</text>
           </view>
-
-          <!-- 可滑动的内容区域（消息内容 + 操作按钮） -->
-          <view class="message-slide-area">
-            <view
-              class="message-content-wrapper"
-              :style="{ transform: swipeIndex === index ? `translateX(${swipeOffset}px)` : 'translateX(0)' }"
-            >
-              <!-- 消息内容 -->
-              <view class="message-content">
-                <view class="msg-top">
-                  <text class="msg-name">{{ message.name }}</text>
-                  <text class="msg-time">{{ message.time }}</text>
+          <view class="slide-mask">
+            <view class="slide-inner" :style="{ transform: swipeIndex === index ? 'translateX(' + swipeOffset + 'px)' : 'translateX(0)' }">
+              <view class="conversation-main">
+                <view class="conv-top">
+                  <view class="conv-name-line">
+                    <text v-if="message.pinned" class="pin-dot"></text>
+                    <text class="conv-name">{{ message.name }}</text>
+                    <text v-if="message.muted" class="muted-icon">免</text>
+                  </view>
+                  <text class="conv-time">{{ message.time }}</text>
                 </view>
-                <view class="msg-bottom">
-                  <text class="msg-preview">{{ message.preview }}</text>
-                  <view class="msg-right">
-                    <text v-if="message.muted" class="msg-muted">🔕</text>
-                    <view v-if="message.actionBtn" class="msg-action-btn" @click.stop="onActionBtn(index)">
-                      <text class="action-btn-text">{{ message.actionBtn }}</text>
-                    </view>
-                    <view v-else-if="message.unread" class="msg-unread">
-                      <text class="unread-text">{{ message.unread > 99 ? '99+' : message.unread }}</text>
-                    </view>
+                <view class="conv-bottom">
+                  <text class="conv-preview">{{ message.preview }}</text>
+                  <view class="conv-right">
+                    <view v-if="message.actionBtn" class="inline-action" @click.stop="onInlineAction(index, message)">{{ message.actionBtn }}</view>
+                    <view v-else-if="message.unread" class="unread-badge">{{ message.unread > 99 ? '99+' : message.unread }}</view>
                   </view>
                 </view>
               </view>
-
-              <!-- 左滑操作按钮 -->
               <view class="swipe-actions">
-                <view class="action-btn pin-btn" @click.stop="pinMessage(index)">
-                  <text class="action-text">置顶</text>
-                </view>
-                <view class="action-btn unread-btn" @click.stop="markUnread(index)">
-                  <text class="action-text">未读</text>
-                </view>
-                <view class="action-btn delete-btn" @click.stop="deleteMessage(index)">
-                  <text class="action-text">删除</text>
-                </view>
+                <view class="swipe-btn pin" @click.stop="pinMessage(index)">置顶</view>
+                <view class="swipe-btn read" @click.stop="markUnread(index)">{{ message.unread ? '已读' : '未读' }}</view>
+                <view class="swipe-btn delete" @click.stop="deleteMessage(index)">删除</view>
               </view>
             </view>
           </view>
@@ -211,9 +195,9 @@
       </scroll-view>
     </view>
 
-    <!-- 长按底部操作菜单 -->
-    <view v-if="showActionSheet" class="action-sheet-overlay" @click="closeActionSheet">
+    <view v-if="showActionSheet" class="sheet-mask" @click="closeActionSheet">
       <view class="action-sheet" @click.stop>
+        <view class="sheet-handle"></view>
         <view class="sheet-item" @click="sheetPin">置顶会话</view>
         <view class="sheet-item" @click="sheetUnread">标为未读</view>
         <view class="sheet-item" @click="sheetMute">消息免打扰</view>
@@ -223,230 +207,231 @@
       </view>
     </view>
 
-    <!-- 全局发布弹窗挂载点 -->
     <GlobalOverlayHost />
   </view>
 </template>
 
 <script>
 import GlobalOverlayHost from '../../components/common/GlobalOverlayHost.vue'
+
+const ICONS = {
+  bell: '<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>',
+  location: '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/>',
+  mountain: '<path d="M3 20h18L14 7l-4 7-2-3-5 9z"/>',
+  runner: '<circle cx="17" cy="4" r="2"/><path d="M15.5 13.5l2.5-2.5"/><path d="M8 21l3-7 3 2 4-5"/><path d="M6 14l3-5 4 2"/>',
+  food: '<path d="M4 2v8a3 3 0 006 0V2"/><line x1="7" y1="2" x2="7" y2="11"/><path d="M20 2v20"/><path d="M16 2v8a4 4 0 004 4"/>',
+  camera: '<path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 20v-1c0-3.31 3.58-6 8-6s8 2.69 8 6v1"/>',
+  users: '<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>',
+  heart: '<path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 00-7.8 7.8L12 21.2l8.8-8.8a5.5 5.5 0 000-7.8z"/>',
+  comment: '<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>',
+  at: '<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 006 0 10 10 0 10-4 8"/>',
+  plusUser: '<path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>',
+  scan: '<path d="M3 7V5a2 2 0 012-2h2"/><path d="M17 3h2a2 2 0 012 2v2"/><path d="M21 17v2a2 2 0 01-2 2h-2"/><path d="M7 21H5a2 2 0 01-2-2v-2"/>'
+}
+
 export default {
   components: { GlobalOverlayHost },
   data() {
     return {
       topOffset: 0,
-      bottomOffset: 0,
-      listHeight: 0,
+      bottomOffset: 86,
+      rightPadding: 180,
+      listHeight: 520,
+      searchHeight: 520,
+      isSearching: false,
+      searchKeyword: '',
       showAddMenu: false,
+      showActionSheet: false,
+      actionSheetTarget: -1,
       activeTab: 0,
-      tabs: ['频道与朋友', '关注与粉丝', '点赞与评论'],
       selectedBubble: 'notice',
-      // Tab1 - 频道与朋友
-      tab1: {
-        fixed: [
-          { id: 'notice', icon: '🔔', name: '消息通知', color: '#007AFF', unread: 3, pinned: true },
-          { id: 'nearby', icon: '📍', name: '附近动态', color: '#34C759', unread: 5, pinned: true }
-        ],
-        user: [
-          { id: 'city', icon: '🏙', name: '城市探店', color: '#FF9500', unread: 2 },
-          { id: 'outdoor', icon: '🏃', name: '户外运动', color: '#FF3B30', muted: true },
-          { id: 'food', icon: '🍜', name: '美食分享', color: '#AF52DE', unread: 99 },
-          { id: 'photo', icon: '📷', name: '摄影交流', color: '#5AC8FA' }
-        ],
-        bottom: [
-          { id: 'more', icon: '➕', name: '更多频道', color: '#999999' }
-        ]
-      },
-      // Tab2 - 关注与粉丝
-      tab2: {
-        fixed: [
-          { id: 'follow', icon: '👤', name: '关注', color: '#007AFF', unread: 1 },
-          { id: 'fans', icon: '👥', name: '粉丝', color: '#34C759' },
-          { id: 'newfans', icon: '🆕', name: '新粉丝', color: '#FF9500', unread: 4 }
-        ],
-        user: [],
-        bottom: []
-      },
-      // Tab3 - 点赞与评论
-      tab3: {
-        fixed: [
-          { id: 'like', icon: '❤️', name: '点赞', color: '#FF3B30', unread: 8 },
-          { id: 'comment', icon: '💬', name: '评论', color: '#007AFF', unread: 3 },
-          { id: 'atme', icon: '📢', name: '@我', color: '#FF9500', unread: 1 }
-        ],
-        user: [],
-        bottom: []
-      },
-      // 消息数据（按气泡id索引）
-      messageData: {
-        notice: [
-          { name: '系统通知', avatar: '#007AFF', time: '10:00', preview: '系统：您有一条新的活动通知', unread: 3 },
-          { name: '服务助手', avatar: '#FF9500', time: '昨天', preview: '您的预约已确认，请准时到店', unread: 0 }
-        ],
-        nearby: [
-          { name: '附近动态', avatar: '#34C759', time: '5分钟前', preview: '3条新动态，点击查看', unread: 5 }
-        ],
-        city: [
-          { name: '城市探店', avatar: '#FF9500', time: '12:30', preview: '小王：推荐一家超赞的咖啡馆[图片]', unread: 2, pinned: true },
-          { name: '美食分享群', avatar: '#AF52DE', time: '昨天', preview: '[语音 15"] 今晚火锅约吗', unread: 5, muted: true },
-          { name: '张三', avatar: '#34C759', time: '昨天', preview: '[位置] 春熙路', unread: 0 },
-          { name: '李四', avatar: '#007AFF', time: '周一', preview: '好的没问题', unread: 0 }
-        ],
-        outdoor: [],
-        food: [],
-        photo: [],
-        more: [],
-        follow: [
-          { name: '小明', avatar: '#FF9500', time: '1小时前', preview: '发布了新内容：周末骑行日记', unread: 1 },
-          { name: '旅行达人', avatar: '#AF52DE', time: '3小时前', preview: '发布了新内容：西藏自驾游攻略', unread: 0 }
-        ],
-        fans: [],
-        newfans: [
-          { name: '小红的吃货日记', avatar: '#FF2D92', time: '今天', preview: '关注了你，点击回关', unread: 4, actionBtn: '回关' }
-        ],
-        like: [
-          { name: '小明', avatar: '#FF9500', time: '10分钟前', preview: '赞了你的动态：今天的咖啡馆探店', unread: 3 },
-          { name: '阿强', avatar: '#34C759', time: '1小时前', preview: '赞了你的动态：周末爬山', unread: 5 }
-        ],
-        comment: [
-          { name: '旅行达人', avatar: '#AF52DE', time: '30分钟前', preview: '评论：这家店我也去过，确实不错！', unread: 3 }
-        ],
-        atme: [
-          { name: '小王', avatar: '#5AC8FA', time: '2小时前', preview: '在评论里@了你：@你看看这个', unread: 1 }
-        ]
-      },
-      // 拖拽相关数据（仅Tab1用户频道）
-      dragIndex: -1,
-      dragOffset: 0,
-      startY: 0,
-      isDragging: false,
-      // 左滑相关数据
+      dragId: '',
       swipeIndex: -1,
       swipeOffset: 0,
       startX: 0,
       isSwipping: false,
-      // 长按操作菜单
-      showActionSheet: false,
-      actionSheetTarget: -1,
-      // 下拉刷新
       isRefreshing: false,
-      refreshTip: ''
+      refreshTip: '',
+      tabs: ['频道与朋友', '关注与粉丝', '点赞与评论'],
+      recentSearches: ['系统通知', '小王', '周末爬山'],
+      addActions: [
+        { label: '添加朋友', icon: ICONS.plusUser },
+        { label: '发起群聊', icon: ICONS.users },
+        { label: '扫一扫', icon: ICONS.scan },
+        { label: '创建频道', icon: ICONS.bell },
+        { label: '附近的人', icon: ICONS.location }
+      ],
+      tabData: [
+        {
+          channels: [
+            { id: 'notice', svgIcon: ICONS.bell, bgColor: '#4A90D9', iconColor: '#fff', unread: 3 },
+            { id: 'nearby', svgIcon: ICONS.location, bgColor: '#34C759', iconColor: '#fff', unread: 5 },
+            { id: 'city', svgIcon: ICONS.mountain, bgColor: '#FF9500', iconColor: '#fff', unread: 2 },
+            { id: 'outdoor', svgIcon: ICONS.runner, bgColor: '#FF3B30', iconColor: '#fff', unread: 100 },
+            { id: 'food', svgIcon: ICONS.food, bgColor: '#AF52DE', iconColor: '#fff' },
+            { id: 'photo', svgIcon: ICONS.camera, bgColor: '#5AC8FA', iconColor: '#fff' }
+          ]
+        },
+        {
+          channels: [
+            { id: 'follow', svgIcon: ICONS.user, bgColor: '#4A90D9', iconColor: '#fff', unread: 1 },
+            { id: 'fans', svgIcon: ICONS.users, bgColor: '#34C759', iconColor: '#fff' },
+            { id: 'newfans', iconChar: '新', bgColor: '#FF9500', iconColor: '#fff', unread: 4 }
+          ]
+        },
+        {
+          channels: [
+            { id: 'like', svgIcon: ICONS.heart, bgColor: '#FF6B6B', iconColor: '#fff', unread: 8 },
+            { id: 'comment', svgIcon: ICONS.comment, bgColor: '#4A90D9', iconColor: '#fff', unread: 3 },
+            { id: 'atme', svgIcon: ICONS.at, bgColor: '#FF9500', iconColor: '#fff', unread: 1 }
+          ]
+        }
+      ],
+      messageData: {
+        notice: [
+          { id: 'system', type: 'system_notice', name: '系统通知', avatarColor: '#4A90D9', avatarText: '系', time: '10:30', preview: '系统：您有一条新的活动通知', unread: 1, pinned: true },
+          { id: 'assistant', type: 'assistant', name: '服务助手', avatarColor: '#FF9500', avatarText: '服', time: '09:15', preview: '您的预约已确认，请准时到店', unread: 1 },
+          { id: 'friend-wang', type: 'direct', name: '小王', avatarColor: '#34C759', avatarText: '王', time: '昨天', preview: '好的，明天见！' },
+          { id: 'food-group', type: 'group', name: '美食探店群', avatarColor: '#FF7F3F', avatarText: '群', time: '昨天', preview: '李明：这家店真的很推荐...', muted: true },
+          { id: 'activity', type: 'system_notice', name: '活动通知', avatarColor: '#FF3B30', avatarText: '活', time: '周一', preview: '您参与的周末徒步活动已更新集合点' }
+        ],
+        nearby: [
+          { id: 'nearby-1', type: 'channel', name: '附近动态', avatarColor: '#34C759', avatarText: '近', time: '5分钟前', preview: '3条新动态，点击查看', unread: 5, actionBtn: '查看' }
+        ],
+        city: [
+          { id: 'city-1', type: 'channel', name: '城市探店', avatarColor: '#FF9500', avatarText: '探', time: '12:30', preview: '小王：推荐一家超赞的咖啡馆[图片]', unread: 2, pinned: true },
+          { id: 'city-2', type: 'group', name: '美食分享群', avatarColor: '#AF52DE', avatarText: '美', time: '昨天', preview: '[语音 15\"] 今晚火锅约吗', unread: 5, muted: true },
+          { id: 'city-3', type: 'direct', name: '张三', avatarColor: '#34C759', avatarText: '张', time: '昨天', preview: '[位置] 春熙路' }
+        ],
+        outdoor: [],
+        food: [],
+        photo: [],
+        follow: [
+          { id: 'follow-1', type: 'direct', name: '小明', avatarColor: '#FF9500', avatarText: '明', time: '1小时前', preview: '发布了新内容：周末骑行日记', unread: 1 },
+          { id: 'follow-2', type: 'direct', name: '旅行达人', avatarColor: '#AF52DE', avatarText: '旅', time: '3小时前', preview: '发布了新内容：西藏自驾游攻略' }
+        ],
+        fans: [],
+        newfans: [
+          { id: 'fan-1', type: 'direct', name: '小红的吃货日记', avatarColor: '#FF2D92', avatarText: '吃', time: '今天', preview: '关注了你，点击回关', unread: 4, actionBtn: '回关' }
+        ],
+        like: [
+          { id: 'like-1', type: 'direct', name: '小明', avatarColor: '#FF9500', avatarText: '明', time: '10分钟前', preview: '赞了你的动态：今天的咖啡馆探店', unread: 3 },
+          { id: 'like-2', type: 'direct', name: '阿强', avatarColor: '#34C759', avatarText: '强', time: '1小时前', preview: '赞了你的动态：周末爬山', unread: 5 }
+        ],
+        comment: [
+          { id: 'comment-1', type: 'direct', name: '旅行达人', avatarColor: '#AF52DE', avatarText: '旅', time: '30分钟前', preview: '评论：这家店我也去过，确实不错！', unread: 3 }
+        ],
+        atme: [
+          { id: 'at-1', type: 'direct', name: '小王', avatarColor: '#5AC8FA', avatarText: '王', time: '2小时前', preview: '在评论里@了你：@你看看这个', unread: 1 }
+        ]
+      }
     }
   },
   computed: {
     currentTabData() {
-      return this['tab' + (this.activeTab + 1)]
+      return this.tabData[this.activeTab]
     },
     currentMessages() {
       return this.messageData[this.selectedBubble] || []
+    },
+    allMessages() {
+      return Object.keys(this.messageData).reduce((arr, key) => arr.concat(this.messageData[key]), [])
+    },
+    searchResults() {
+      const keyword = this.searchKeyword.trim().toLowerCase()
+      if (!keyword) return []
+      return this.allMessages.filter(item => {
+        return item.name.toLowerCase().includes(keyword) || item.preview.toLowerCase().includes(keyword)
+      })
     }
   },
   created() {
-    try {
-      const info = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
-      const statusPx = (info && ((info.safeAreaInsets && info.safeAreaInsets.top) || (info.safeArea && info.safeArea.top) || info.statusBarHeight || 0)) || 0
-      // 轻微上移补偿：允许向上再贴近一点（默认6px，可通过缓存覆写）
-      const topComp = uni.getStorageSync('TOP_COMPENSATION_PX')
-      const compPx = (typeof topComp === 'number' && topComp >= 0 && topComp <= 20) ? topComp : 6
-      this.topOffset = Math.max(statusPx - compPx, 0)
-
-      const tabMetrics = uni.getStorageSync('TABBAR_METRICS') || null
-      if (tabMetrics && typeof tabMetrics.tabHeightPx === 'number') {
-        this.bottomOffset = tabMetrics.tabHeightPx
-      } else {
-        this.bottomOffset = 86
-      }
-    } catch (e) {
-      this.topOffset = 20
-      this.bottomOffset = 86
-    }
+    this.initMetrics()
   },
   onReady() {
+    this.calcHeights()
+  },
+  onShow() {
     try {
-      const info = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
-      const winH = (info && (info.windowHeight || (info.safeArea && info.safeArea.height))) || 0
-      const q = uni.createSelectorQuery().in(this)
-      q.select('.search-container').boundingClientRect()
-      q.select('.tab-bar').boundingClientRect()
-      q.exec(res => {
-        const searchH = (res && res[0] && res[0].height) ? res[0].height : 0
-        const tabH = (res && res[1] && res[1].height) ? res[1].height : 0
-        const calc = Math.round(winH - this.topOffset - searchH - tabH - this.bottomOffset)
-        this.listHeight = Math.max(120, calc)
-      })
-    } catch (e) {
-      // 回退：给一个保守高度，避免滚动区域撑到TabBar
-      this.listHeight = 500
-    }
+      const tab = typeof this.getTabBar === 'function' ? this.getTabBar() : null
+      if (tab && tab.setData) tab.setData({ selected: 3 })
+    } catch (e) {}
   },
   methods: {
-    // Tab切换
+    initMetrics() {
+      try {
+        const info = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
+        const statusPx = (info && ((info.safeAreaInsets && info.safeAreaInsets.top) || info.statusBarHeight || 0)) || 0
+        this.topOffset = Math.max(statusPx - 6, 0)
+        const metrics = uni.getStorageSync('TABBAR_METRICS') || null
+        this.bottomOffset = metrics && metrics.tabHeightPx ? metrics.tabHeightPx : 86
+        const menu = uni.getMenuButtonBoundingClientRect ? uni.getMenuButtonBoundingClientRect() : null
+        if (menu) {
+          const windowWidth = info.windowWidth || 375
+          this.rightPadding = Math.round(Math.max(windowWidth - menu.left + 28, 90) * (750 / windowWidth))
+        }
+      } catch (e) {}
+    },
+    calcHeights() {
+      try {
+        const info = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
+        const winH = info.windowHeight || 700
+        const q = uni.createSelectorQuery().in(this)
+        q.select('.top-area').boundingClientRect()
+        q.select('.tab-bar').boundingClientRect()
+        q.exec(res => {
+          const topH = (res && res[0] && res[0].height) || 56
+          const tabH = (res && res[1] && res[1].height) || 50
+          this.listHeight = Math.max(220, Math.round(winH - this.topOffset - topH - tabH - this.bottomOffset))
+          this.searchHeight = Math.max(220, Math.round(winH - this.topOffset - topH - this.bottomOffset))
+        })
+      } catch (e) {}
+    },
+    enterSearch() {
+      this.isSearching = true
+      this.resetSwipe()
+      this.$nextTick(this.calcHeights)
+    },
+    leaveSearch() {
+      this.isSearching = false
+      this.searchKeyword = ''
+      this.$nextTick(this.calcHeights)
+    },
     switchTab(index) {
       if (this.activeTab === index) return
       this.activeTab = index
-      const tabData = this['tab' + (index + 1)]
-      const first = tabData.fixed[0] || tabData.user[0] || tabData.bottom[0]
+      const first = this.currentTabData.channels[0]
       if (first) this.selectedBubble = first.id
       this.resetSwipe()
     },
-    // 气泡选择
-    selectBubble(bubbleId) {
-      if (!this.isDragging) {
-        this.selectedBubble = bubbleId
-        this.resetSwipe()
+    selectBubble(id) {
+      this.selectedBubble = id
+      this.resetSwipe()
+    },
+    openConversation(message) {
+      if (this.isSwipping) return
+      this.leaveSearch()
+      if (message.type === 'system_notice' || message.type === 'assistant') {
+        uni.navigateTo({ url: `/pages/notification/index?source=${encodeURIComponent(message.id || 'notice')}` })
+        return
       }
+      const url = `/pages/chat/index?name=${encodeURIComponent(message.name)}&avatar=${encodeURIComponent(message.avatarColor || '')}&text=${encodeURIComponent(message.avatarText || '')}&type=${encodeURIComponent(message.type || 'direct')}`
+      uni.navigateTo({ url })
     },
-    // 添加菜单项
-    addFriend() { this.showAddMenu = false },
-    createGroup() { this.showAddMenu = false },
-    scanQR() { this.showAddMenu = false },
-    createChannel() { this.showAddMenu = false },
-    nearbyPeople() { this.showAddMenu = false },
-    // 消息项操作按钮（如"回关"）
-    onActionBtn(index) {
-      // 此处可扩展回关逻辑
+    onAddAction(label) {
+      this.showAddMenu = false
+      this.showToast(label)
     },
-    // ===== 拖拽排序（仅Tab1用户频道） =====
-    startDrag(event, index) {
-      if (this.activeTab !== 0) return
-      this.dragIndex = index
-      this.startY = event.touches[0].clientY
-      this.dragOffset = 0
-      this.isDragging = false
-      event.preventDefault()
+    showToast(title) {
+      uni.showToast({ title, icon: 'none' })
     },
-    onDrag(event) {
-      if (this.dragIndex === -1) return
-      const currentY = event.touches[0].clientY
-      this.dragOffset = currentY - this.startY
-      this.isDragging = true
-      event.preventDefault()
+    startChannelHint(channel) {
+      this.dragId = channel.id
+      uni.showToast({ title: '长按后可拖拽排序', icon: 'none' })
+      setTimeout(() => { this.dragId = '' }, 600)
     },
-    endDrag() {
-      if (this.dragIndex === -1) return
-      const itemHeight = 65 // 气泡项高度 + 间距
-      const targetIndex = Math.round(this.dragOffset / itemHeight)
-      const newIndex = Math.max(0, Math.min(this.tab1.user.length - 1, this.dragIndex + targetIndex))
-      if (newIndex !== this.dragIndex) {
-        const draggedItem = this.tab1.user[this.dragIndex]
-        const newArr = [...this.tab1.user]
-        newArr.splice(this.dragIndex, 1)
-        newArr.splice(newIndex, 0, draggedItem)
-        this.tab1.user = newArr
-      }
-      this.dragIndex = -1
-      this.dragOffset = 0
-      // 延迟重置isDragging，避免点击事件触发
-      setTimeout(() => {
-        this.isDragging = false
-      }, 100)
-    },
-    // ===== 左滑操作 =====
     startSwipe(event, index) {
-      // 如果其他消息项正在滑动，先重置
-      if (this.swipeIndex !== -1 && this.swipeIndex !== index) {
-        this.resetSwipe()
-      }
       this.swipeIndex = index
       this.startX = event.touches[0].clientX
       this.swipeOffset = 0
@@ -454,46 +439,50 @@ export default {
     },
     onSwipe(event) {
       if (this.swipeIndex === -1) return
-      const currentX = event.touches[0].clientX
-      const deltaX = currentX - this.startX
-      // 只允许向左滑动
-      if (deltaX < 0) {
-        this.swipeOffset = Math.max(deltaX, -180) // 最大滑动距离180px
+      const deltaX = event.touches[0].clientX - this.startX
+      if (deltaX < -8) {
+        this.swipeOffset = Math.max(deltaX, -180)
         this.isSwipping = true
-        event.preventDefault()
       }
     },
     endSwipe() {
       if (this.swipeIndex === -1) return
-      // 如果滑动距离小于60px，自动回弹
-      if (this.swipeOffset > -60) {
-        this.resetSwipe()
-      } else {
-        // 保持在显示操作按钮的位置
-        this.swipeOffset = -180
-      }
-      setTimeout(() => {
-        this.isSwipping = false
-      }, 100)
+      this.swipeOffset = this.swipeOffset < -60 ? -180 : 0
+      if (this.swipeOffset === 0) this.swipeIndex = -1
+      setTimeout(() => { this.isSwipping = false }, 120)
     },
     resetSwipe() {
       this.swipeIndex = -1
       this.swipeOffset = 0
     },
-    // 左滑操作方法
+    onInlineAction(index, message) {
+      if (message.actionBtn === '回关') {
+        this.currentMessages.splice(index, 1)
+        this.showToast('已回关')
+      } else {
+        this.showToast(message.actionBtn)
+      }
+    },
     pinMessage(index) {
+      const list = this.messageData[this.selectedBubble] || []
+      const item = list[index]
+      item.pinned = !item.pinned
+      list.splice(index, 1)
+      item.pinned ? list.unshift(item) : list.push(item)
       this.resetSwipe()
+      this.showToast(item.pinned ? '已置顶' : '已取消置顶')
     },
     markUnread(index) {
+      const item = this.currentMessages[index]
+      item.unread = item.unread ? 0 : 1
       this.resetSwipe()
+      this.showToast(item.unread ? '已标为未读' : '已标为已读')
     },
     deleteMessage(index) {
-      const list = [...(this.messageData[this.selectedBubble] || [])]
-      list.splice(index, 1)
-      this.messageData[this.selectedBubble] = list
+      this.currentMessages.splice(index, 1)
       this.resetSwipe()
+      this.showToast('已删除')
     },
-    // ===== 长按底部菜单 =====
     onMessageLongPress(index) {
       this.actionSheetTarget = index
       this.showActionSheet = true
@@ -503,40 +492,38 @@ export default {
       this.showActionSheet = false
       this.actionSheetTarget = -1
     },
-    sheetPin() { this.closeActionSheet() },
-    sheetUnread() { this.closeActionSheet() },
-    sheetMute() { this.closeActionSheet() },
-    sheetStar() { this.closeActionSheet() },
-    sheetDelete() {
-      if (this.actionSheetTarget >= 0) {
-        const list = [...(this.messageData[this.selectedBubble] || [])]
-        list.splice(this.actionSheetTarget, 1)
-        this.messageData[this.selectedBubble] = list
+    sheetPin() {
+      if (this.actionSheetTarget >= 0) this.pinMessage(this.actionSheetTarget)
+      this.closeActionSheet()
+    },
+    sheetUnread() {
+      if (this.actionSheetTarget >= 0) this.markUnread(this.actionSheetTarget)
+      this.closeActionSheet()
+    },
+    sheetMute() {
+      const item = this.currentMessages[this.actionSheetTarget]
+      if (item) {
+        item.muted = !item.muted
+        this.showToast(item.muted ? '已免打扰' : '已开启通知')
       }
       this.closeActionSheet()
     },
-    // ===== 下拉刷新 =====
+    sheetStar() {
+      this.showToast('已设为特别关注')
+      this.closeActionSheet()
+    },
+    sheetDelete() {
+      if (this.actionSheetTarget >= 0) this.deleteMessage(this.actionSheetTarget)
+      this.closeActionSheet()
+    },
     onRefresh() {
       this.isRefreshing = true
       setTimeout(() => {
         this.isRefreshing = false
-        this.refreshTip = '3条新消息'
-        setTimeout(() => { this.refreshTip = '' }, 2000)
-      }, 1000)
+        this.refreshTip = '已同步，发现 3 条新消息'
+        setTimeout(() => { this.refreshTip = '' }, 1800)
+      }, 800)
     }
-  },
-  onShow() {
-    try {
-      if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-        this.getTabBar().setData({ selected: 3 })
-      } else {
-        const pages = getCurrentPages()
-        const page = pages[pages.length - 1]
-        if (page && typeof page.getTabBar === 'function' && page.getTabBar()) {
-          page.getTabBar().setData({ selected: 3 })
-        }
-      }
-    } catch (e) {}
   }
 }
 </script>
@@ -544,527 +531,600 @@ export default {
 <style scoped>
 .message-page {
   height: 100vh;
-  background: #f8f9fa;
   display: flex;
   flex-direction: column;
-  padding-top: 0;
-  position: relative;
-  overscroll-behavior-y: none;
+  background: #fff;
+  color: #1f1f1f;
+  overflow: hidden;
 }
 
-/* 状态栏占位 */
-.status-bar {
-  background: transparent;
+.status-bar,
+.top-area,
+.tab-bar {
+  flex-shrink: 0;
 }
 
-/* ===== 搜索栏 ===== */
-.search-container {
-  padding: 10rpx 20rpx 16rpx 20rpx;
+.top-area {
   display: flex;
   align-items: center;
-  gap: 16rpx;
-  background: #f8f9fa;
+  gap: 14rpx;
+  padding: 12rpx 86rpx 14rpx 24rpx;
+  background: #fff;
 }
 
 .search-bar {
   flex: 1;
+  min-width: 0;
   height: 64rpx;
-  background: #e8e8ea;
   border-radius: 32rpx;
+  background: #F3F3F5;
   display: flex;
   align-items: center;
-  padding: 0 24rpx;
   gap: 12rpx;
+  padding: 0 20rpx;
+}
+
+.search-bar.active {
+  background: #F0F0F3;
 }
 
 .search-icon {
-  font-size: 28rpx;
-  opacity: 0.7;
+  width: 32rpx;
+  height: 32rpx;
+  flex-shrink: 0;
 }
 
-.search-placeholder {
-  color: #999;
+.search-placeholder,
+.search-input {
+  flex: 1;
   font-size: 26rpx;
+  color: #9A9A9A;
 }
 
-.add-btn {
+.search-input {
+  color: #222;
+  height: 64rpx;
+}
+
+.clear-search {
+  width: 32rpx;
+  height: 32rpx;
+  border-radius: 50%;
+  background: #E1E1E5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clear-search svg,
+.round-tool svg,
+.more-dots svg,
+.user-entry svg,
+.rail-add svg {
+  width: 34rpx;
+  height: 34rpx;
+}
+
+.cancel-search {
+  font-size: 28rpx;
+  color: #FF6B35;
+  padding: 0 4rpx;
+}
+
+.round-tool,
+.user-entry {
   width: 64rpx;
   height: 64rpx;
-  background: #e8e8ea;
   border-radius: 50%;
+  background: #F3F3F5;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 
-.add-icon {
-  color: #333;
-  font-size: 36rpx;
-  font-weight: bold;
+.more-dots {
+  width: 40rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-/* ===== 添加菜单浮层 ===== */
-.add-menu-overlay {
+.add-menu-mask {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.45);
+  inset: 0;
   z-index: 1000;
+  background: rgba(0, 0, 0, 0.28);
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  padding-right: 20rpx;
+  justify-content: flex-end;
+  padding-right: 22rpx;
 }
 
 .add-menu {
+  width: 280rpx;
   background: #fff;
-  border-radius: 16rpx;
-  padding: 8rpx 0;
-  width: 240rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.2);
+  border-radius: 18rpx;
+  box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.18);
+  overflow: hidden;
 }
 
 .menu-item {
-  padding: 24rpx 28rpx;
+  height: 88rpx;
   display: flex;
   align-items: center;
-  gap: 16rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  gap: 18rpx;
+  padding: 0 26rpx;
+  border-bottom: 1rpx solid #F0F0F0;
+  font-size: 28rpx;
+  color: #333;
 }
 
 .menu-item:last-child {
-  border-bottom: none;
+  border-bottom: 0;
 }
 
 .menu-icon {
-  font-size: 30rpx;
+  width: 36rpx;
+  height: 36rpx;
 }
 
-.menu-text {
-  color: #333;
-  font-size: 26rpx;
-}
-
-/* ===== Tab切换栏 ===== */
 .tab-bar {
-  display: flex;
   position: relative;
-  background: #f8f9fa;
-  border-bottom: 1rpx solid #ececec;
-  padding: 8rpx 20rpx 0 20rpx;
+  display: flex;
+  height: 88rpx;
+  border-bottom: 1rpx solid #F0F0F0;
 }
 
 .tab-item {
   flex: 1;
-  text-align: center;
-  padding: 20rpx 0;
-}
-
-.tab-text {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   color: #999;
   font-size: 28rpx;
 }
 
-.tab-item.active .tab-text {
-  color: #ff8a65;
-  font-weight: bold;
+.tab-item.active {
+  color: #FF6B35;
+  font-weight: 700;
 }
 
 .tab-indicator {
   position: absolute;
-  bottom: 0;
   left: 0;
+  bottom: 0;
   width: 33.33%;
   height: 6rpx;
   display: flex;
   justify-content: center;
-  transition: transform 0.3s ease;
+  transition: transform 0.25s ease;
 }
 
 .indicator-line {
-  width: 48rpx;
-  height: 6rpx;
-  background: #ff8a65;
+  width: 42rpx;
+  height: 5rpx;
   border-radius: 3rpx;
+  background: #FF6B35;
 }
 
-/* ===== 主要内容区域 ===== */
 .main-content {
   flex: 1;
+  min-height: 0;
   display: flex;
   background: #fff;
-  overflow: visible;
 }
 
-/* ===== 左侧气泡频道栏 ===== */
-.bubble-list {
-  width: 90rpx;
-  background: #fff;
+.channel-rail {
+  width: 128rpx;
+  background: #F5F5F7;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  border-right: 1rpx solid #ececec;
-  flex-shrink: 0;
+  align-items: center;
 }
 
-.bubble-scroll {
+.channel-scroll {
   flex: 1;
-  padding: 16rpx 0;
+  width: 100%;
+  padding-top: 18rpx;
 }
 
-.bubble-item {
-  width: 70rpx;
-  height: 70rpx;
+.channel-dot {
+  width: 82rpx;
+  height: 82rpx;
   border-radius: 50%;
-  margin: 16rpx 10rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 3rpx solid transparent;
-  transition: transform 0.2s ease;
+  margin: 10rpx auto 20rpx;
   position: relative;
-  z-index: 1;
-}
-
-.bubble-item.active {
-  border-color: #333;
-  transform: scale(1.15);
-}
-
-.bubble-item.dragging {
-  z-index: 10;
-  opacity: 0.85;
-  transition: none;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.3);
-}
-
-.bubble-icon {
-  font-size: 34rpx;
-  pointer-events: none;
-}
-
-.bubble-pin {
-  position: absolute;
-  top: -10rpx;
-  left: -8rpx;
-  font-size: 20rpx;
-  z-index: 2;
-}
-
-.bubble-badge {
-  position: absolute;
-  top: -12rpx;
-  right: -12rpx;
-  min-width: 28rpx;
-  height: 28rpx;
-  padding: 0 6rpx;
-  background: #FF3B30;
-  border-radius: 14rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2rpx solid #fff;
-  z-index: 2;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.badge-text {
+.channel-dot.active {
+  transform: scale(1.08);
+  box-shadow: 0 10rpx 22rpx rgba(255, 107, 53, 0.24);
+}
+
+.channel-dot.dragging {
+  transform: scale(1.14);
+}
+
+.channel-icon svg {
+  width: 40rpx;
+  height: 40rpx;
+}
+
+.channel-icon text {
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.channel-badge {
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  min-width: 30rpx;
+  height: 30rpx;
+  padding: 0 7rpx;
+  border-radius: 18rpx;
+  background: #FF3838;
+  border: 3rpx solid #F5F5F7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.channel-badge text {
   color: #fff;
   font-size: 18rpx;
-  font-weight: bold;
-  line-height: 1;
+  font-weight: 700;
 }
 
-.bubble-muted {
+.channel-active-bar {
   position: absolute;
-  bottom: -6rpx;
-  right: -6rpx;
-  font-size: 18rpx;
-  background: #fff;
+  left: -16rpx;
+  top: 18rpx;
+  bottom: 18rpx;
+  width: 6rpx;
+  border-radius: 3rpx;
+  background: #FF6B35;
+}
+
+.rail-add {
+  width: 72rpx;
+  height: 72rpx;
   border-radius: 50%;
-  width: 22rpx;
-  height: 22rpx;
+  background: #E8E8EB;
+  margin: 16rpx 0 22rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2;
 }
 
-.bubble-bar {
-  position: absolute;
-  left: -10rpx;
-  top: 6rpx;
-  bottom: 6rpx;
-  width: 6rpx;
-  background: #ff8a65;
-  border-radius: 3rpx;
-  z-index: 2;
-}
-
-.bubble-divider {
-  width: 30rpx;
-  height: 1rpx;
-  background: #ececec;
-  margin: 8rpx auto;
-}
-
-/* ===== 右侧消息列表 ===== */
-.message-list {
+.conversation-list {
   flex: 1;
   background: #fff;
-  overscroll-behavior-y: contain;
-  -webkit-overflow-scrolling: touch;
 }
 
 .refresh-tip {
-  background: #fff7e6;
-  color: #ff8a65;
+  height: 56rpx;
+  line-height: 56rpx;
   text-align: center;
-  padding: 16rpx 0;
+  background: #FFF4EB;
+  color: #FF6B35;
   font-size: 24rpx;
 }
 
-/* 空状态 */
-.empty-state {
+.conversation-row {
+  min-height: 126rpx;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 160rpx 0 0 0;
-}
-
-.empty-icon {
-  font-size: 96rpx;
-  margin-bottom: 24rpx;
-  opacity: 0.6;
-}
-
-.empty-text {
-  color: #999;
-  font-size: 28rpx;
-  margin-bottom: 32rpx;
-}
-
-.empty-btn {
-  color: #ff8a65;
-  font-size: 26rpx;
-  padding: 16rpx 40rpx;
-  border: 1rpx solid #ff8a65;
-  border-radius: 32rpx;
-}
-
-/* 消息项 */
-.message-item-container {
-  height: 130rpx;
-  width: 100%;
-  border-bottom: 1rpx solid #f0f0f0;
+  gap: 18rpx;
+  padding: 16rpx 18rpx 16rpx 24rpx;
   background: #fff;
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-  padding-left: 20rpx;
+  border-bottom: 1rpx solid #F1F1F1;
 }
 
-.message-avatar {
-  width: 80rpx;
-  height: 80rpx;
-  border-radius: 8rpx;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 3;
+.conversation-row.pinned {
+  background: #FFF9F4;
+}
+
+.conversation-avatar,
+.result-avatar {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 18rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
-.avatar-text {
+.conversation-avatar text,
+.result-avatar text {
   color: #fff;
-  font-size: 32rpx;
-  font-weight: bold;
+  font-size: 28rpx;
+  font-weight: 800;
 }
 
-.message-slide-area {
+.conversation-avatar svg {
+  width: 42rpx;
+  height: 42rpx;
+}
+
+.slide-mask {
   flex: 1;
-  height: 100rpx;
+  min-width: 0;
   overflow: hidden;
-  position: relative;
 }
 
-.message-content-wrapper {
+.slide-inner {
   display: flex;
-  height: 100%;
-  transition: transform 0.3s ease;
-  position: relative;
-  z-index: 2;
+  width: calc(100% + 360rpx);
+  transition: transform 0.24s ease;
 }
 
-.message-content {
-  width: 100%;
-  height: 100%;
-  background: #fff;
+.conversation-main {
+  width: calc(100% - 360rpx);
+  min-width: 0;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding-right: 20rpx;
-  flex-shrink: 0;
-  box-sizing: border-box;
 }
 
-.msg-top {
+.conv-top,
+.conv-bottom {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8rpx;
+  min-width: 0;
 }
 
-.msg-name {
-  color: #333;
-  font-size: 30rpx;
-  font-weight: bold;
+.conv-top {
+  margin-bottom: 10rpx;
+}
+
+.conv-name-line {
+  min-width: 0;
   flex: 1;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.msg-time {
-  color: #999;
-  font-size: 22rpx;
-  flex-shrink: 0;
-  margin-left: 16rpx;
-}
-
-.msg-bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.msg-preview {
-  color: #999;
-  font-size: 24rpx;
-  flex: 1;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.msg-right {
   display: flex;
   align-items: center;
   gap: 8rpx;
+}
+
+.pin-dot {
+  width: 10rpx;
+  height: 10rpx;
+  border-radius: 50%;
+  background: #FF6B35;
   flex-shrink: 0;
-  margin-left: 16rpx;
 }
 
-.msg-muted {
+.conv-name {
+  font-size: 30rpx;
+  font-weight: 800;
+  color: #202020;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.muted-icon {
+  padding: 2rpx 8rpx;
+  border-radius: 10rpx;
+  background: #ECECEF;
+  color: #9A9A9A;
+  font-size: 18rpx;
+  flex-shrink: 0;
+}
+
+.conv-time {
+  color: #999;
   font-size: 24rpx;
-  opacity: 0.7;
+  margin-left: 16rpx;
+  flex-shrink: 0;
 }
 
-.msg-action-btn {
-  background: #ff8a65;
-  border-radius: 24rpx;
-  padding: 6rpx 20rpx;
+.conv-preview {
+  flex: 1;
+  color: #6B6B6B;
+  font-size: 26rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
-.action-btn-text {
+.conv-right {
+  margin-left: 14rpx;
+  flex-shrink: 0;
+}
+
+.inline-action {
+  height: 42rpx;
+  line-height: 42rpx;
+  padding: 0 20rpx;
+  border-radius: 22rpx;
+  background: #FF6B35;
   color: #fff;
   font-size: 22rpx;
+  font-weight: 700;
 }
 
-.msg-unread {
+.unread-badge {
   min-width: 32rpx;
   height: 32rpx;
   padding: 0 8rpx;
-  background: #FF3B30;
-  border-radius: 16rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.unread-text {
+  border-radius: 18rpx;
+  background: #FF3838;
   color: #fff;
   font-size: 20rpx;
-  font-weight: bold;
-  line-height: 1;
-}
-
-/* 左滑操作按钮 */
-.swipe-actions {
+  font-weight: 700;
   display: flex;
-  height: 100%;
-  flex-shrink: 0;
-  width: 180px;
+  align-items: center;
+  justify-content: center;
 }
 
-.action-btn {
-  width: 60px;
+.swipe-actions {
+  width: 360rpx;
+  display: flex;
+}
+
+.swipe-btn {
+  width: 120rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   font-size: 24rpx;
+  font-weight: 700;
 }
 
-.pin-btn {
-  background: #FF9500;
+.swipe-btn.pin { background: #FF9500; }
+.swipe-btn.read { background: #4A90D9; }
+.swipe-btn.delete { background: #FF3838; }
+
+.search-panel {
+  background: #fff;
+  padding: 28rpx 28rpx 0;
 }
 
-.unread-btn {
-  background: #007AFF;
-}
-
-.delete-btn {
-  background: #FF3B30;
-}
-
-.action-text {
-  color: #fff;
+.section-title {
+  display: block;
+  color: #999;
   font-size: 24rpx;
-  font-weight: 500;
+  margin-bottom: 20rpx;
 }
 
-/* ===== 长按底部操作菜单 ===== */
-.action-sheet-overlay {
+.hint-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18rpx;
+}
+
+.hint-tag {
+  padding: 12rpx 24rpx;
+  border-radius: 28rpx;
+  background: #F5F5F7;
+  color: #555;
+  font-size: 26rpx;
+}
+
+.result-item {
+  min-height: 112rpx;
+  display: flex;
+  align-items: center;
+  gap: 18rpx;
+  border-bottom: 1rpx solid #F1F1F1;
+}
+
+.result-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.result-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #222;
+}
+
+.result-preview {
+  color: #777;
+  font-size: 25rpx;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.result-time {
+  font-size: 23rpx;
+  color: #999;
+}
+
+.empty-state {
+  min-height: 420rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18rpx;
+  color: #999;
+}
+
+.empty-icon {
+  width: 90rpx;
+  height: 90rpx;
+}
+
+.empty-title {
+  font-size: 28rpx;
+  color: #999;
+}
+
+.empty-desc {
+  color: #B6B6B6;
+  font-size: 24rpx;
+}
+
+.empty-action {
+  height: 56rpx;
+  line-height: 56rpx;
+  padding: 0 34rpx;
+  border-radius: 30rpx;
+  border: 1rpx solid #FF6B35;
+  color: #FF6B35;
+  font-size: 24rpx;
+}
+
+.sheet-mask {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  inset: 0;
   z-index: 2000;
+  background: rgba(0, 0, 0, 0.42);
   display: flex;
   align-items: flex-end;
 }
 
 .action-sheet {
   width: 100%;
-  background: #fff;
-  border-radius: 24rpx 24rpx 0 0;
   padding-bottom: env(safe-area-inset-bottom);
+  background: #fff;
+  border-radius: 28rpx 28rpx 0 0;
+  overflow: hidden;
 }
 
-.sheet-item {
-  padding: 30rpx 0;
+.sheet-handle {
+  width: 66rpx;
+  height: 7rpx;
+  border-radius: 4rpx;
+  background: #D9D9D9;
+  margin: 18rpx auto;
+}
+
+.sheet-item,
+.sheet-cancel {
+  height: 92rpx;
+  line-height: 92rpx;
   text-align: center;
-  color: #333;
   font-size: 30rpx;
-  border-bottom: 1rpx solid #f0f0f0;
+  color: #333;
+  border-top: 1rpx solid #F1F1F1;
 }
 
 .sheet-item.danger {
-  color: #FF3B30;
+  color: #FF3838;
 }
 
 .sheet-cancel {
-  margin-top: 16rpx;
-  padding: 30rpx 0;
-  text-align: center;
+  margin-top: 12rpx;
+  border-top: 10rpx solid #F5F5F7;
   color: #999;
-  font-size: 30rpx;
-  border-top: 8rpx solid #f5f5f5;
 }
 </style>

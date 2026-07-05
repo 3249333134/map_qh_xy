@@ -1,0 +1,193 @@
+{
+  "data": [
+    {
+      "id": "page-publish-popup",
+      "title": "发布入口弹窗",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1751606400000,
+      "canvasData": {
+        "x": 0,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/publish-popup.html",
+        "interactions": [
+          {
+            "domId": "btn-publish-general",
+            "targetPageId": "page-publish-general",
+            "transitionLabel": "发布"
+          },
+          {
+            "domId": "btn-publish-sandbox",
+            "targetPageId": "page-publish-sandbox",
+            "transitionLabel": "沙盒"
+          },
+          {
+            "domId": "btn-publish-ip",
+            "targetPageId": "page-publish-ip",
+            "transitionLabel": "原创 IP"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-publish-general",
+      "title": "发布动态",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1751606400000,
+      "canvasData": {
+        "x": 420,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/publish-general.html",
+        "interactions": [
+          {
+            "domId": "nav-back-general",
+            "targetPageId": "page-publish-popup",
+            "hideEdge": true,
+            "transitionLabel": "返回"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-publish-sandbox",
+      "title": "沙盒创作",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1751606400000,
+      "canvasData": {
+        "x": 420,
+        "y": 590,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/publish-sandbox.html",
+        "interactions": [
+          {
+            "domId": "nav-back-sandbox",
+            "targetPageId": "page-publish-popup",
+            "hideEdge": true,
+            "transitionLabel": "返回"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-publish-ip",
+      "title": "IP 内容发布",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1751606400000,
+      "canvasData": {
+        "x": 420,
+        "y": 1180,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/publish-ip.html",
+        "interactions": [
+          {
+            "domId": "nav-back-ip",
+            "targetPageId": "page-publish-popup",
+            "hideEdge": true,
+            "transitionLabel": "返回"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-message-list",
+      "title": "消息中心",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1751610000000,
+      "canvasData": {
+        "x": 0,
+        "y": 1770,
+        "group": 1
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/message-list.html",
+        "interactions": [
+          {
+            "domId": "msg-item-system",
+            "targetPageId": "page-message-notification",
+            "transitionLabel": "系统通知"
+          },
+          {
+            "domId": "msg-item-wang",
+            "targetPageId": "page-message-chat",
+            "transitionLabel": "聊天"
+          },
+          {
+            "domId": "channel-bell",
+            "targetPageId": "page-message-chat",
+            "transitionLabel": "频道"
+          },
+          {
+            "domId": "channel-pin",
+            "targetPageId": "page-message-chat",
+            "transitionLabel": "频道"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-message-chat",
+      "title": "聊天详情",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1751610000000,
+      "canvasData": {
+        "x": 420,
+        "y": 2360,
+        "group": 1
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/message-chat.html",
+        "interactions": [
+          {
+            "domId": "nav-back-chat",
+            "targetPageId": "page-message-list",
+            "hideEdge": true,
+            "transitionLabel": "返回"
+          }
+        ]
+      }
+    },
+    {
+      "id": "page-message-notification",
+      "title": "消息通知详情",
+      "type": "page",
+      "version": 1,
+      "createdAt": 1751610000000,
+      "canvasData": {
+        "x": 420,
+        "y": 1770,
+        "group": 1
+      },
+      "devMetadata": {
+        "htmlSrc": "pages/message-notification.html",
+        "interactions": [
+          {
+            "domId": "nav-back-notification",
+            "targetPageId": "page-message-list",
+            "hideEdge": true,
+            "transitionLabel": "返回"
+          }
+        ]
+      }
+    }
+  ],
+  "config": {
+    "autoLayout": true,
+    "deviceType": "mobile",
+    "projectName": "发布系统 UI 设计"
+  }
+}

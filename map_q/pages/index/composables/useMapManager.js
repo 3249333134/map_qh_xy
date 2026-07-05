@@ -13,6 +13,9 @@ const MARKER_CONFIG = {
   service: { bgColor: '#ffffff', color: '#333' },
   track: { bgColor: '#ffffff', color: '#333' }
 }
+const DEFAULT_MARKER_ICON = '/static/marker.png'
+const DEFAULT_MARKER_WIDTH = 30
+const DEFAULT_MARKER_HEIGHT = 30
 
 export function useMapManager() {
   // 地图配置 - 使用武汉工程大学坐标（与GIS-Smart-campus-master一致）
@@ -64,6 +67,9 @@ export function useMapManager() {
         id: sourceIndex,
         latitude: point.location.coordinates[1],
         longitude: point.location.coordinates[0],
+        width: DEFAULT_MARKER_WIDTH,
+        height: DEFAULT_MARKER_HEIGHT,
+        iconPath: DEFAULT_MARKER_ICON,
         zIndex: isSelected ? 100 : sourceIndex,
         customData: {
           pointId: point._id,

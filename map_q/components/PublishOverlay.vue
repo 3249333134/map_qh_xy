@@ -1,6 +1,31 @@
 <template>
   <view class="publish-overlay" :class="{ active: show }" @click="close">
     <view class="menu-arc-container" @click.stop>
+      <!-- 热点推送区域 -->
+      <view class="hotspot-section" @click.stop>
+        <view class="hotspot-header">
+          <text class="hotspot-title">热点推送</text>
+          <text class="hotspot-more" @click.stop="handleHotspotMore">更多</text>
+        </view>
+        <scroll-view class="hotspot-scroll" scroll-x show-scrollbar="false">
+          <view
+            v-for="(item, index) in hotspotList"
+            :key="index"
+            class="hotspot-card"
+            @click.stop="handleHotspotClick(item, index)"
+          >
+            <image v-if="item.cover" class="hotspot-cover" :src="item.cover" mode="aspectFill" />
+            <view v-else class="hotspot-cover placeholder">
+              <text class="placeholder-icon">#</text>
+            </view>
+            <view class="hotspot-info">
+              <text class="hotspot-name">{{ item.name }}</text>
+              <text class="hotspot-count">{{ item.count }} 热度</text>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+
       <view class="menu-item item-1" @click="handleItemClick('sandbox')">
         <view class="rect-btn rect-small"><text class="btn-text">沙盒</text></view>
       </view>
@@ -26,13 +51,24 @@ export default {
       default: false
     }
   },
+  data() {
+    return {
+      hotspotList: [
+        { name: '周末骑行', count: 12800, cover: '', type: 'topic' },
+        { name: '城市露营', count: 9650, cover: '', type: 'topic' },
+        { name: '探店打卡', count: 8400, cover: '', type: 'topic' },
+        { name: '摄影分享', count: 7200, cover: '', type: 'topic' },
+        { name: '美食地图', count: 6800, cover: '', type: 'topic' }
+      ]
+    }
+  },
   methods: {
     close() {
       this.$emit('close');
     },
     handleItemClick(item) {
       console.log(`Clicked on ${item}`);
-      
+
       // 根据不同的功能项执行不同的操作
       switch(item) {
         case 'sandbox':
@@ -47,35 +83,31 @@ export default {
         default:
           console.log('Unknown item:', item);
       }
-      
+
       this.close();
     },
     handleSandbox() {
-      // 沙盒功能 - 可以跳转到相应页面或执行相应操作
-      uni.showToast({
-        title: '进入沙盒模式',
-        icon: 'success'
-      });
-      // 如果需要跳转到特定页面，可以使用：
-      // uni.navigateTo({ url: '/pages/sandbox/index' });
+      uni.navigateTo({ url: '/pages/sandbox/index' });
     },
     handlePublish() {
-      // 发布功能 - 可以跳转到发布页面
-      uni.showToast({
-        title: '开始发布内容',
-        icon: 'success'
-      });
-      // 如果需要跳转到发布页面，可以使用：
-      // uni.navigateTo({ url: '/pages/publish/index' });
+      uni.navigateTo({ url: '/pages/publish/index' });
     },
     handleOriginalIP() {
-      // 原创IP功能
+      uni.navigateTo({ url: '/pages/ip-publish/index' });
+    },
+    handleHotspotClick(item, index) {
+      console.log('点击热点:', item);
       uni.showToast({
-        title: '创建原创IP',
-        icon: 'success'
+        title: `#${item.name}`,
+        icon: 'none'
       });
-      // 如果需要跳转到原创IP页面，可以使用：
-      // uni.navigateTo({ url: '/pages/original-ip/index' });
+    },
+    handleHotspotMore() {
+      console.log('查看更多热点');
+      uni.showToast({
+        title: '更多热点',
+        icon: 'none'
+      });
     }
   }
 };
@@ -115,15 +147,15 @@ export default {
   box-shadow: 0 -6px 22px rgba(0, 0, 0, 0.22);
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto;
+  grid-template-rows: 1fr auto auto;
   justify-items: center;
-  align-items: center;
-  align-content: end; /* 将两排按钮整体压到容器底部 */
+  align-items: end;
+  align-content: end; /* 将内容整体压到容器底部 */
   row-gap: 10px;
   column-gap: 3px;
   /* 将列间距同时作为切口居中参考 */
   --inner-gap: 3px;
-  padding: 24px 24px 10px 24px; /* 底部内边距缩小，贴近关闭按钮 */
+  padding: 20px 24px 10px 24px; /* 底部内边距缩小，贴近关闭按钮 */
   --bottom-pad: 10px;          /* 下方按钮到底部灰色区域的距离（与上面 padding 底值一致） */
   transition: transform 0.3s ease;
   transform-origin: center;
@@ -193,10 +225,11 @@ export default {
 
 /* 取消沿弧线的定位，改为矩形内水平分布 */
 .item-1, .item-2, .item-3 { transform: none; }
-/* 发布单独占据上排并居中，沙盒/原创位于下排左右 */
-.item-2 { grid-row: 1; grid-column: 1 / span 2; }
-.item-1 { grid-row: 2; grid-column: 1; }
-.item-3 { grid-row: 2; grid-column: 2; }
+/* 热点推送占据最上方，发布占据中间一排居中，沙盒/原创位于底部左右 */
+.hotspot-section { grid-row: 1; grid-column: 1 / span 2; align-self: start; }
+.item-2 { grid-row: 2; grid-column: 1 / span 2; }
+.item-1 { grid-row: 3; grid-column: 1; }
+.item-3 { grid-row: 3; grid-column: 2; }
 
 /* 在底部两个按钮上使用 mask 真实“挖孔”，显示后方背景 */
 .item-1 .rect-btn {
@@ -271,4 +304,95 @@ export default {
 }
 .close-button::before { transform: rotate(45deg); }
 .close-button::after { transform: rotate(-45deg); }
+
+/* ===== 热点推送区域 ===== */
+.hotspot-section {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.hotspot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.hotspot-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.hotspot-more {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.hotspot-scroll {
+  flex: 1;
+  width: 100%;
+  white-space: nowrap;
+}
+
+.hotspot-card {
+  display: inline-flex;
+  flex-direction: column;
+  width: 110px;
+  height: 100%;
+  margin-right: 10px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.1);
+  vertical-align: top;
+}
+
+.hotspot-card:last-child {
+  margin-right: 0;
+}
+
+.hotspot-cover {
+  width: 100%;
+  height: 70%;
+  background: linear-gradient(135deg, #ff6b9d 0%, #c44dff 100%);
+}
+
+.hotspot-cover.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.placeholder-icon {
+  font-size: 28px;
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 700;
+}
+
+.hotspot-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8px;
+}
+
+.hotspot-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hotspot-count {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 4px;
+}
 </style>

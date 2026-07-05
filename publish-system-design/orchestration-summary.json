@@ -1,0 +1,96 @@
+{
+  "project": {
+    "name": "发布系统 UI 设计",
+    "operation": "create",
+    "deviceType": "mobile",
+    "designRead": "mobile publish flow / social creator / playful vibrant / information-dense / generic social app cliché",
+    "designDials": { "layoutVariance": 3, "motionIntensity": 2, "visualDensity": 4 },
+    "styleDefinitionBrief": "Social media mobile publish system, pink-purple gradient primary, clean white surfaces, iOS-style rounded cards, playful creator-focused tone.",
+    "sharedProjectShellContract": {
+      "primaryColor": "#FF6B9D → #C44DFF gradient",
+      "backgroundColor": "#FFFFFF",
+      "radiusScale": "12px / 16px / 24px / full",
+      "fontStack": "system sans-serif stack with PingFang SC",
+      "surfaceDepthModel": "border + surface layering; overlay shadow alpha ≤ 0.15"
+    }
+  },
+  "designSource": {
+    "operatingMode": "free-explore",
+    "brandCssPath": "colors_and_type.css",
+    "styleConstraints": {
+      "radiusMax": 24,
+      "staticShadowAlphaMax": 0.05
+    }
+  },
+  "pages": [
+    {
+      "nodeId": "page-publish-popup",
+      "title": "发布入口弹窗",
+      "htmlSrc": "pages/publish-popup.html",
+      "pageType": "task-driven",
+      "visualNorthStar": "Bottom sheet popup overlay on dimmed content, pink-purple gradient primary CTA, clean white surface with drag handle, three action buttons arranged vertically",
+      "continuityAnchors": [
+        "shared gradient primary color #FF6B9D → #C44DFF",
+        "shared font stack system sans-serif with PingFang SC",
+        "shared radius scale 12/16/24px",
+        "shared text colors title #1A1A1A, secondary #666666, hint #999999"
+      ],
+      "imagePlan": []
+    },
+    {
+      "nodeId": "page-publish-general",
+      "title": "发布动态",
+      "htmlSrc": "pages/publish-general.html",
+      "pageType": "task-driven",
+      "visualNorthStar": "Full-screen mobile publish form, fixed top nav bar, text area with char counter, 9-grid image picker, option list rows with icons and switches",
+      "continuityAnchors": [
+        "shared gradient primary color #FF6B9D → #C44DFF",
+        "shared font stack system sans-serif with PingFang SC",
+        "shared radius scale 12/16/24px",
+        "shared text colors title #1A1A1A, secondary #666666, hint #999999"
+      ],
+      "imagePlan": []
+    },
+    {
+      "nodeId": "page-publish-sandbox",
+      "title": "沙盒创作",
+      "htmlSrc": "pages/publish-sandbox.html",
+      "pageType": "task-driven",
+      "visualNorthStar": "Full-screen sandbox publish form, purple-accent theme, sandbox icon in title bar, category tags, schedule timer toggle, preview and test share options, bottom dual-action bar",
+      "continuityAnchors": [
+        "shared gradient primary color #FF6B9D → #C44DFF",
+        "shared font stack system sans-serif with PingFang SC",
+        "shared radius scale 12/16/24px",
+        "shared text colors title #1A1A1A, secondary #666666, hint #999999",
+        "sandbox purple accent #C44DFF for save button and category tags"
+      ],
+      "imagePlan": []
+    },
+    {
+      "nodeId": "page-publish-ip",
+      "title": "IP 内容发布",
+      "htmlSrc": "pages/publish-ip.html",
+      "pageType": "task-driven",
+      "visualNorthStar": "Full-screen IP publish form with IP binding card at top, gradient-tinted card background, crown/copyright icon in title bar, IP tags auto-generated, authorization dropdown, copyright toggle default on",
+      "continuityAnchors": [
+        "shared gradient primary color #FF6B9D → #C44DFF",
+        "shared font stack system sans-serif with PingFang SC",
+        "shared radius scale 12/16/24px",
+        "shared text colors title #1A1A1A, secondary #666666, hint #999999",
+        "IP card accent background rgba(255,107,157,0.1)"
+      ],
+      "imagePlan": []
+    }
+  ],
+  "assets": [],
+  "wiringPlan": [
+    { "from": "page-publish-popup", "to": "page-publish-general", "domId": "btn-publish-general", "label": "发布" },
+    { "from": "page-publish-popup", "to": "page-publish-sandbox", "domId": "btn-publish-sandbox", "label": "沙盒" },
+    { "from": "page-publish-popup", "to": "page-publish-ip", "domId": "btn-publish-ip", "label": "原创 IP" }
+  ],
+  "hiddenInteractionPlan": [
+    { "from": "page-publish-general", "to": "page-publish-popup", "domId": "nav-back-general", "hideEdge": true },
+    { "from": "page-publish-sandbox", "to": "page-publish-popup", "domId": "nav-back-sandbox", "hideEdge": true },
+    { "from": "page-publish-ip", "to": "page-publish-popup", "domId": "nav-back-ip", "hideEdge": true }
+  ]
+}

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发布动态</title>
+    <style id="theme-vars">
+/* ==========================================
+   Publish System — Brand Design Tokens
+   Mobile App UI Design System
+   ========================================== */
+
+:root {
+  /* ---- Brand Primary Gradient ---- */
+  --color-primary-start: #FF6B9D;
+  --color-primary-end: #C44DFF;
+  --gradient-primary: linear-gradient(135deg, var(--color-primary-start), var(--color-primary-end));
+
+  /* ---- Text Colors ---- */
+  --color-title: #1A1A1A;
+  --color-body: #1A1A1A;
+  --color-secondary: #666666;
+  --color-hint: #999999;
+  --color-white: #FFFFFF;
+
+  /* ---- Background Colors ---- */
+  --bg-page: #FFFFFF;
+  --bg-surface: #F5F5F7;
+  --bg-overlay: rgba(0, 0, 0, 0.6);
+
+  /* ---- Border ---- */
+  --border-color: #EEEEEE;
+  --divider-color: #F0F0F0;
+
+  /* ---- Sandbox Purple Accent ---- */
+  --color-sandbox-primary: #C44DFF;
+  --color-sandbox-bg: rgba(196, 77, 255, 0.1);
+  --gradient-sandbox: linear-gradient(135deg, #D87EFF, #A855F7);
+
+  /* ---- IP Card Accent ---- */
+  --color-ip-bg: rgba(255, 107, 157, 0.1);
+
+  /* ---- Shape ---- */
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+
+  /* ---- Typography ---- */
+  --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+
+  --font-size-title: 16px;
+  --font-weight-title: 700;
+
+  --font-size-body: 14px;
+  --font-weight-body: 400;
+
+  --font-size-caption: 12px;
+  --font-weight-caption: 400;
+
+  --font-size-large: 24px;
+
+  /* ---- Spacing ---- */
+  --spacing-page-x: 20px;
+  --spacing-section: 16px;
+  --spacing-item: 12px;
+  --spacing-xs: 8px;
+
+  /* ---- Button Heights ---- */
+  --height-primary-btn: 56px;
+  --height-secondary-btn: 48px;
+  --height-nav-btn: 32px;
+  --height-option-row: 48px;
+
+  /* ---- Drag Handle ---- */
+  --drag-bar-width: 36px;
+  --drag-bar-height: 4px;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-secondary: var(--color-secondary);
+  }
+  @layer base {
+    body { background: var(--color-background); color: var(--color-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main class="min-h-screen" style="background: var(--bg-page);">
+        <!-- Fixed Top Navigation Bar -->
+        <header class="fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-5 h-12" style="background: var(--bg-page); border-bottom: 1px solid var(--border-color);">
+            <button data-dom-id="nav-back-general" class="text-sm whitespace-nowrap transition-colors duration-150 hover:opacity-70 active:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2" style="color: var(--color-secondary); outline-color: var(--color-primary-start);">
+                取消
+            </button>
+            <h1 class="text-base font-bold whitespace-nowrap" style="color: var(--color-title); font-family: var(--font-family);">
+                发布动态
+            </h1>
+            <button class="inline-flex items-center justify-center h-8 px-4 text-sm font-semibold whitespace-nowrap rounded-lg transition-transform duration-150 active:scale-95 focus-visible:outline-2 focus-visible:outline-offset-2" style="background: var(--gradient-primary); color: var(--color-white); outline-color: var(--color-primary-start);">
+                发布
+            </button>
+        </header>
+
+        <!-- Scrollable Content Area -->
+        <div class="pt-12 pb-8 px-5">
+            <!-- Text Input Area -->
+            <section class="relative mt-4" style="max-height: 40vh;">
+                <textarea
+                    class="w-full resize-none text-sm leading-relaxed outline-none no-scrollbar"
+                    style="font-family: var(--font-family); color: var(--color-body); min-height: 120px; max-height: 40vh; --tw-placeholder-opacity: 1;"
+                    placeholder="分享你的创作、想法或日常..."
+                    maxlength="500"
+                    rows="5"
+                ></textarea>
+                <div class="absolute bottom-2 right-0 text-xs" style="color: var(--color-hint);">
+                    0/500
+                </div>
+            </section>
+
+            <!-- Image/Video Picker - 9-Grid Layout -->
+            <section class="mt-4">
+                <div class="grid grid-cols-3 gap-2">
+                    <!-- Sample placeholder image 1 -->
+                    <div class="relative aspect-square rounded-xl overflow-hidden" style="background: var(--bg-surface);">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <svg class="w-8 h-8" style="color: var(--color-hint);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                                <circle cx="9" cy="9" r="2"/>
+                                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                            </svg>
+                        </div>
+                        <button class="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded-full text-white transition-opacity duration-150 hover:opacity-90 active:opacity-70" style="background: rgba(0,0,0,0.45);" aria-label="删除图片">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <!-- Sample placeholder image 2 -->
+                    <div class="relative aspect-square rounded-xl overflow-hidden" style="background: var(--bg-surface);">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <svg class="w-8 h-8" style="color: var(--color-hint);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                                <circle cx="9" cy="9" r="2"/>
+                                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                            </svg>
+                        </div>
+                        <button class="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded-full text-white transition-opacity duration-150 hover:opacity-90 active:opacity-70" style="background: rgba(0,0,0,0.45);" aria-label="删除图片">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <!-- Sample placeholder image 3 -->
+                    <div class="relative aspect-square rounded-xl overflow-hidden" style="background: var(--bg-surface);">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <svg class="w-8 h-8" style="color: var(--color-hint);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+                                <circle cx="9" cy="9" r="2"/>
+                                <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+                            </svg>
+                        </div>
+                        <button class="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded-full text-white transition-opacity duration-150 hover:opacity-90 active:opacity-70" style="background: rgba(0,0,0,0.45);" aria-label="删除图片">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <!-- Add button cell -->
+                    <button class="aspect-square rounded-xl flex items-center justify-center transition-colors duration-150 hover:opacity-80 active:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2" style="background: var(--bg-surface); outline-color: var(--color-primary-start);" aria-label="添加图片或视频">
+                        <svg class="w-6 h-6" style="color: var(--color-hint);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 12h14"/><path d="M12 5v14"/>
+                        </svg>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Feature Options List -->
+            <section class="mt-5">
+                <!-- 添加话题 -->
+                <div class="flex items-center justify-between" style="height: var(--height-option-row); border-bottom: 1px solid var(--divider-color);">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 shrink-0" style="color: var(--color-secondary);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="4" x2="20" y1="12" y2="12"/>
+                        </svg>
+                        <span class="text-sm" style="color: var(--color-title); font-family: var(--font-family);">添加话题</span>
+                    </div>
+                    <svg class="w-4 h-4 shrink-0" style="color: var(--color-hint);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                </div>
+                <!-- @好友 -->
+                <div class="flex items-center justify-between" style="height: var(--height-option-row); border-bottom: 1px solid var(--divider-color);">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 shrink-0" style="color: var(--color-secondary);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="4"/>
+                            <path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94"/>
+                        </svg>
+                        <span class="text-sm" style="color: var(--color-title); font-family: var(--font-family);">@好友</span>
+                    </div>
+                    <svg class="w-4 h-4 shrink-0" style="color: var(--color-hint);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                </div>
+                <!-- 添加位置 -->
+                <div class="flex items-center justify-between" style="height: var(--height-option-row); border-bottom: 1px solid var(--divider-color);">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 shrink-0" style="color: var(--color-secondary);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                            <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        <span class="text-sm" style="color: var(--color-title); font-family: var(--font-family);">添加位置</span>
+                    </div>
+                    <svg class="w-4 h-4 shrink-0" style="color: var(--color-hint);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                </div>
+                <!-- 谁可以看 -->
+                <div class="flex items-center justify-between" style="height: var(--height-option-row); border-bottom: 1px solid var(--divider-color);">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 shrink-0" style="color: var(--color-secondary);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <span class="text-sm" style="color: var(--color-title); font-family: var(--font-family);">谁可以看</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-sm" style="color: var(--color-hint);">公开</span>
+                        <svg class="w-4 h-4 shrink-0" style="color: var(--color-hint);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m9 18 6-6-6-6"/>
+                        </svg>
+                    </div>
+                </div>
+                <!-- 原创声明 -->
+                <div class="flex items-center justify-between" style="height: var(--height-option-row);">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5 shrink-0" style="color: var(--color-secondary);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M14.83 9.17a3 3 0 0 0-4.24 0L9.17 10.3a1 1 0 0 0 0 1.42l3.1 3.1a1 1 0 0 0 1.42 0l1.13-1.13a3 3 0 0 0 0-4.24Z"/>
+                        </svg>
+                        <span class="text-sm" style="color: var(--color-title); font-family: var(--font-family);">原创声明</span>
+                    </div>
+                    <!-- iOS-style toggle switch - ON state -->
+                    <div class="relative w-11 h-6 rounded-full transition-colors duration-200" style="background: var(--gradient-primary);">
+                        <div class="absolute top-0.5 right-0.5 w-5 h-5 rounded-full shadow-sm transition-transform duration-200" style="background: var(--color-white);"></div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Safe area bottom padding -->
+        <div class="h-[env(safe-area-inset-bottom,0px)]"></div>
+    </main>
+    <script>lucide.createIcons();</script>
+    <style>
+        textarea::placeholder { color: var(--color-hint); opacity: 1; }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { transition-duration: 0.01ms !important; }
+        }
+    </style>
+</body>
+</html>

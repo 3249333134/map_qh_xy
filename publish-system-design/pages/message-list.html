@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消息中心</title>
+    <style id="theme-vars">
+/* ==========================================
+   Publish System — Brand Design Tokens
+   Mobile App UI Design System
+   ========================================== */
+
+:root {
+  /* ---- Brand Primary Gradient ---- */
+  --color-primary-start: #FF6B9D;
+  --color-primary-end: #C44DFF;
+  --gradient-primary: linear-gradient(135deg, var(--color-primary-start), var(--color-primary-end));
+
+  /* ---- Text Colors ---- */
+  --color-title: #1A1A1A;
+  --color-body: #1A1A1A;
+  --color-secondary: #666666;
+  --color-hint: #999999;
+  --color-white: #FFFFFF;
+
+  /* ---- Background Colors ---- */
+  --bg-page: #FFFFFF;
+  --bg-surface: #F5F5F7;
+  --bg-overlay: rgba(0, 0, 0, 0.6);
+
+  /* ---- Border ---- */
+  --border-color: #EEEEEE;
+  --divider-color: #F0F0F0;
+
+  /* ---- Sandbox Purple Accent ---- */
+  --color-sandbox-primary: #C44DFF;
+  --color-sandbox-bg: rgba(196, 77, 255, 0.1);
+  --gradient-sandbox: linear-gradient(135deg, #D87EFF, #A855F7);
+
+  /* ---- IP Card Accent ---- */
+  --color-ip-bg: rgba(255, 107, 157, 0.1);
+
+  /* ---- Shape ---- */
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+
+  /* ---- Typography ---- */
+  --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+
+  --font-size-title: 16px;
+  --font-weight-title: 700;
+
+  --font-size-body: 14px;
+  --font-weight-body: 400;
+
+  --font-size-caption: 12px;
+  --font-weight-caption: 400;
+
+  --font-size-large: 24px;
+
+  /* ---- Spacing ---- */
+  --spacing-page-x: 20px;
+  --spacing-section: 16px;
+  --spacing-item: 12px;
+  --spacing-xs: 8px;
+
+  /* ---- Button Heights ---- */
+  --height-primary-btn: 56px;
+  --height-secondary-btn: 48px;
+  --height-nav-btn: 32px;
+  --height-option-row: 48px;
+
+  /* ---- Drag Handle ---- */
+  --drag-bar-width: 36px;
+  --drag-bar-height: 4px;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-secondary: var(--color-secondary);
+  }
+  @layer base {
+    body { background: var(--color-background); color: var(--color-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main class="relative mx-auto" style="max-width: 375px; min-height: 812px; background: var(--bg-page); font-family: var(--font-family); overflow: hidden;">
+
+      <!-- ====== Status Bar ====== -->
+      <div class="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-6" style="height: 44px; background: var(--bg-page);">
+        <span style="font-size: 15px; font-weight: 600; color: var(--color-title);">12:27</span>
+        <div class="flex items-center gap-1.5">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 11.5a1.25 1.25 0 100 2.5 1.25 1.25 0 000-2.5z" fill="#1A1A1A"/><path d="M4.93 9.44a4.37 4.37 0 016.14 0" stroke="#1A1A1A" stroke-width="1.3" stroke-linecap="round"/><path d="M2.93 7.44a7.37 7.37 0 0110.14 0" stroke="#1A1A1A" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <svg width="22" height="12" viewBox="0 0 22 12" fill="none" style="margin-left: 2px;"><rect x="0.5" y="0.5" width="18" height="11" rx="2.5" stroke="#1A1A1A" stroke-width="1"/><rect x="2" y="2" width="13" height="8" rx="1" fill="#1A1A1A"/><path d="M20 4v4a2 2 0 000-4z" fill="#1A1A1A"/></svg>
+        </div>
+      </div>
+
+      <!-- ====== Search Header ====== -->
+      <div class="absolute top-11 left-0 right-0 z-20" style="background: var(--bg-page); padding: 8px 16px 0 16px;">
+        <div class="flex items-center gap-2">
+          <!-- Search bar -->
+          <div class="flex items-center flex-1" style="height: 36px; background: var(--bg-surface); border-radius: 18px; padding: 0 12px;">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink: 0; margin-right: 6px;">
+              <circle cx="7" cy="7" r="4.5" stroke="#999" stroke-width="1.5"/>
+              <path d="M10.5 10.5L14 14" stroke="#999" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <span style="font-size: 13px; color: var(--color-hint);">搜索消息/联系人</span>
+          </div>
+          <!-- Add button -->
+          <div class="flex items-center justify-center flex-shrink-0" style="width: 32px; height: 32px; border-radius: 50%; background: var(--bg-surface); cursor: pointer;">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 3V13M3 8H13" stroke="#666" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <!-- Three-dot menu -->
+          <div class="flex items-center justify-center flex-shrink-0" style="width: 28px; height: 28px; cursor: pointer;">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+              <circle cx="9" cy="4" r="1.2" fill="#666"/>
+              <circle cx="9" cy="9" r="1.2" fill="#666"/>
+              <circle cx="9" cy="14" r="1.2" fill="#666"/>
+            </svg>
+          </div>
+          <!-- Avatar button -->
+          <div class="flex items-center justify-center flex-shrink-0" style="width: 28px; height: 28px; border-radius: 50%; background: var(--bg-surface); cursor: pointer; overflow: hidden;">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="6" r="3" stroke="#999" stroke-width="1.3"/>
+              <path d="M2 15C2 11.68 4.69 9 8 9C11.31 9 14 11.68 14 15" stroke="#999" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- ====== Navigation Tabs ====== -->
+        <div class="flex" style="margin-top: 8px;">
+          <!-- Active tab: 频道与朋友 -->
+          <div class="flex items-center justify-center" style="flex: 1; height: 40px; position: relative; cursor: pointer;">
+            <span style="font-size: 14px; font-weight: 600; color: #FF8C42; white-space: nowrap;">频道与朋友</span>
+            <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 24px; height: 2.5px; border-radius: 1.25px; background: #FF8C42;"></div>
+          </div>
+          <!-- Inactive tab: 关注与粉丝 -->
+          <a href="#" data-dom-id="tab-followers" class="flex items-center justify-center" style="flex: 1; height: 40px; text-decoration: none; cursor: pointer;">
+            <span style="font-size: 14px; font-weight: 400; color: var(--color-hint); white-space: nowrap;">关注与粉丝</span>
+          </a>
+          <!-- Inactive tab: 点赞与评论 -->
+          <a href="#" data-dom-id="tab-likes" class="flex items-center justify-center" style="flex: 1; height: 40px; text-decoration: none; cursor: pointer;">
+            <span style="font-size: 14px; font-weight: 400; color: var(--color-hint); white-space: nowrap;">点赞与评论</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- ====== Main Content Area — Split Panel ====== -->
+      <div class="absolute left-0 right-0" style="top: 168px; bottom: 64px; display: flex;">
+
+        <!-- Left Sidebar — Channel/Friend Avatar List -->
+        <div class="no-scrollbar" style="width: 72px; flex-shrink: 0; background: var(--bg-surface); overflow-y: auto; padding: 12px 0; display: flex; flex-direction: column; align-items: center; gap: 14px;">
+
+          <!-- Channel 1: Blue bell — badge 3 -->
+          <div data-dom-id="channel-bell" style="position: relative; cursor: pointer;">
+            <div class="flex items-center justify-center" style="width: 48px; height: 48px; border-radius: 50%; background: #4A90D9;">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <path d="M11 2C8.5 2 6.5 4 6.5 6.5V10L4 13H18L15.5 10V6.5C15.5 4 13.5 2 11 2Z" fill="white"/>
+                <path d="M9 15C9 16.1 9.9 17 11 17C12.1 17 13 16.1 13 15" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="flex items-center justify-center" style="position: absolute; top: -2px; right: -2px; min-width: 16px; height: 16px; border-radius: 8px; background: #FF3B30; padding: 0 4px;">
+              <span style="font-size: 10px; color: white; font-weight: 600; line-height: 1;">3</span>
+            </div>
+          </div>
+
+          <!-- Channel 2: Green pin — badge 5 -->
+          <div data-dom-id="channel-pin" style="position: relative; cursor: pointer;">
+            <div class="flex items-center justify-center" style="width: 48px; height: 48px; border-radius: 50%; background: #34C759;">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <path d="M11 2C7.69 2 5 4.69 5 8C5 13 11 19 11 19C11 19 17 13 17 8C17 4.69 14.31 2 11 2Z" fill="white"/>
+                <circle cx="11" cy="8" r="2.5" fill="#34C759"/>
+              </svg>
+            </div>
+            <div class="flex items-center justify-center" style="position: absolute; top: -2px; right: -2px; min-width: 16px; height: 16px; border-radius: 8px; background: #FF3B30; padding: 0 4px;">
+              <span style="font-size: 10px; color: white; font-weight: 600; line-height: 1;">5</span>
+            </div>
+          </div>
+
+          <!-- Channel 3: Orange mountain — badge 2 -->
+          <div style="position: relative; cursor: pointer;">
+            <div class="flex items-center justify-center" style="width: 48px; height: 48px; border-radius: 50%; background: #FF9500;">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <path d="M3 17L8 8L11 13L14 6L19 17H3Z" fill="white"/>
+                <path d="M6 17L9 11L12 17H6Z" fill="rgba(255,255,255,0.5)"/>
+              </svg>
+            </div>
+            <div class="flex items-center justify-center" style="position: absolute; top: -2px; right: -2px; min-width: 16px; height: 16px; border-radius: 8px; background: #FF3B30; padding: 0 4px;">
+              <span style="font-size: 10px; color: white; font-weight: 600; line-height: 1;">2</span>
+            </div>
+          </div>
+
+          <!-- Channel 4: Red runner — badge 99+ -->
+          <div style="position: relative; cursor: pointer;">
+            <div class="flex items-center justify-center" style="width: 48px; height: 48px; border-radius: 50%; background: #FF3B30;">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <circle cx="10" cy="8" r="3" fill="white"/>
+                <path d="M4 19L7 12L10 14L14 8L18 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="flex items-center justify-center" style="position: absolute; top: -2px; right: -4px; min-width: 22px; height: 16px; border-radius: 8px; background: #FF3B30; padding: 0 5px;">
+              <span style="font-size: 10px; color: white; font-weight: 600; line-height: 1;">99+</span>
+            </div>
+          </div>
+
+          <!-- Channel 5: Purple food bowl — no badge -->
+          <div style="cursor: pointer;">
+            <div class="flex items-center justify-center" style="width: 48px; height: 48px; border-radius: 50%; background: #AF52DE;">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <path d="M3 9H19C19 9 18 17 11 17C4 17 3 9 3 9Z" fill="white"/>
+                <path d="M11 3V7M8 4.5V7M14 4.5V7" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Channel 6: Light blue camera — no badge -->
+          <div style="cursor: pointer;">
+            <div class="flex items-center justify-center" style="width: 48px; height: 48px; border-radius: 50%; background: #5AC8FA;">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <rect x="2" y="6" width="18" height="12" rx="2" fill="white"/>
+                <path d="M8 6L9 4H13L14 6" fill="white"/>
+                <circle cx="11" cy="12" r="3" fill="#5AC8FA"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Add channel button -->
+          <div style="cursor: pointer;">
+            <div class="flex items-center justify-center" style="width: 48px; height: 48px; border-radius: 50%; background: rgba(0,0,0,0.06);">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <path d="M11 5V17M5 11H17" stroke="#999" stroke-width="1.8" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Content Panel — Message List -->
+        <div class="no-scrollbar flex-1" style="overflow-y: auto; background: var(--bg-page);">
+
+          <!-- Message Item 1: 系统通知 -->
+          <a href="#" data-dom-id="msg-item-system" class="flex items-center" style="padding: 14px 16px; text-decoration: none; border-bottom: 0.5px solid var(--divider-color);">
+            <!-- Avatar: Blue square with "系" -->
+            <div class="flex items-center justify-center flex-shrink-0" style="width: 44px; height: 44px; border-radius: 10px; background: #4A90D9;">
+              <span style="font-size: 18px; color: white; font-weight: 600;">系</span>
+            </div>
+            <!-- Right content -->
+            <div class="flex-1 min-w-0" style="margin-left: 12px;">
+              <div class="flex items-center justify-between">
+                <span style="font-size: 15px; font-weight: 600; color: var(--color-title);">系统通知</span>
+                <span style="font-size: 12px; color: var(--color-hint); flex-shrink: 0; margin-left: 8px;">10:30</span>
+              </div>
+              <div class="mt-1" style="font-size: 13px; color: var(--color-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">系统：您有一条新的活动通知</div>
+            </div>
+          </a>
+
+          <!-- Message Item 2: 服务助手 -->
+          <a href="#" data-dom-id="msg-item-service" class="flex items-center" style="padding: 14px 16px; text-decoration: none; border-bottom: 0.5px solid var(--divider-color);">
+            <!-- Avatar: Orange square with "服" -->
+            <div class="flex items-center justify-center flex-shrink-0" style="width: 44px; height: 44px; border-radius: 10px; background: #FF9500;">
+              <span style="font-size: 18px; color: white; font-weight: 600;">服</span>
+            </div>
+            <!-- Right content -->
+            <div class="flex-1 min-w-0" style="margin-left: 12px;">
+              <div class="flex items-center justify-between">
+                <span style="font-size: 15px; font-weight: 600; color: var(--color-title);">服务助手</span>
+                <span style="font-size: 12px; color: var(--color-hint); flex-shrink: 0; margin-left: 8px;">09:15</span>
+              </div>
+              <div class="mt-1" style="font-size: 13px; color: var(--color-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">您的预约已确认，请准时到店</div>
+            </div>
+          </a>
+
+          <!-- Message Item 3: 小王 -->
+          <a href="#" data-dom-id="msg-item-wang" class="flex items-center" style="padding: 14px 16px; text-decoration: none; border-bottom: 0.5px solid var(--divider-color);">
+            <!-- Avatar: Green square with "王" -->
+            <div class="flex items-center justify-center flex-shrink-0" style="width: 44px; height: 44px; border-radius: 10px; background: #34C759;">
+              <span style="font-size: 18px; color: white; font-weight: 600;">王</span>
+            </div>
+            <!-- Right content -->
+            <div class="flex-1 min-w-0" style="margin-left: 12px;">
+              <div class="flex items-center justify-between">
+                <span style="font-size: 15px; font-weight: 600; color: var(--color-title);">小王</span>
+                <span style="font-size: 12px; color: var(--color-hint); flex-shrink: 0; margin-left: 8px;">昨天</span>
+              </div>
+              <div class="mt-1" style="font-size: 13px; color: var(--color-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">好的，明天见！</div>
+            </div>
+          </a>
+
+          <!-- Message Item 4: 美食探店群 -->
+          <a href="#" data-dom-id="msg-item-food-group" class="flex items-center" style="padding: 14px 16px; text-decoration: none; border-bottom: 0.5px solid var(--divider-color);">
+            <!-- Avatar: Coral square with group icon -->
+            <div class="flex items-center justify-center flex-shrink-0" style="width: 44px; height: 44px; border-radius: 10px; background: #FF8C42;">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <circle cx="8" cy="8" r="2.5" fill="white"/>
+                <circle cx="15" cy="8" r="2.5" fill="white"/>
+                <path d="M3 17C3 14.24 5.24 12 8 12C9.1 12 10.1 12.37 10.9 13" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M10 17C10 14.8 11.8 13 14 13C14.8 13 15.6 13.3 16.2 13.8" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <!-- Right content -->
+            <div class="flex-1 min-w-0" style="margin-left: 12px;">
+              <div class="flex items-center justify-between">
+                <span style="font-size: 15px; font-weight: 600; color: var(--color-title);">美食探店群</span>
+                <span style="font-size: 12px; color: var(--color-hint); flex-shrink: 0; margin-left: 8px;">昨天</span>
+              </div>
+              <div class="mt-1" style="font-size: 13px; color: var(--color-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">李明：这家店真的很推荐...</div>
+            </div>
+          </a>
+
+          <!-- Message Item 5: 活动通知 -->
+          <a href="#" data-dom-id="msg-item-activity" class="flex items-center" style="padding: 14px 16px; text-decoration: none;">
+            <!-- Avatar: Red square with bell icon -->
+            <div class="flex items-center justify-center flex-shrink-0" style="width: 44px; height: 44px; border-radius: 10px; background: #FF3B30;">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <path d="M11 2C8.5 2 6.5 4 6.5 6.5V10L4 13H18L15.5 10V6.5C15.5 4 13.5 2 11 2Z" fill="white"/>
+                <path d="M9 15C9 16.1 9.9 17 11 17C12.1 17 13 16.1 13 15" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <!-- Right content -->
+            <div class="flex-1 min-w-0" style="margin-left: 12px;">
+              <div class="flex items-center justify-between">
+                <span style="font-size: 15px; font-weight: 600; color: var(--color-title);">活动通知</span>
+                <span style="font-size: 12px; color: var(--color-hint); flex-shrink: 0; margin-left: 8px;">周一</span>
+              </div>
+              <div class="mt-1" style="font-size: 13px; color: var(--color-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">您参与的周末徒步活动已...</div>
+            </div>
+          </a>
+
+        </div>
+
+      </div>
+
+      <!-- ====== Bottom Tab Bar ====== -->
+      <div class="absolute bottom-0 left-0 right-0 z-30 flex items-center" style="height: 64px; background: rgba(255,255,255,0.97); border-top: 0.5px solid rgba(0,0,0,0.08); padding-bottom: env(safe-area-inset-bottom, 0px);">
+        <!-- 首页 -->
+        <div class="flex-1 flex flex-col items-center justify-center gap-0.5" style="cursor: pointer;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 8L11 3L19 8V17C19 18 18 19 17 19H5C4 19 3 18 3 17V8Z" stroke="#999" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          <span style="font-size: 10px; color: #999;">首页</span>
+        </div>
+        <!-- 服务 -->
+        <div class="flex-1 flex flex-col items-center justify-center gap-0.5" style="cursor: pointer;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="3" y="3" width="7" height="7" rx="2" stroke="#999" stroke-width="1.5"/><rect x="12" y="3" width="7" height="7" rx="2" stroke="#999" stroke-width="1.5"/><rect x="3" y="12" width="7" height="7" rx="2" stroke="#999" stroke-width="1.5"/><rect x="12" y="12" width="7" height="7" rx="2" stroke="#999" stroke-width="1.5"/></svg>
+          <span style="font-size: 10px; color: #999;">服务</span>
+        </div>
+        <!-- Center + publish button (raised) -->
+        <div class="flex flex-col items-center justify-center" style="flex: 0 0 56px; margin-top: -18px;">
+          <div class="flex items-center justify-center" style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, var(--color-primary-start), var(--color-primary-end)); box-shadow: 0 2px 10px rgba(255,107,157,0.4);">
+            <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M11 5V17M5 11H17" stroke="white" stroke-width="2.5" stroke-linecap="round"/></svg>
+          </div>
+        </div>
+        <!-- 消息 (ACTIVE — orange/coral) -->
+        <div class="flex-1 flex flex-col items-center justify-center gap-0.5" style="cursor: pointer;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M4 6C4 5 5 4 6 4H16C17 4 18 5 18 6V13C18 14 17 15 16 15H8L5 18V15H6" stroke="#FF8C42" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>
+          <span style="font-size: 10px; color: #FF8C42; font-weight: 500;">消息</span>
+        </div>
+        <!-- 我的 -->
+        <div class="flex-1 flex flex-col items-center justify-center gap-0.5" style="cursor: pointer;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="8" r="4" stroke="#999" stroke-width="1.5"/><path d="M4 19C4 15.68 7.13 13 11 13C14.87 13 18 15.68 18 19" stroke="#999" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span style="font-size: 10px; color: #999;">我的</span>
+        </div>
+      </div>
+
+    </main>
+    <style>
+      @media (prefers-reduced-motion: reduce) {
+        button, a, [data-dom-id] { transition-duration: 0.01ms !important; }
+      }
+    </style>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

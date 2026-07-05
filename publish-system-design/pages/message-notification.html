@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消息通知详情</title>
+    <style id="theme-vars">
+/* ==========================================
+   Publish System — Brand Design Tokens
+   Mobile App UI Design System
+   ========================================== */
+
+:root {
+  /* ---- Brand Primary Gradient ---- */
+  --color-primary-start: #FF6B9D;
+  --color-primary-end: #C44DFF;
+  --gradient-primary: linear-gradient(135deg, var(--color-primary-start), var(--color-primary-end));
+
+  /* ---- Text Colors ---- */
+  --color-title: #1A1A1A;
+  --color-body: #1A1A1A;
+  --color-secondary: #666666;
+  --color-hint: #999999;
+  --color-white: #FFFFFF;
+
+  /* ---- Background Colors ---- */
+  --bg-page: #FFFFFF;
+  --bg-surface: #F5F5F7;
+  --bg-overlay: rgba(0, 0, 0, 0.6);
+
+  /* ---- Border ---- */
+  --border-color: #EEEEEE;
+  --divider-color: #F0F0F0;
+
+  /* ---- Sandbox Purple Accent ---- */
+  --color-sandbox-primary: #C44DFF;
+  --color-sandbox-bg: rgba(196, 77, 255, 0.1);
+  --gradient-sandbox: linear-gradient(135deg, #D87EFF, #A855F7);
+
+  /* ---- IP Card Accent ---- */
+  --color-ip-bg: rgba(255, 107, 157, 0.1);
+
+  /* ---- Shape ---- */
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+
+  /* ---- Typography ---- */
+  --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+
+  --font-size-title: 16px;
+  --font-weight-title: 700;
+
+  --font-size-body: 14px;
+  --font-weight-body: 400;
+
+  --font-size-caption: 12px;
+  --font-weight-caption: 400;
+
+  --font-size-large: 24px;
+
+  /* ---- Spacing ---- */
+  --spacing-page-x: 20px;
+  --spacing-section: 16px;
+  --spacing-item: 12px;
+  --spacing-xs: 8px;
+
+  /* ---- Button Heights ---- */
+  --height-primary-btn: 56px;
+  --height-secondary-btn: 48px;
+  --height-nav-btn: 32px;
+  --height-option-row: 48px;
+
+  /* ---- Drag Handle ---- */
+  --drag-bar-width: 36px;
+  --drag-bar-height: 4px;
+}
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.1/dist/index.global.js"></script>
+    <script src="https://unpkg.com/lucide@1.8.0/dist/umd/lucide.min.js"></script>
+    <style type="text/tailwindcss">
+  @theme inline {
+    --color-secondary: var(--color-secondary);
+  }
+  @layer base {
+    body { background: var(--color-background); color: var(--color-foreground); }
+    td, th { @apply break-words; word-break: break-all; word-break: auto-phrase; }
+    th { @apply whitespace-nowrap; }
+  }
+    </style>
+    <style>
+      .no-scrollbar::-webkit-scrollbar { display: none; }
+      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      [data-icon] {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        -webkit-mask-size: contain;
+        mask-size: contain;
+        -webkit-mask-repeat: no-repeat;
+        mask-repeat: no-repeat;
+        -webkit-mask-position: center;
+        mask-position: center;
+        background-color: currentColor;
+      }
+    </style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+    <main>
+      <!-- Top Navigation Bar -->
+      <header class="sticky top-0 z-30 border-b border-[var(--divider-color)] bg-[var(--bg-page)]/95 backdrop-blur-sm">
+        <div class="flex h-12 items-center px-[var(--spacing-page-x)]">
+          <button data-dom-id="nav-back-notification" class="flex h-8 w-8 items-center justify-center" aria-label="返回">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--color-title)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          <h1 class="min-w-0 flex-1 text-center text-[var(--font-size-title)] font-bold tracking-[-0.02em]" style="color: var(--color-title);">系统通知</h1>
+          <button class="whitespace-nowrap text-[14px] font-normal" style="color: #FF6B35;">全部已读</button>
+        </div>
+      </header>
+
+      <!-- Notification List -->
+      <section class="pb-8">
+        <!-- Card 1: UNREAD - Activity Notification -->
+        <div class="flex items-start gap-3 px-[var(--spacing-page-x)] py-3 relative" style="border-bottom: 1px solid var(--divider-color);">
+          <div class="relative shrink-0">
+            <span class="flex h-10 w-10 items-center justify-center" style="background: rgba(59, 130, 246, 0.1); border-radius: var(--radius-sm);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            </span>
+            <span class="absolute -left-0.5 top-1/2 h-1.5 w-1.5 -translate-y-1/2" style="background: #3B82F6; border-radius: var(--radius-full);"></span>
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[14px] font-bold truncate" style="color: var(--color-title);">活动通知</span>
+              <span class="shrink-0 text-[12px]" style="color: var(--color-hint);">2小时前</span>
+            </div>
+            <p class="mt-1 text-[13px] leading-relaxed line-clamp-2" style="color: var(--color-secondary);">您参与的「周末城市徒步」活动将在明天上午9:00开始，请准时参加集合点：天府广场南门</p>
+          </div>
+        </div>
+
+        <!-- Card 2: UNREAD - Interaction Notification -->
+        <div class="flex items-start gap-3 px-[var(--spacing-page-x)] py-3 relative" style="border-bottom: 1px solid var(--divider-color);">
+          <div class="relative shrink-0">
+            <span class="flex h-10 w-10 items-center justify-center" style="background: rgba(255, 107, 53, 0.1); border-radius: var(--radius-sm);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6B35" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            </span>
+            <span class="absolute -left-0.5 top-1/2 h-1.5 w-1.5 -translate-y-1/2" style="background: #3B82F6; border-radius: var(--radius-full);"></span>
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[14px] font-bold truncate" style="color: var(--color-title);">互动通知</span>
+              <span class="shrink-0 text-[12px]" style="color: var(--color-hint);">3小时前</span>
+            </div>
+            <p class="mt-1 text-[13px] leading-relaxed line-clamp-2" style="color: var(--color-secondary);">小王等3人赞了你的动态「周末爬山计划」</p>
+          </div>
+        </div>
+
+        <!-- Card 3: UNREAD - Comment Notification -->
+        <div class="flex items-start gap-3 px-[var(--spacing-page-x)] py-3 relative" style="border-bottom: 1px solid var(--divider-color);">
+          <div class="relative shrink-0">
+            <span class="flex h-10 w-10 items-center justify-center" style="background: rgba(239, 68, 68, 0.1); border-radius: var(--radius-sm);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+            </span>
+            <span class="absolute -left-0.5 top-1/2 h-1.5 w-1.5 -translate-y-1/2" style="background: #3B82F6; border-radius: var(--radius-full);"></span>
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[14px] font-bold truncate" style="color: var(--color-title);">评论通知</span>
+              <span class="shrink-0 text-[12px]" style="color: var(--color-hint);">5小时前</span>
+            </div>
+            <p class="mt-1 text-[13px] leading-relaxed line-clamp-2" style="color: var(--color-secondary);">李明评论了你的动态："这个计划不错，算我一个！"</p>
+          </div>
+        </div>
+
+        <!-- Card 4: READ - System Notification -->
+        <div class="flex items-start gap-3 px-[var(--spacing-page-x)] py-3 relative" style="border-bottom: 1px solid var(--divider-color); opacity: 0.65;">
+          <div class="shrink-0">
+            <span class="flex h-10 w-10 items-center justify-center" style="background: rgba(34, 197, 94, 0.1); border-radius: var(--radius-sm);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22C55E" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </span>
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[14px] font-normal truncate" style="color: var(--color-hint);">系统通知</span>
+              <span class="shrink-0 text-[12px]" style="color: var(--color-hint);">昨天</span>
+            </div>
+            <p class="mt-1 text-[13px] leading-relaxed line-clamp-2" style="color: var(--color-hint);">您的内容已通过审核，已公开发布</p>
+          </div>
+        </div>
+
+        <!-- Card 5: READ - Follower Notification -->
+        <div class="flex items-start gap-3 px-[var(--spacing-page-x)] py-3 relative" style="border-bottom: 1px solid var(--divider-color); opacity: 0.65;">
+          <div class="shrink-0">
+            <span class="flex h-10 w-10 items-center justify-center" style="background: rgba(168, 85, 247, 0.1); border-radius: var(--radius-sm);">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A855F7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+            </span>
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[14px] font-normal truncate" style="color: var(--color-hint);">粉丝通知</span>
+              <span class="shrink-0 text-[12px]" style="color: var(--color-hint);">昨天</span>
+            </div>
+            <p class="mt-1 text-[13px] leading-relaxed line-clamp-2" style="color: var(--color-hint);">设计师小林 开始关注了你</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Load More -->
+      <div class="flex items-center justify-center py-6">
+        <button class="flex items-center gap-1 text-[14px]" style="color: var(--color-hint);">
+          <span>查看更多通知</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+      </div>
+    </main>
+    <script>lucide.createIcons();</script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+/* ==========================================
+   Publish System — Brand Design Tokens
+   Mobile App UI Design System
+   ========================================== */
+
+:root {
+  /* ---- Brand Primary Gradient ---- */
+  --color-primary-start: #FF6B9D;
+  --color-primary-end: #C44DFF;
+  --gradient-primary: linear-gradient(135deg, var(--color-primary-start), var(--color-primary-end));
+
+  /* ---- Text Colors ---- */
+  --color-title: #1A1A1A;
+  --color-body: #1A1A1A;
+  --color-secondary: #666666;
+  --color-hint: #999999;
+  --color-white: #FFFFFF;
+
+  /* ---- Background Colors ---- */
+  --bg-page: #FFFFFF;
+  --bg-surface: #F5F5F7;
+  --bg-overlay: rgba(0, 0, 0, 0.6);
+
+  /* ---- Border ---- */
+  --border-color: #EEEEEE;
+  --divider-color: #F0F0F0;
+
+  /* ---- Sandbox Purple Accent ---- */
+  --color-sandbox-primary: #C44DFF;
+  --color-sandbox-bg: rgba(196, 77, 255, 0.1);
+  --gradient-sandbox: linear-gradient(135deg, #D87EFF, #A855F7);
+
+  /* ---- IP Card Accent ---- */
+  --color-ip-bg: rgba(255, 107, 157, 0.1);
+
+  /* ---- Shape ---- */
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-full: 9999px;
+
+  /* ---- Typography ---- */
+  --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+
+  --font-size-title: 16px;
+  --font-weight-title: 700;
+
+  --font-size-body: 14px;
+  --font-weight-body: 400;
+
+  --font-size-caption: 12px;
+  --font-weight-caption: 400;
+
+  --font-size-large: 24px;
+
+  /* ---- Spacing ---- */
+  --spacing-page-x: 20px;
+  --spacing-section: 16px;
+  --spacing-item: 12px;
+  --spacing-xs: 8px;
+
+  /* ---- Button Heights ---- */
+  --height-primary-btn: 56px;
+  --height-secondary-btn: 48px;
+  --height-nav-btn: 32px;
+  --height-option-row: 48px;
+
+  /* ---- Drag Handle ---- */
+  --drag-bar-width: 36px;
+  --drag-bar-height: 4px;
+}

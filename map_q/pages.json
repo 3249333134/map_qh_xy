@@ -46,9 +46,37 @@
       }
     },
     {
+      "path": "pages/publish/index",
+      "style": {
+        "navigationBarTitleText": "发布动态",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/sandbox/index",
+      "style": {
+        "navigationBarTitleText": "沙盒创作",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/ip-publish/index",
+      "style": {
+        "navigationBarTitleText": "IP 内容发布",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/message/index",
       "style": {
         "navigationBarTitleText": "消息",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/notification/index",
+      "style": {
+        "navigationBarTitleText": "系统通知",
         "navigationStyle": "custom"
       }
     },
@@ -58,6 +86,13 @@
         "navigationBarTitleText": "我的",
         "navigationStyle": "custom",
         "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/chat/index",
+      "style": {
+        "navigationBarTitleText": "聊天",
+        "navigationStyle": "custom"
       }
     }
   ],
