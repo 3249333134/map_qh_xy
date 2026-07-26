@@ -3,19 +3,16 @@ import { ref, reactive } from 'vue'
 // 首页专用前缀，用于隔离本地存储
 const STORAGE_PREFIX = 'INDEX_'
 
-// 标记点类型配置 - 低饱和浅红 + 白色描边
+// 标记点类型配置
 const MARKER_CONFIG = {
-  normal: { bgColor: '#ffffff', color: '#333' },
-  video: { bgColor: '#ffffff', color: '#333' },
-  article: { bgColor: '#ffffff', color: '#333' },
-  place: { bgColor: '#ffffff', color: '#333' },
-  event: { bgColor: '#ffffff', color: '#333' },
-  service: { bgColor: '#ffffff', color: '#333' },
-  track: { bgColor: '#ffffff', color: '#333' }
+  normal: { bgColor: '#4A90D9', color: '#fff', iconPath: '/static/marker-blue.png' },
+  video: { bgColor: '#8E44AD', color: '#fff', iconPath: '/static/marker-purple.png' },
+  article: { bgColor: '#4A90D9', color: '#fff', iconPath: '/static/marker-blue.png' },
+  place: { bgColor: '#27AE60', color: '#fff', iconPath: '/static/marker-green.png' },
+  event: { bgColor: '#E67E22', color: '#fff', iconPath: '/static/marker-orange.png' },
+  service: { bgColor: '#27AE60', color: '#fff', iconPath: '/static/marker-green.png' },
+  track: { bgColor: '#4A90D9', color: '#fff', iconPath: '/static/marker-blue.png' }
 }
-const DEFAULT_MARKER_ICON = '/static/marker.png'
-const DEFAULT_MARKER_WIDTH = 30
-const DEFAULT_MARKER_HEIGHT = 30
 
 export function useMapManager() {
   // 地图配置 - 使用武汉工程大学坐标（与GIS-Smart-campus-master一致）
@@ -67,9 +64,9 @@ export function useMapManager() {
         id: sourceIndex,
         latitude: point.location.coordinates[1],
         longitude: point.location.coordinates[0],
-        width: DEFAULT_MARKER_WIDTH,
-        height: DEFAULT_MARKER_HEIGHT,
-        iconPath: DEFAULT_MARKER_ICON,
+        width: 30,
+        height: 30,
+        iconPath: config.iconPath,
         zIndex: isSelected ? 100 : sourceIndex,
         customData: {
           pointId: point._id,
@@ -79,13 +76,13 @@ export function useMapManager() {
         },
         callout: {
           content: point.name || point.title || '',
-          fontSize: 11,
-          borderRadius: 8,
-          bgColor: 'rgba(255, 255, 255, 0.92)',
-          color: '#555',
-          padding: 6,
+          fontSize: 12,
+          borderRadius: 6,
+          bgColor: 'rgba(255, 255, 255, 0.95)',
+          color: '#333',
+          padding: 5,
           display: 'BYCLICK',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
         },
         label: {
           content: '',

@@ -1,28 +1,27 @@
 <template>
   <view class="detail-page video-detail">
-    <!-- 视频播放区域 -->
-    <view class="video-container">
+    <!-- 顶部导航（沉浸式） -->
+    <view class="detail-nav immersive">
+      <view class="status-spacer" :style="{ height: statusBarHeight + 'px' }"></view>
+      <view class="nav-row">
+        <view class="nav-back" @tap="back">
+          <text class="back-icon">‹</text>
+        </view>
+        <text class="nav-title">视频详情</text>
+        <view class="nav-actions" @tap="shareContent">
+          <text class="action-icon">↗</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 视频播放区域（顶到状态栏） -->
+    <view class="video-container" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="video-placeholder" @tap="togglePlay">
         <view class="play-btn" v-if="!isPlaying">
           <text class="play-icon">▶</text>
         </view>
         <view class="video-info">
           <text class="duration">{{ formattedDuration }}</text>
-        </view>
-      </view>
-    </view>
-
-    <!-- 顶部导航 -->
-    <view class="detail-nav">
-      <view class="nav-back" @tap="back">
-        <view class="back-btn">
-          <text class="back-icon">‹</text>
-        </view>
-      </view>
-      <text class="nav-title">视频详情</text>
-      <view class="nav-actions">
-        <view class="share-btn" @tap="shareContent">
-          <text class="action-icon">↗</text>
         </view>
       </view>
     </view>
@@ -141,6 +140,7 @@ export default {
     const comments = ref([])
     const commentCount = ref(0)
     const bottomHeight = ref(100)
+    const statusBarHeight = ref(20)
 
     const formattedDuration = computed(() => {
       const mins = Math.floor(videoData.value.duration / 60)
@@ -253,6 +253,10 @@ export default {
 
     onMounted(() => {
       loadData()
+      try {
+        const info = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
+        statusBarHeight.value = info.statusBarHeight || 20
+      } catch (e) {}
     })
 
     return {
@@ -264,6 +268,7 @@ export default {
       comments,
       commentCount,
       bottomHeight,
+      statusBarHeight,
       formattedDuration,
       formattedPlays,
       togglePlay,
@@ -291,70 +296,57 @@ export default {
   top: 0;
   left: 0;
   right: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--status-bar-height) 24rpx 16rpx;
-  background: transparent;
   z-index: 100;
 }
 
-.nav-back {
-  width: 80rpx;
-  height: 80rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.detail-nav.immersive {
+  background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 100%);
 }
 
-.back-btn {
-  width: 64rpx;
-  height: 64rpx;
+.nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+}
+
+.nav-back {
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 50%;
 }
 
 .back-icon {
-  font-size: 48rpx;
-  font-weight: 300;
-  color: #ffffff;
-  position: relative;
-  top: -4rpx;
+  font-size: 32px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 .nav-title {
-  font-size: 32rpx;
+  font-size: 17px;
   font-weight: 600;
-  color: #ffffff;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 .nav-actions {
-  width: 80rpx;
+  width: 40px;
   display: flex;
   justify-content: flex-end;
 }
 
-.share-btn {
-  width: 64rpx;
-  height: 64rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 50%;
-}
-
 .action-icon {
-  font-size: 28rpx;
-  color: #ffffff;
+  font-size: 20px;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 .video-container {
   width: 100%;
-  height: 800rpx;
+  aspect-ratio: 16/9;
   background: #000;
   position: relative;
 }
@@ -401,13 +393,8 @@ export default {
 .user-section {
   display: flex;
   align-items: center;
-  padding: 32rpx;
+  padding: 16px;
   background: #fff;
-  margin-top: -40rpx;
-  border-top-left-radius: 32rpx;
-  border-top-right-radius: 32rpx;
-  position: relative;
-  z-index: 10;
 }
 
 .user-avatar {

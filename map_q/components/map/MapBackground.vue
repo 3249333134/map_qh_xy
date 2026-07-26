@@ -17,30 +17,17 @@
       @poitap="onPoiTap"
     ></map>
     <!-- 添加位置刷新按钮 -->
-    <view class="location-btn" @tap="refreshLocation">
+    <view class="location-btn" role="button" aria-label="Center on my location" @tap="refreshLocation">
       <text class="location-icon">📍</text>
     </view>
-    <!-- 悬浮热点卡片 -->
-    <HotspotCardsContainer
-      :visible="showHotspots"
-      :items="hotspotItems"
-      :map-center="mapCenter"
-      :map-scale="currentScale"
-      :map-width="mapWidth"
-      :map-height="height"
-      :map-bounds="currentBounds"
-      :highlighted-id="highlightedHotspotId"
-      @card-tap="onHotspotCardTap"
-      @card-long-press="onHotspotCardLongPress"
-    />
   </view>
 </template>
 
 <script>
-import HotspotCardsContainer from './HotspotCardsContainer.vue'
+import { APP_CONFIG } from '@/utils/config.js'
+import { debounce } from '@/utils/debounce.js'
 
 export default {
-  components: { HotspotCardsContainer },
   props: {
     height: {
       type: Number,
@@ -49,19 +36,11 @@ export default {
     config: {
       type: Object,
       required: true
-    },
-    showHotspots: {
-      type: Boolean,
-      default: false
-    },
-    hotspotItems: {
-      type: Array,
-      default: () => []
     }
   },
   data() {
     return {
-      mapKey: 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K',
+      mapKey: APP_CONFIG.TENCENT_MAP.KEY,
       mapContext: null,
       isInitialized: false,
       boundsFetchTimer: null,
@@ -70,9 +49,17 @@ export default {
       retryCount: 0,
       maxRetries: 3,
       lastScale: null,
-      highlightedHotspotId: null,
-      mapWidth: 375,
-      currentBounds: null
+      debouncedGetBounds: null
+    }
+  },
+  created() {
+    this.debouncedGetBounds = debounce(() => {
+      this.getMapBounds()
+    }, 500)
+  },
+  beforeDestroy() {
+    if (this.debouncedGetBounds) {
+      this.debouncedGetBounds.cancel()
     }
   },
   computed: {
@@ -334,43 +321,12 @@ export default {
       this.$emit('poi-tap', { detail, marker })
     },
     
-    onHotspotCardTap(item) {
-      this.$emit('hotspot-tap', item)
-    },
-    
-    onHotspotCardLongPress(item) {
-      this.$emit('hotspot-long-press', item)
-    },
-    
-    setHighlightedHotspot(id) {
-      this.highlightedHotspotId = id
-    },
-    
     onRegionChange(e) {
-      console.log('地图区域变化事件:', e);
       if (e.type === 'end' && (e.causedBy === 'drag' || e.causedBy === 'scale')) {
         const newScale = e.scale || this.lastScale || this.currentScale
         this.lastScale = newScale
-        console.log('地图缩放级别:', newScale)
         this.debouncedGetBounds()
       }
-    },
-    
-    debouncedGetBounds() {
-      const now = Date.now();
-      if (now - this.lastBoundsTime < 2000) { 
-        console.log('防抖：跳过边界获取');
-        return;
-      }
-      this.lastBoundsTime = now;
-      
-      if (this.boundsFetchTimer) {
-        clearTimeout(this.boundsFetchTimer);
-      }
-      
-      this.boundsFetchTimer = setTimeout(() => {
-        this.getMapBounds();
-      }, 1000);
     },
     
     getMapBounds() {
@@ -414,7 +370,6 @@ export default {
             
             if (this.validateBounds(bounds)) {
               console.log('发送区域变化事件给父组件');
-              this.currentBounds = bounds;
               this.$emit('region-changed', bounds);
             } else {
               this.handleBoundsFailure();
@@ -468,7 +423,6 @@ export default {
       const fallbackBounds = this.createFallbackBounds();
       if (fallbackBounds && this.validateBounds(fallbackBounds)) {
         console.log('使用fallback边界:', fallbackBounds);
-        this.currentBounds = fallbackBounds;
         this.$emit('region-changed', fallbackBounds);
       } else {
         console.error('无法创建有效的fallback边界');
@@ -497,14 +451,6 @@ export default {
         scale
       }
     }
-  },
-  mounted() {
-    try {
-      const sys = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
-      this.mapWidth = sys.windowWidth || 375
-    } catch (e) {
-      this.mapWidth = 375
-    }
   }
 }
 </script>
@@ -527,18 +473,30 @@ export default {
   position: absolute;
   bottom: 20px;
   right: 20px;
-  width: 40px;
-  height: 40px;
-  background-color: #ffffff;
+  width: 48px;
+  height: 48px;
+  background-color: rgba(255,255,255,.96);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,.9);
+  box-shadow: 0 8px 24px rgba(15,23,42,.16);
+  backdrop-filter: blur(12px);
   z-index: 10;
+  transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
 .location-icon {
-  font-size: 24px;
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #334155;
+  border-radius: 50%;
+  font-size: 0;
+  box-sizing: border-box;
 }
+.location-icon::before { content: ''; position: absolute; left: 5px; top: 5px; width: 4px; height: 4px; border-radius: 50%; background: #ea580c; }
+.location-icon::after { content: ''; position: absolute; inset: -6px; border: 1.5px solid #334155; border-color: #334155 transparent; border-radius: 50%; }
+.location-btn:active { transform: scale(.94); box-shadow: 0 4px 14px rgba(15,23,42,.14); }
 </style>

@@ -25,6 +25,27 @@
       }
     },
     {
+      "path": "pages/search/index",
+      "style": {
+        "navigationBarTitleText": "搜索",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/media-preview/index",
+      "style": {
+        "navigationBarTitleText": "媒体预览",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/booking/index",
+      "style": {
+        "navigationBarTitleText": "预约确认",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/service/index",
       "style": {
         "navigationBarTitleText": "服务",
@@ -92,6 +113,230 @@
       "path": "pages/chat/index",
       "style": {
         "navigationBarTitleText": "聊天",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/ai-search/index",
+      "style": {
+        "navigationBarTitleText": "AI 语义搜索",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/anchor-layer/index",
+      "style": {
+        "navigationBarTitleText": "锚点与图层",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/anchor-action/index",
+      "style": {
+        "navigationBarTitleText": "锚点操作",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/map-share/index",
+      "style": {
+        "navigationBarTitleText": "地图分享",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/fog-unlock/index",
+      "style": {
+        "navigationBarTitleText": "迷雾解锁",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/publish-type/index",
+      "style": {
+        "navigationBarTitleText": "选择创作类型",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/creator-center/index",
+      "style": {
+        "navigationBarTitleText": "创作者中心",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/publish-ai-template/index",
+      "style": {
+        "navigationBarTitleText": "AI模板助手",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/publish-track-editor/index",
+      "style": {
+        "navigationBarTitleText": "轨迹编辑",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/publish-topic-picker/index",
+      "style": {
+        "navigationBarTitleText": "话题选择",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/publish-location-picker/index",
+      "style": {
+        "navigationBarTitleText": "添加位置",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/publish-preview/index",
+      "style": {
+        "navigationBarTitleText": "预览",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/publish-cocreate/index",
+      "style": {
+        "navigationBarTitleText": "地图共创",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/publish-success/index",
+      "style": {
+        "navigationBarTitleText": "发布成功",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/sandbox-schedule/index",
+      "style": {
+        "navigationBarTitleText": "定时发布",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/sandbox-test-share/index",
+      "style": {
+        "navigationBarTitleText": "测试分享",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/ip-selector/index",
+      "style": {
+        "navigationBarTitleText": "选择IP",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/ip-auth-settings/index",
+      "style": {
+        "navigationBarTitleText": "授权方式",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/ip-success/index",
+      "style": {
+        "navigationBarTitleText": "IP发布成功",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/channel-map/index",
+      "style": {
+        "navigationBarTitleText": "地图频道",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/message-search/index",
+      "style": {
+        "navigationBarTitleText": "消息搜索",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/channel-detail/index",
+      "style": {
+        "navigationBarTitleText": "频道详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/channel-thread/index",
+      "style": {
+        "navigationBarTitleText": "频道线程",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/contact-profile/index",
+      "style": {
+        "navigationBarTitleText": "联系人资料",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/channel-permissions/index",
+      "style": {
+        "navigationBarTitleText": "权限角色",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/my-services/index",
+      "style": {
+        "navigationBarTitleText": "我的服务",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/my-heatmap/index",
+      "style": {
+        "navigationBarTitleText": "足迹数据",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/my-timeline/index",
+      "style": {
+        "navigationBarTitleText": "时间轴回顾",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/my-settings/index",
+      "style": {
+        "navigationBarTitleText": "设置",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/my-privacy/index",
+      "style": {
+        "navigationBarTitleText": "隐私控制",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/my-profile-edit/index",
+      "style": {
+        "navigationBarTitleText": "编辑资料",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/service-card-types/index",
+      "style": {
+        "navigationBarTitleText": "服务类型",
         "navigationStyle": "custom"
       }
     }

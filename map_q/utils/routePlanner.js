@@ -1,12 +1,10 @@
-// 路径规划服务 - 使用腾讯地图方向API获取真实道路轨迹
-const TENCENT_MAP_KEY = 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K'
+import { APP_CONFIG } from './config.js'
+import { getQqMapKey } from './mapKey.js'
 
-// 默认起终点（武汉工程大学附近）
 const DEFAULT_START = [114.3980, 30.5150]
 const DEFAULT_END = [114.4120, 30.5280]
 
 export const ROUTE_PLANNER = {
-  // 获取真实驾车路线 - 使用腾讯地图方向API
   getFixedRoute: async (start, end) => {
     const startLng = start ? start[0] : DEFAULT_START[0]
     const startLat = start ? start[1] : DEFAULT_START[1]
@@ -16,7 +14,8 @@ export const ROUTE_PLANNER = {
     console.log('调用腾讯地图驾车路线规划API...')
 
     try {
-      const url = `https://apis.map.qq.com/ws/direction/v1/driving/?from=${startLat},${startLng}&to=${endLat},${endLng}&key=${TENCENT_MAP_KEY}`
+      const key = getQqMapKey()
+      const url = `${APP_CONFIG.TENCENT_MAP.DIRECTION_URL}?from=${startLat},${startLng}&to=${endLat},${endLng}&key=${key}`
 
       const res = await uni.request({
         url: url,

@@ -270,10 +270,9 @@ export default {
 
 <style>
 .event-card {
-  margin-bottom: 8rpx;
+  margin-bottom: 12rpx;
   border-radius: 12rpx;
-  background-color: transparent;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+  background-color: #fff;
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
@@ -281,7 +280,7 @@ export default {
 
 .event-card .card-media {
   position: relative;
-  height: var(--card-height, 280rpx);
+  height: var(--card-height, 240rpx);
   width: 100%;
   cursor: pointer;
   overflow: hidden;
@@ -307,9 +306,7 @@ export default {
 .placeholder-icon {
   font-size: 52rpx;
   margin-bottom: 8rpx;
-  opacity: 0.3;
-  color: #ccc;
-  filter: grayscale(1);
+  opacity: 0.5;
 }
 
 .cover-placeholder-text {
@@ -319,16 +316,15 @@ export default {
 
 .event-badge {
   position: absolute;
-  bottom: 8rpx;
-  right: 8rpx;
+  top: 10rpx;
+  left: 10rpx;
   height: 30rpx;
   padding: 0 10rpx;
-  border-radius: 12rpx;
+  border-radius: 15rpx;
   display: flex;
   align-items: center;
   font-size: 18rpx;
-  font-weight: 400;
-  line-height: 30rpx;
+  font-weight: 600;
   color: #fff;
   background: rgba(0, 0, 0, 0.5);
 }
@@ -355,21 +351,17 @@ export default {
 
 .event-time {
   position: absolute;
-  left: 8rpx;
-  bottom: 8rpx;
-  padding: 0 10rpx;
-  border-radius: 12rpx;
-  background: rgba(0, 0, 0, 0.5);
-  height: 30rpx;
-  display: flex;
-  align-items: center;
+  left: 10rpx;
+  bottom: 10rpx;
+  padding: 4rpx 10rpx;
+  border-radius: 8rpx;
+  background: rgba(0, 0, 0, 0.65);
 }
 
 .time-text {
   color: #fff;
   font-size: 18rpx;
-  font-weight: 400;
-  line-height: 30rpx;
+  font-weight: 500;
 }
 
 .event-card .card-content {

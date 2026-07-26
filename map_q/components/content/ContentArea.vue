@@ -1,7 +1,7 @@
 <template>
   <view 
     class="content-area" 
-    :class="{ collapsed: isCollapsed, 'has-overlay': !!selectedPoint }"
+    :class="{ collapsed: isCollapsed, 'has-overlay': !!selectedPoint, 'is-dragging': isDragging }"
     :style="{ height: contentAreaHeight + 'px', bottom: (bottomOffset || 0) + 'px' }"
   >
     <!-- 白色背景容器 -->
@@ -14,6 +14,7 @@
         :collapsed-search-width="collapsedSearchWidth"
         :collapsed-gap="collapsedGap"
         :selected-point="selectedPoint"
+        :value="searchText"
         @drag-start="onDragStart"
         @drag="onDrag"
         @drag-end="onDragEnd"
@@ -25,22 +26,32 @@
       
       <!-- 分类选项卡（右侧按钮固定，可展开覆盖除“全部”外的区域） -->
       <category-tabs-bar
-        v-if="!isCollapsed || categoryActionExpanded"
+        v-if="(!isCollapsed || categoryActionExpanded) && !isSearchMode"
         :categories="categories"
         :active-category="activeCategory"
         :category-action-expanded="categoryActionExpanded"
         :expanded-left="expandedLeft"
         :selected-point="selectedPoint"
+        :show-action-button="!selectedPoint"
         @drag-start="onDragStart"
         @drag="onDrag"
         @drag-end="onDragEnd"
-        @category-change="onCategoryChange"
-        @right-action-tap="onRightActionTap"
+      @category-change="onCategoryChange"
+      @right-action-tap="onRightActionTap"
+      @close-point-detail="onClosePointDetail"
+      />
+
+      <inline-search-results
+        v-if="!isCollapsed && isSearchMode"
+        :height="cardsContainerHeight"
+        :keyword="searchText"
+        @exit="clearSearch"
+        @result-tap="onInlineSearchResultTap"
       />
 
       <!-- 卡片内容区 -->
       <cards-container
-      v-if="!isCollapsed && !categoryActionExpanded"
+      v-if="!isCollapsed && !categoryActionExpanded && !isSearchMode"
       :scroll-top="scrollTop"
       :scroll-with-animation="scrollWithAnimation"
       :cards-container-height="cardsContainerHeight"
@@ -51,6 +62,9 @@
       :use-service-card="useServiceCard"
       :get-column-item-height="getColumnItemHeight"
       :highlighted-card-id="highlightedCardId"
+      :empty-title="isSearchMode ? '没有找到相关内容' : '暂无内容'"
+      :empty-desc="isSearchMode ? '换个关键词试试' : '去发布第一条动态吧'"
+      :show-empty-action="!isSearchMode"
       @load-more="onLoadMore"
       @scroll="onScroll"
       @media-tap="onMediaTap"
@@ -76,13 +90,15 @@ import DragSearchBar from './DragSearchBar.vue'
 import CategoryTabsBar from './CategoryTabsBar.vue'
 import CardsContainer from './CardsContainer.vue'
 import ExpandedModules from './ExpandedModules.vue'
+import InlineSearchResults from './InlineSearchResults.vue'
 
 export default {
   components: {
     DragSearchBar,
     CategoryTabsBar,
     CardsContainer,
-    ExpandedModules
+    ExpandedModules,
+    InlineSearchResults
   },
   props: {
     height: {
@@ -100,6 +116,10 @@ export default {
     minContentHeight: {
       type: Number,
       required: true
+    },
+    isDragging: {
+      type: Boolean,
+      default: false
     },
     categories: {
       type: Array,
@@ -153,7 +173,7 @@ export default {
       expandedLeft: 0,
       collapsedSearchWidth: 76,
       collapsedGap: 8,
-      collapsedButtonWidth: 48,
+      collapsedButtonWidth: 64,
       userToggledAction: false,
       resetExpandOnExitCollapse: false,
       tabsHeightApprox: 50,
@@ -161,9 +181,10 @@ export default {
       fillCompensation: 10,
       isContentLocked: false,
       lockedContentHeight: 0,
-      highlightedCardId: null,
       cardsContainerRef: null,
-      highlightTimer: null
+      highlightTimer: null,
+      searchText: '',
+      searchFocused: false
     }
   },
   mounted() {
@@ -288,13 +309,13 @@ export default {
       }
     },
     highlightedCardId(newVal) {
-      this.highlightedCardId = newVal
-      if (newVal) {
-        if (this.highlightTimer) clearTimeout(this.highlightTimer)
-        this.highlightTimer = setTimeout(() => {
-          this.highlightedCardId = null
-        }, 3000)
-      }
+      if (newVal && this.highlightTimer) clearTimeout(this.highlightTimer)
+    },
+    isSearchMode() {
+      this.$nextTick(() => {
+        this.updateTabsHeightApprox()
+        this.updateTopAreaHeight()
+      })
     }
   },
   methods: {
@@ -317,6 +338,10 @@ export default {
       if (!next && this.selectedPoint) {
         this.$emit('close-point-detail')
       }
+    },
+    onClosePointDetail() {
+      this.userToggledAction = false
+      this.categoryActionExpanded = false
     },
 
     // 计算展开时的 left，使覆盖区域从“全部”按钮右侧开始
@@ -344,6 +369,10 @@ export default {
     },
     // 测量分类栏实际高度（含内边距、边框），用于更精确计算内容滚动区的高度
     updateTabsHeightApprox() {
+      if (this.isSearchMode) {
+        this.tabsHeightApprox = 0
+        return
+      }
       try {
         const q = uni.createSelectorQuery().in(this)
         q.select('.category-tabs-wrap').boundingClientRect()
@@ -363,12 +392,13 @@ export default {
       try {
         const q = uni.createSelectorQuery().in(this)
         q.select('.drag-area').boundingClientRect()
-        if (!this.isCollapsed || this.categoryActionExpanded) {
+        const hasSecondaryBar = !this.isSearchMode && (!this.isCollapsed || this.categoryActionExpanded)
+        if (hasSecondaryBar) {
           q.select('.category-tabs-wrap').boundingClientRect()
         }
         q.exec(res => {
           const dragRect = res && res[0]
-          const tabsRect = (!this.isCollapsed || this.categoryActionExpanded) ? res && res[1] : null
+          const tabsRect = hasSecondaryBar ? res && res[1] : null
           const dragH = (dragRect && dragRect.height) ? dragRect.height : 0
           const tabsH = (tabsRect && tabsRect.height) ? tabsRect.height : 0
           this.topAreaHeight = Math.round(dragH + tabsH)
@@ -450,15 +480,47 @@ export default {
     
     // 搜索输入事件
     onSearchInput(e) {
-      this.$emit('search-input', e)
+      const value = typeof e === 'string'
+        ? e
+        : String((e && e.detail && e.detail.value) || '')
+      this.searchText = value
+      this.searchFocused = true
+      this.$emit('search-input', value)
     },
     onSearchFocus(e) {
       this.categoryActionExpanded = false
+      this.searchFocused = true
       this.$emit('search-focus', e)
     },
     onSearchTap() {
       this.categoryActionExpanded = false
+      this.searchFocused = true
       this.$emit('search-tap')
+    },
+    clearSearch() {
+      this.searchText = ''
+      this.searchFocused = false
+      this.$emit('search-input', '')
+    },
+    onInlineSearchResultTap(item) {
+      const source = Array.isArray(this.mapData) ? this.mapData : []
+      let cardData = null
+      if (item && item.type === 'poi') {
+        cardData = source.find(card => card && card.type === 'place') || source[0]
+      } else if (item && item.type === 'track') {
+        cardData = source.find(card => card && card.type === 'track') || source[0]
+      } else {
+        cardData = source.find(card => card && card.type !== 'track' && card.type !== 'place') || source[0]
+      }
+      if (!cardData) {
+        uni.showToast({ title: '暂无可联动内容', icon: 'none' })
+        return
+      }
+      if (item && item.type === 'content') {
+        this.$emit('media-tap', { cardData })
+      } else {
+        this.$emit('content-tap', { cardData })
+      }
     },
     // 加载更多事件
     // 优化加载更多事件
@@ -589,6 +651,9 @@ export default {
       // 注意：这里不要直接设置 this.scrollTop = scrollTop;
       // scrollTop 的变化应该由 watch.activeCategory 控制，以避免冲突
     },
+    onScrollToCard(payload) {
+      this.$emit('scroll-to-card', payload)
+    },
     
     // 检测可视区域内的卡片
     checkVisibleCards(scrollTop) {
@@ -645,10 +710,33 @@ export default {
     },
     // 将数据分为左右两列
     leftColumnData() {
-      return this.mapData ? this.mapData.filter((_, index) => index % 2 === 0) : [];
+      return this.filteredMapData.filter((_, index) => index % 2 === 0);
     },
     rightColumnData() {
-      return this.mapData ? this.mapData.filter((_, index) => index % 2 === 1) : [];
+      return this.filteredMapData.filter((_, index) => index % 2 === 1);
+    },
+    filteredMapData() {
+      const source = Array.isArray(this.mapData) ? this.mapData : []
+      const keyword = String(this.searchText || '').trim().toLowerCase()
+      if (!keyword) return source
+      return source.filter(item => {
+        const searchable = [
+          item && item.name,
+          item && item.title,
+          item && item.description,
+          item && item.address,
+          item && item.author,
+          item && item.category,
+          item && item.type
+        ].filter(Boolean).join(' ').toLowerCase()
+        return searchable.includes(keyword)
+      })
+    },
+    searchResultCount() {
+      return this.filteredMapData.length
+    },
+    isSearchMode() {
+      return this.searchFocused
     },
     // 新增：是否使用服务卡片
     useServiceCard() {
@@ -658,7 +746,7 @@ export default {
     cardsContainerHeight() {
       const H = Number(this.contentAreaHeight || 0)
       const searchH = Number(this.searchBoxHeight || 0)
-      const tabsApprox = Number(this.tabsHeightApprox || 50)
+      const tabsApprox = this.isSearchMode ? 0 : Number(this.tabsHeightApprox || 50)
       const measuredTop = Number(this.topAreaHeight || 0)
       const topUsed = measuredTop > 0 ? measuredTop : (searchH + tabsApprox)
       const val = H - topUsed + Number(this.fillCompensation || 0)
@@ -683,219 +771,59 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 .content-area {
   position: absolute;
   left: 0;
   bottom: 0;
   width: 100%;
   z-index: 10;
-  background-color: transparent;
-  border-top-left-radius: 20px;
-  border-top-right-radius: 20px;
   overflow: hidden;
+  border-radius: 26px 26px 0 0;
+  background: transparent;
+  transition: height 260ms cubic-bezier(.2,.8,.2,1);
+}
+
+/* 拖动时高度必须紧跟手指，避免外层动画滞后于内部滚动区而露出白色块。 */
+.content-area.is-dragging {
+  transition: none;
 }
 
 .content-inner {
   width: 100%;
   height: 100%;
-  background-color: #f8f8f8;
-  border-top-left-radius: 20px;
-  border-top-right-radius: 20px;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.82);
+  border-bottom: 0;
+  border-radius: 26px 26px 0 0;
+  background: rgba(255,255,255,.97);
+  box-shadow: 0 -12px 40px rgba(15,23,42,.12);
+  backdrop-filter: blur(18px) saturate(135%);
 }
 
-/* 折叠态：容器高度自适应，仅包裹搜索区，去掉下方空白 */
-.content-area.collapsed {
-  height: auto !important;
-}
-
-.drag-area {
-  padding: 6px 15px; /* 压缩上下内边距，让区域更紧凑 */
-}
-
-.drag-handle {
-  display: flex;
-  justify-content: center;
-  padding: 2px 0; /* 缩小拖动条上下留白 */
-}
-
-.drag-indicator {
-  width: 40px;
-  height: 5px;
-  background-color: #ddd;
-  border-radius: 3px;
-}
-
-.search-box {
-  margin-top: 2px; /* 减少拖动条与搜索框之间的距离 */
-  position: relative; /* 让折叠态的右侧按钮可绝对定位到容器内 */
-}
-
-.search-input-wrapper {
-  display: flex;
-  align-items: center;
-  background-color: #fff;
-  border-radius: 17px; /* 与分类按钮高度匹配的圆角 */
-  padding: 0 15px;
-  height: 34px; /* 降低高度以与分类按钮一致 */
-}
-
-/* 折叠态：右侧为按钮预留空间，左侧保持原位置 */
-.search-input-wrapper.collapsed {
-  width: calc(100% - 56px); /* 预留按钮宽48 + 约8px间距 */
-  margin: 0; /* 不居中，贴左对齐 */
-}
-
-.search-icon {
-  margin-right: 10px;
-  font-size: 16px;
-  color: #999;
-}
-
-.search-input {
-  flex: 1;
-  height: 34px; /* 与搜索框容器高度一致 */
-  font-size: 14px;
-}
-
-/* 折叠态：搜索框容器右侧的橙红色按钮（保持当前位置） */
-.search-action-fixed {
+.content-area::before {
+  content: '';
   position: absolute;
-  right: 0; /* 与正常模式的外侧间距对齐（drag-area已有15px padding） */
-  top: 50%;
-  transform: translateY(-50%);
-  width: 48px;
-  height: 34px;
-  border-radius: 10px;
-  background: radial-gradient(circle at 50% 40%, #ff8a3d 0%, #ff6b35 60%, #ff4757 100%);
-  border: 2px solid #ffffff;
-  box-shadow: 0 4px 12px rgba(255, 71, 87, 0.25), 0 2px 8px rgba(255, 107, 53, 0.2);
-  box-sizing: border-box;
-  transition: left 200ms ease, right 200ms ease, width 200ms ease;
-}
-
-.search-action-fixed.expanded {
-  left: 0;
-  right: 0;
-  width: auto;
-}
-
-.category-tabs {
-  display: flex;
-  flex-wrap: nowrap;
-  white-space: nowrap;
-  padding: 2px 9px;
-  align-items: center; /* 垂直居中，统一行内高度感受 */
-  border-bottom: 1px solid #eee;
-}
-
-/* 包裹层用于固定右侧按钮 */
-.category-tabs-wrap {
-  position: relative;
-  margin-top: -10px; /* 整体下移一点，拉开与搜索框的间距 */
-}
-
-/* 展开态：隐藏除第一项外的其他tab，仅保留“全部”可见 */
-.category-tabs-wrap.expanded .category-tabs .category-tab:not(:first-child) {
-  opacity: 0;
+  top: 0;
+  left: 50%;
+  z-index: 2;
+  width: 64px;
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(234,88,12,.48), transparent);
+  transform: translateX(-50%);
   pointer-events: none;
 }
 
-.category-action-fixed {
-  transition: left 200ms ease, right 200ms ease, width 200ms ease;
+.content-area.collapsed { height: auto !important; overflow: visible; }
+.content-area.collapsed::before { display: none; }
+.content-area.collapsed .content-inner {
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
-/* 展开态：按钮从“全部”右侧起始，延伸到容器右侧，宽度自动跟随 */
-.category-tabs-wrap.expanded .category-action-fixed {
-  width: auto;
-}
-
-/* 右侧预留空间，避免内容被固定按钮覆盖 */
-.category-tabs-spacer {
-  display: inline-block;
-  width: 52px; /* 与固定按钮宽度+间距一致 */
-  height: 34px; /* 与右侧固定按钮保持一致高度 */
-}
-
-.category-tab {
-  display: inline-flex; /* 使内容垂直居中并可设定固定高度 */
-  align-items: center;
-  height: 34px; /* 与右侧固定按钮一致 */
-  padding: 0 15px; /* 保持原横向留白，去除垂直内边距影响高度 */
-  margin-right: 10px;
-  font-size: 14px; /* 保持字号不变 */
-  border-radius: 17px; /* 与高度匹配的圆角 */
-  background-color: #f0f0f0;
-  color: #666;
-}
-
-.category-tab.active {
-  background-color: #2196F3;
-  color: #fff;
-}
-
-.cards-container {
-  overflow: hidden; /* 高度由模板中的动态 style 控制 */
-}
-
-/* 瀑布流网格布局 */
-.cards-grid {
-  display: flex;
-  padding: 10px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.cards-column {
-  flex: 0 0 50%; /* 修改为固定宽度 */
-  padding: 0 5px;
-  width: 50%; /* 确保每列宽度为50% */
-  box-sizing: border-box;
-}
-
-/* 加载更多样式 */
-.loading-more {
-  text-align: center;
-  padding: 15px 0;
-  color: #666;
-}
-
-/* 加载完成提示 */
-.loading-done {
-  text-align: center;
-  padding: 15px 0;
-  color: #999;
-  font-size: 12px;
-}
-
-/* 右侧橙红色按钮样式（与底部“+”按钮统一色系） */
-.category-action-fixed {
-  position: absolute;
-  right: 15px; /* 与 tabs 的内边距右侧一致 */
-  top: calc(50% + 6px); /* 稍微下移以贴合视觉中心 */
-  transform: translateY(-50%);
-  width: 48px;
-  height: 34px;
-  border-radius: 10px;
-  background: radial-gradient(circle at 50% 40%, #ff8a3d 0%, #ff6b35 60%, #ff4757 100%);
-  border: 2px solid #ffffff;
-  box-shadow: 0 4px 12px rgba(255, 71, 87, 0.25), 0 2px 8px rgba(255, 107, 53, 0.2);
-  box-sizing: border-box;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.category-action-text {
-  max-width: 100%;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  padding: 0 12px;
-}
+@media (prefers-reduced-motion: reduce) { .content-area { transition: none; } }
 </style>

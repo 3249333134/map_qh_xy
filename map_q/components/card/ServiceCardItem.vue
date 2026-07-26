@@ -23,35 +23,6 @@
       @tap="handleContentTap"
       @click="handleContentTap">
       <view class="card-title">{{ cardTitle }}</view>
-      <!-- 时段状态条 -->
-      <view class="availability-bar" @tap.stop="onBarTap" @click.stop="onBarTap">
-        <view class="bar-row">
-          <text class="bar-label bar-left">现在</text>
-          <view class="bar-track">
-            <view 
-              v-for="(seg, i) in firstRowSegments" 
-              :key="i" 
-              class="bar-seg"
-              :class="'seg-' + seg.status"
-              :style="{ width: seg.width + '%' }"
-            ></view>
-          </view>
-          <text class="bar-label bar-right">+6h</text>
-        </view>
-        <view class="bar-row">
-          <text class="bar-label bar-left"></text>
-          <view class="bar-track">
-            <view 
-              v-for="(seg, i) in secondRowSegments" 
-              :key="i" 
-              class="bar-seg"
-              :class="'seg-' + seg.status"
-              :style="{ width: seg.width + '%' }"
-            ></view>
-          </view>
-          <text class="bar-label bar-right">+12h</text>
-        </view>
-      </view>
       <view class="card-info">
         <view class="business-status" :class="businessStatusClass">
           <text class="status-dot"></text>
@@ -158,17 +129,6 @@ export default {
     favoritesCount() {
       const favorites = Number(this.cardData && this.cardData.favorites) || Number(this.cardData && this.cardData.collects)
       return Number.isFinite(favorites) && favorites > 0 ? favorites : ''
-    },
-    timeSlots() {
-      const slots = this.cardData && this.cardData.timeSlots
-      if (Array.isArray(slots) && slots.length > 0) return slots
-      return this.generateMockSlots()
-    },
-    firstRowSegments() {
-      return this.buildSegments(0, 12)
-    },
-    secondRowSegments() {
-      return this.buildSegments(12, 24)
     }
   },
   methods: {
@@ -198,50 +158,6 @@ export default {
       uni.showToast({ title: '预约', icon: 'none' })
       this.$emit('reserve', { cardData: this.cardData, index: this.index })
     },
-    onBarTap() {
-      this.$emit('reserve', { cardData: this.cardData, index: this.index, scrollToTime: true })
-    },
-    generateMockSlots() {
-      const slots = []
-      const now = new Date()
-      const seed = (this.cardId || 0).toString().charCodeAt(0) || 5
-      for (let i = 0; i < 24; i++) {
-        const hour = now.getHours() + i * 0.5
-        const normalizedHour = hour % 24
-        let status = 'available'
-        if (normalizedHour >= 22 || normalizedHour < 9) {
-          status = 'closed'
-        } else if (normalizedHour >= 18 && normalizedHour < 20) {
-          status = 'busy'
-        } else if (normalizedHour >= 12 && normalizedHour < 13.5) {
-          status = 'busy'
-        }
-        const pseudo = Math.sin(seed + i * 1.7) * 0.5 + 0.5
-        if (status === 'available' && pseudo > 0.85) status = 'busy'
-        if (status === 'busy' && pseudo > 0.9) status = 'closed'
-        slots.push({ index: i, status })
-      }
-      return slots
-    },
-    buildSegments(start, end) {
-      const slots = this.timeSlots.slice(start, end)
-      if (slots.length === 0) return []
-      const segWidth = 100 / slots.length
-      const result = []
-      let currentStatus = slots[0].status
-      let count = 1
-      for (let i = 1; i < slots.length; i++) {
-        if (slots[i].status === currentStatus) {
-          count++
-        } else {
-          result.push({ status: currentStatus, width: count * segWidth })
-          currentStatus = slots[i].status
-          count = 1
-        }
-      }
-      result.push({ status: currentStatus, width: count * segWidth })
-      return result
-    },
     makeRandomRating(min, max, step) {
       const steps = Math.round((max - min) / step)
       const idx = Math.floor(Math.random() * (steps + 1))
@@ -257,10 +173,9 @@ export default {
 
 <style>
 .service-map-card {
-  margin-bottom: 8rpx;
+  margin-bottom: 12rpx;
   border-radius: 12rpx;
-  background-color: transparent;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+  background-color: #fff;
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
@@ -283,36 +198,34 @@ export default {
   left: 0;
   opacity: 0.5;
   background-image:
-    linear-gradient(90deg, rgba(150, 150, 150, 0.06) 1rpx, transparent 1rpx),
-    linear-gradient(rgba(150, 150, 150, 0.05) 1rpx, transparent 1rpx);
+    linear-gradient(90deg, rgba(150, 150, 150, 0.08) 1rpx, transparent 1rpx),
+    linear-gradient(rgba(150, 150, 150, 0.06) 1rpx, transparent 1rpx);
   background-size: 24rpx 24rpx, 24rpx 24rpx;
 }
 
 .service-badge,
 .service-rating {
   position: absolute;
+  top: 10rpx;
   height: 30rpx;
   padding: 0 10rpx;
-  border-radius: 12rpx;
+  border-radius: 15rpx;
   display: flex;
   align-items: center;
   font-size: 18rpx;
-  font-weight: 400;
-  line-height: 30rpx;
+  font-weight: 600;
 }
 
 .service-badge {
-  bottom: 8rpx;
-  right: 8rpx;
+  left: 10rpx;
   color: #fff;
   background: rgba(0, 0, 0, 0.5);
 }
 
 .service-rating {
-  top: 8rpx;
-  right: 8rpx;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.5);
+  right: 10rpx;
+  color: #b45309;
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .service-spot {
@@ -323,7 +236,7 @@ export default {
   height: 52rpx;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: rgba(92, 107, 192, 0.15);
+  background: rgba(14, 165, 233, 0.15);
   border: 2rpx solid rgba(255, 255, 255, 0.8);
 }
 
@@ -335,7 +248,7 @@ export default {
   height: 24rpx;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: #5c6bc0;
+  background: #0ea5e9;
   border: 4rpx solid #fff;
 }
 
@@ -347,7 +260,7 @@ export default {
   height: 100%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: rgba(92, 107, 192, 0.2);
+  background: rgba(14, 165, 233, 0.25);
   animation: servicePulse 2s ease-out infinite;
 }
 
@@ -359,7 +272,7 @@ export default {
   height: 100%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: rgba(92, 107, 192, 0.2);
+  background: rgba(14, 165, 233, 0.15);
   animation: servicePulse 2s ease-out infinite;
   animation-delay: 1s;
 }
@@ -387,62 +300,11 @@ export default {
   font-size: 26rpx;
   line-height: 32rpx;
   font-weight: 400;
-  margin-bottom: 8rpx;
+  margin-bottom: 4rpx;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.availability-bar {
-  margin-bottom: 8rpx;
-  display: flex;
-  flex-direction: column;
-  gap: 6rpx;
-}
-
-.availability-bar .bar-row {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-}
-
-.availability-bar .bar-label {
-  font-size: 18rpx;
-  color: #ccc;
-  flex-shrink: 0;
-  width: 48rpx;
-}
-
-.availability-bar .bar-label.bar-right {
-  text-align: right;
-}
-
-.availability-bar .bar-track {
-  flex: 1;
-  height: 6rpx;
-  border-radius: 3rpx;
-  background: #f0f0f0;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-}
-
-.availability-bar .bar-seg {
-  height: 100%;
-  flex-shrink: 0;
-}
-
-.availability-bar .bar-seg.seg-available {
-  background: #22c55e;
-}
-
-.availability-bar .bar-seg.seg-busy {
-  background: #f59e0b;
-}
-
-.availability-bar .bar-seg.seg-closed {
-  background: #ef4444;
 }
 
 .service-map-card .card-info {

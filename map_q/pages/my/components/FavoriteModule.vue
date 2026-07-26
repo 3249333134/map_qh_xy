@@ -322,10 +322,9 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
 
      // 保留服务卡片的“预”按钮功能
      handleReserveService({ cardData, index }) {
-       console.log('收藏模块-点击预约:', { cardData, index })
-       uni.showToast({ title: '预约', icon: 'none' })
-       // 如需跳转预约页面，可在此处接入：
-       // uni.navigateTo({ url: `/pages/reserve/index?id=${cardData._id || cardData.id}` })
+       const target = cardData || this.allItems[index] || {}
+       try { uni.setStorageSync('BOOKING_ITEM', target) } catch (e) {}
+       uni.navigateTo({ url: '/pages/booking/index?source=favorites' })
      },
 
      // 获取卡片高度（瀑布流效果，单位 rpx）- 修正签名

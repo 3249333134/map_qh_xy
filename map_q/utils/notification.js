@@ -6,6 +6,10 @@ class NotificationManager {
     this.subscribers = new Map()
     this.reconnectAttempts = 0
     this.maxReconnectAttempts = 5
+    this.isInitialized = false
+    this.isSocketOpen = false
+    this.shouldReconnect = false
+    this.reconnectTimer = null
   }
   
   // 订阅推送
@@ -52,20 +56,29 @@ class NotificationManager {
   
   // 连接WebSocket
   connectWebSocket() {
+    this.shouldReconnect = true
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
+    }
     if (this.socket) {
       this.socket.close()
     }
     
-    this.socket = uni.connectSocket({
+    const socket = uni.connectSocket({
       url: APP_CONFIG.WEBSOCKET.NOTIFICATIONS_URL
     })
+    this.socket = socket
     
-    this.socket.onOpen(() => {
+    socket.onOpen(() => {
+      if (this.socket !== socket) return
       console.log('推送连接已建立')
+      this.isSocketOpen = true
       this.reconnectAttempts = 0
     })
     
-    this.socket.onMessage((res) => {
+    socket.onMessage((res) => {
+      if (this.socket !== socket) return
       try {
         const data = JSON.parse(res.data)
         this.handleNotification(data)
@@ -74,12 +87,18 @@ class NotificationManager {
       }
     })
     
-    this.socket.onClose(() => {
+    socket.onClose(() => {
+      if (this.socket !== socket) return
+      this.isSocketOpen = false
+      this.socket = null
+      if (!this.shouldReconnect) return
       console.log('推送连接断开，尝试重连...')
       this.handleReconnect()
     })
     
-    this.socket.onError((error) => {
+    socket.onError((error) => {
+      if (this.socket !== socket) return
+      this.isSocketOpen = false
       console.error('推送连接错误:', error)
       this.handleReconnect()
     })
@@ -87,13 +106,15 @@ class NotificationManager {
   
   // 处理重连
   handleReconnect() {
+    if (!this.shouldReconnect || this.reconnectTimer) return
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnectAttempts++
       const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000)
       
       console.log(`第 ${this.reconnectAttempts} 次重连，${delay}ms 后重试`)
       
-      setTimeout(() => {
+      this.reconnectTimer = setTimeout(() => {
+        this.reconnectTimer = null
         this.connectWebSocket()
       }, delay)
     } else {
@@ -141,7 +162,7 @@ class NotificationManager {
   
   // 发送推送消息
   sendNotification(data) {
-    if (this.socket && this.socket.readyState === 1) {
+    if (this.socket && this.isSocketOpen) {
       this.socket.send({
         data: JSON.stringify(data)
       })
@@ -152,10 +173,16 @@ class NotificationManager {
   
   // 断开连接
   disconnect() {
+    this.shouldReconnect = false
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = null
+    }
     if (this.socket) {
       this.socket.close()
       this.socket = null
     }
+    this.isSocketOpen = false
     this.isInitialized = false
     this.reconnectAttempts = 0
   }

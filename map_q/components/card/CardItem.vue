@@ -178,10 +178,9 @@ export default {
 
 <style>
 .card.map-card {
-  margin-bottom: 8rpx;
-  border-radius: 12rpx;
-  background-color: transparent;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20rpx;
+  border-radius: 24rpx;
+  background-color: #fff;
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
@@ -205,14 +204,15 @@ export default {
 
 .media-heat {
   position: absolute;
-  bottom: 8rpx;
-  right: 8rpx;
+  bottom: 10rpx;
+  right: 10rpx;
+  height: 30rpx;
   padding: 0 10rpx;
-  border-radius: 12rpx;
+  border-radius: 15rpx;
   display: flex;
   align-items: center;
   font-size: 18rpx;
-  font-weight: 400;
+  font-weight: 600;
   line-height: 30rpx;
   color: #fff;
   background: rgba(0, 0, 0, 0.5);
@@ -233,7 +233,7 @@ export default {
 }
 
 .card.map-card .card-content {
-  padding: 10rpx;
+  padding: 18rpx 18rpx 16rpx;
   width: 100%;
   box-sizing: border-box;
   cursor: pointer;
@@ -242,10 +242,10 @@ export default {
 .card.map-card .card-title {
   width: 100%;
   color: #000;
-  font-size: 26rpx;
-  font-weight: 400;
-  line-height: 32rpx;
-  margin-bottom: 6rpx;
+  font-size: 28rpx;
+  font-weight: 650;
+  line-height: 38rpx;
+  margin-bottom: 10rpx;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -255,8 +255,8 @@ export default {
 .card.map-card .card-author {
   display: flex;
   align-items: center;
-  color: #999;
-  font-size: 20rpx;
+  color: #64748b;
+  font-size: 22rpx;
   line-height: 26rpx;
   margin-bottom: 4rpx;
   overflow: hidden;
@@ -269,7 +269,9 @@ export default {
   width: 32rpx;
   height: 32rpx;
   border-radius: 50%;
-  background: #eee;
+  background: linear-gradient(135deg,#ffedd5,#fed7aa);
+  border: 2rpx solid #fff;
+  box-shadow: 0 0 0 1rpx rgba(234,88,12,.12);
   margin-right: 6rpx;
   flex-shrink: 0;
 }
@@ -300,6 +302,9 @@ export default {
   align-items: center;
   gap: 4rpx;
   transition: all 0.2s;
+  min-width: 44rpx;
+  min-height: 44rpx;
+  justify-content: center;
 }
 
 .action-btn:active {

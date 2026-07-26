@@ -2,13 +2,12 @@
 export const APP_CONFIG = {
   // 服务器配置 - 修改为本地开发地址
   SERVER: {
-    HOST: '127.0.0.1',  // 改为 127.0.0.1，避免 localhost 解析问题
+    HOST: '127.0.0.1',
     PORT: '3000',
     PROTOCOL: 'http',
     WS_PROTOCOL: 'ws'
   },
   
-  // API 基础配置 - 自动基于SERVER配置生成
   get API() {
     return {
       BASE_URL: `${this.SERVER.PROTOCOL}://${this.SERVER.HOST}:${this.SERVER.PORT}`,
@@ -24,7 +23,6 @@ export const APP_CONFIG = {
     }
   },
   
-  // WebSocket 配置 - 自动基于SERVER配置生成
   get WEBSOCKET() {
     return {
       BASE_URL: `${this.SERVER.WS_PROTOCOL}://${this.SERVER.HOST}:${this.SERVER.PORT}`,
@@ -32,10 +30,19 @@ export const APP_CONFIG = {
     }
   },
   
-  // 数据库配置
   DATABASE: {
     NAME: 'map_data',
     COLLECTION_NAME: 'map_points'
+  },
+
+  TENCENT_MAP: {
+    KEY: 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K',
+    GEOCODER_URL: 'https://apis.map.qq.com/ws/geocoder/v1/',
+    DIRECTION_URL: 'https://apis.map.qq.com/ws/direction/v1/driving/'
+  },
+
+  NOMINATIM: {
+    REVERSE_URL: 'https://nominatim.openstreetmap.org/reverse'
   }
 }
 

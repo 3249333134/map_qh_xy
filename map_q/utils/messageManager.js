@@ -10,7 +10,8 @@ class MessageManager {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, [])
     }
-    this.listeners.get(event).push(callback)
+    const callbacks = this.listeners.get(event)
+    if (!callbacks.includes(callback)) callbacks.push(callback)
   }
   
   // 移除监听器
@@ -27,8 +28,12 @@ class MessageManager {
   // 触发事件
   emit(event, data) {
     if (this.listeners.has(event)) {
-      this.listeners.get(event).forEach(callback => {
-        callback(data)
+      this.listeners.get(event).slice().forEach(callback => {
+        try {
+          callback(data)
+        } catch (error) {
+          console.error(`消息事件 ${event} 处理失败:`, error)
+        }
       })
     }
   }
@@ -82,12 +87,12 @@ class MessageManager {
     // 更新TabBar徽章
     if (this.totalUnread > 0) {
       uni.setTabBarBadge({
-        index: 2, // 消息页面的索引
+        index: 3, // 消息页面的索引
         text: this.totalUnread.toString()
       })
     } else {
       uni.removeTabBarBadge({
-        index: 2
+        index: 3
       })
     }
     
@@ -129,7 +134,7 @@ class MessageManager {
   clearAllUnread() {
     this.unreadCounts.clear()
     this.totalUnread = 0
-    uni.removeTabBarBadge({ index: 2 })
+    uni.removeTabBarBadge({ index: 3 })
     this.emit('total-unread-update', 0)
   }
 }

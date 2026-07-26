@@ -1,0 +1,3278 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Map Q 全页面拓扑 UI Figma Boards</title>
+  <link rel="stylesheet" href="./design-tokens.css" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px;
+      background: var(--page-bg);
+      color: var(--text-primary);
+      font-family: var(--font-family);
+    }
+    .canvas {
+      display: grid;
+      grid-template-columns: repeat(3, var(--device-width));
+      gap: 42px;
+      align-items: start;
+    }
+    .canvas > section:nth-child(1) { order: 1; }
+    .canvas > section:nth-child(6) { order: 2; }
+    .canvas > section:nth-child(7) { order: 3; }
+    .canvas > section:nth-child(8) { order: 4; }
+    .canvas > section:nth-child(9) { order: 5; }
+    .canvas > section:nth-child(10) { order: 6; }
+    .canvas > section:nth-child(11) { order: 7; }
+    .canvas > section:nth-child(2) { order: 8; }
+    .canvas > section:nth-child(3) { order: 9; }
+    .canvas > section:nth-child(4) { order: 10; }
+    .canvas > section:nth-child(5) { order: 11; }
+    .canvas > section:nth-child(12) { order: 12; }
+    .board-title {
+      margin: 0 0 12px;
+      color: #334155;
+      font: 700 16px/22px var(--font-family);
+    }
+    .phone {
+      position: relative;
+      width: var(--device-width);
+      height: var(--device-height);
+      overflow: hidden;
+      border-radius: var(--radius-phone);
+      background: var(--surface-app);
+      box-shadow: var(--shadow-phone);
+    }
+    .status {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      z-index: 40;
+      height: 34px;
+      padding: 8px 16px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      color: #111;
+      font: 500 12px/16px var(--font-family);
+    }
+    .notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      z-index: 45;
+      width: 210px;
+      height: 43px;
+      transform: translateX(-50%);
+      background: #000;
+      border-radius: 0 0 20px 20px;
+    }
+    .status-icons {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .wifi {
+      width: 16px;
+      height: 12px;
+      border-top: 3px solid #111;
+      border-radius: 50%;
+      transform: translateY(3px) scaleX(.9);
+    }
+    .battery {
+      width: 24px;
+      height: 12px;
+      border: 2px solid #111;
+      border-radius: 3px;
+      position: relative;
+    }
+    .battery::after {
+      content: "";
+      position: absolute;
+      right: -5px;
+      top: 3px;
+      width: 3px;
+      height: 5px;
+      border-radius: 0 2px 2px 0;
+      background: #111;
+    }
+    .battery::before {
+      content: "";
+      position: absolute;
+      inset: 2px;
+      background: #111;
+      border-radius: 1px;
+    }
+    .capsule {
+      position: absolute;
+      z-index: 42;
+      right: 14px;
+      top: 66px;
+      width: 84px;
+      height: 32px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.9);
+      border: 1px solid rgba(0,0,0,.12);
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+      display: flex;
+      align-items: center;
+      justify-content: space-evenly;
+    }
+    .dotset {
+      display: flex;
+      gap: 4px;
+    }
+    .dotset i {
+      display: block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #000;
+    }
+    .circle-icon {
+      width: 17px;
+      height: 17px;
+      border: 3px solid #000;
+      border-radius: 50%;
+      position: relative;
+    }
+    .circle-icon::after {
+      content: "";
+      position: absolute;
+      inset: 3px;
+      background: #000;
+      border-radius: 50%;
+    }
+    .map {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 268px;
+      overflow: hidden;
+      background:
+        linear-gradient(28deg, transparent 0 44%, rgba(255,184,90,.65) 44% 49%, transparent 49%),
+        linear-gradient(118deg, transparent 0 52%, rgba(73,132,255,.24) 52% 57%, transparent 57%),
+        linear-gradient(158deg, transparent 0 38%, rgba(55,184,92,.35) 38% 41%, transparent 41%),
+        linear-gradient(135deg, #f8fafc 0%, #f5f5eb 42%, #e7f6dc 43%, #f8fafc 62%, #dcefff 100%);
+    }
+    .map::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(65deg, transparent 0 45%, rgba(140,150,160,.55) 45% 46%, transparent 46%),
+        linear-gradient(115deg, transparent 0 54%, rgba(140,150,160,.45) 54% 55%, transparent 55%),
+        linear-gradient(90deg, rgba(160,168,175,.22) 1px, transparent 1px),
+        linear-gradient(rgba(160,168,175,.22) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 42px 42px, 42px 42px;
+      opacity: .9;
+    }
+    .map-label {
+      position: absolute;
+      z-index: 2;
+      color: #66819c;
+      font: 700 13px/18px var(--font-family);
+    }
+    .map-label.l1 { left: 24px; top: 70px; color: #4a9c4c; }
+    .map-label.l2 { right: 46px; top: 108px; }
+    .map-label.l3 { left: 124px; top: 150px; color: #a66a24; }
+    .pin {
+      position: absolute;
+      z-index: 3;
+      width: 34px;
+      height: 24px;
+      border-radius: 18px 18px 18px 4px;
+      background: #f44651;
+      transform: rotate(-45deg);
+      box-shadow: 0 2px 8px rgba(244,70,81,.25);
+    }
+    .pin::after {
+      content: "";
+      position: absolute;
+      left: 11px;
+      top: 8px;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #fff;
+    }
+    .pin.p1 { left: 28px; top: 146px; }
+    .pin.p2 { left: 258px; top: 204px; }
+    .pin.p3 { left: 250px; top: 94px; }
+    .loc-dot {
+      position: absolute;
+      z-index: 4;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #4db5ec;
+      border: 4px solid rgba(255,255,255,.9);
+      box-shadow: 0 0 0 8px rgba(77,181,236,.22);
+    }
+    .loc-dot.home { left: 168px; top: 167px; }
+    .loc-dot.service { left: 200px; top: 152px; }
+    .sheet {
+      position: absolute;
+      z-index: 10;
+      left: 0;
+      right: 0;
+      bottom: var(--tabbar-height);
+      height: 566px;
+      background: var(--surface-panel);
+      border-radius: var(--radius-sheet);
+      box-shadow: var(--shadow-sheet);
+      overflow: hidden;
+    }
+    .sheet-handle {
+      width: 42px;
+      height: 4px;
+      margin: 8px auto 10px;
+      border-radius: 4px;
+      background: #d6d8dd;
+    }
+    .search {
+      height: 38px;
+      margin: 0 16px 8px;
+      border-radius: 19px;
+      background: #fff;
+      color: #9ca3af;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 14px;
+      font: 400 13px/18px var(--font-family);
+    }
+    .tabs {
+      position: relative;
+      height: 46px;
+      display: flex;
+      align-items: center;
+      gap: 30px;
+      padding: 0 22px;
+      color: #c4c4c4;
+      font: var(--font-page-tab);
+      border-bottom: 1px solid rgba(0,0,0,.04);
+    }
+    .tabs .active {
+      color: #262626;
+      position: relative;
+    }
+    .tabs .active::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -11px;
+      width: 22px;
+      height: 3px;
+      border-radius: 3px;
+      transform: translateX(-50%);
+      background: var(--brand-orange);
+    }
+    .floating-locate {
+      position: absolute;
+      right: 16px;
+      top: 72px;
+      z-index: 13;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 45% 35%, #ff8b5d, var(--brand-orange) 68%, #ff4141);
+      box-shadow: var(--shadow-float);
+    }
+    .floating-locate::after {
+      content: "";
+      position: absolute;
+      left: 19px;
+      top: 9px;
+      width: 6px;
+      height: 25px;
+      border-radius: 5px;
+      background: #e82ac2;
+    }
+    .floating-locate::before {
+      content: "";
+      position: absolute;
+      left: 17px;
+      top: 7px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #e82ac2;
+      border: 2px solid rgba(255,255,255,.5);
+    }
+    .feed {
+      height: calc(100% - 106px);
+      padding: 8px 14px 18px;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      align-items: start;
+    }
+    .col { display: flex; flex-direction: column; gap: 8px; }
+    .card {
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius-card);
+      background: #fff;
+      box-shadow: var(--shadow-card);
+      border: 1px solid rgba(0,0,0,.02);
+    }
+    .cover {
+      position: relative;
+      height: 138px;
+      background: #e9edf2;
+      overflow: hidden;
+    }
+    .photo-bridge {
+      background:
+        linear-gradient(90deg, rgba(82,42,24,.85) 0 24%, transparent 24% 72%, rgba(82,42,24,.9) 72%),
+        linear-gradient(135deg, transparent 0 42%, #202933 42% 44%, transparent 44% 49%, #202933 49% 51%, transparent 51%),
+        linear-gradient(180deg, #55bdf6 0%, #d6f2ff 48%, #e4e9e2 49%, #7a442e 100%);
+    }
+    .photo-cloud {
+      height: 130px;
+      background:
+        radial-gradient(circle at 22% 56%, #fff 0 14%, transparent 15%),
+        radial-gradient(circle at 44% 42%, #fff 0 20%, transparent 21%),
+        radial-gradient(circle at 65% 58%, #fff 0 17%, transparent 18%),
+        linear-gradient(180deg, #1d8eea, #74cfff 56%, #d9f5ff);
+    }
+    .tag-dark, .type-pill, .score-pill {
+      position: absolute;
+      right: 8px;
+      bottom: 8px;
+      min-width: 28px;
+      padding: 2px 6px;
+      border-radius: 9px;
+      color: #fff;
+      background: rgba(0,0,0,.42);
+      text-align: center;
+      font: 700 10px/14px var(--font-family);
+    }
+    .score-pill { top: 8px; bottom: auto; background: rgba(80,80,80,.72); }
+    .type-pill { bottom: 10px; right: 8px; background: rgba(80,80,80,.72); }
+    .card-body { padding: 9px 9px 8px; }
+    .card-title {
+      color: var(--text-title);
+      font: var(--font-card-title);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .meta, .stats, .address {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      color: #a1a7af;
+      font: var(--font-caption);
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    .muted-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #eef0f2;
+      flex: 0 0 auto;
+    }
+    .placeholder {
+      height: 126px;
+      background: #f7f7f8;
+      color: #d8dadd;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      font: 700 13px/20px var(--font-family);
+    }
+    .placeholder .big {
+      display: block;
+      color: #dcdfe3;
+      font-size: 34px;
+      line-height: 36px;
+    }
+    .video-cover {
+      height: 146px;
+      background:
+        radial-gradient(circle at 50% 58%, rgba(255,255,255,.75) 0 12%, transparent 13%),
+        linear-gradient(180deg, #f9f9f9, #eeeeef);
+      color: #d1d3d6;
+      display: grid;
+      place-items: center;
+      font: 700 13px/18px var(--font-family);
+    }
+    .video-card .stats { gap: 5px; }
+    .play {
+      width: 0;
+      height: 0;
+      border-left: 8px solid #b8bcc3;
+      border-top: 6px solid transparent;
+      border-bottom: 6px solid transparent;
+    }
+    .place-mini {
+      height: 132px;
+      position: relative;
+      background:
+        linear-gradient(38deg, transparent 0 48%, rgba(120,185,162,.28) 48% 55%, transparent 55%),
+        linear-gradient(90deg, rgba(201,220,226,.45) 1px, transparent 1px),
+        linear-gradient(rgba(201,220,226,.45) 1px, transparent 1px),
+        #f1fbff;
+      background-size: 100% 100%, 20px 20px, 20px 20px, auto;
+    }
+    .place-dot {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      background: #ff725d;
+      box-shadow: 0 0 0 10px rgba(255,114,93,.13);
+      border: 5px solid #fff;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      height: 17px;
+      padding: 0 6px;
+      border-radius: 8px;
+      color: #fff;
+      background: rgba(70,70,70,.65);
+      font: 700 10px/14px var(--font-family);
+    }
+    .badge-soft {
+      color: var(--brand-orange);
+      background: rgba(255,112,67,.12);
+    }
+    .place-actions {
+      margin-top: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #a2a8b0;
+      font: 700 11px/15px var(--font-family);
+    }
+    .orange { color: var(--brand-orange); }
+    .blue { color: var(--brand-blue); }
+    .green { color: var(--success); }
+    .tabbar {
+      position: absolute;
+      z-index: 30;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: var(--tabbar-height);
+      background: rgba(255,255,255,.96);
+      border-top: 1px solid var(--border-default);
+      display: grid;
+      grid-template-columns: 1fr 1fr 78px 1fr 1fr;
+      align-items: start;
+      padding-top: 14px;
+    }
+    .tab {
+      display: grid;
+      gap: 4px;
+      justify-items: center;
+      color: #7d838b;
+      font: 400 12px/16px var(--font-family);
+    }
+    .tab.active { color: var(--brand-yellow); font-weight: 700; }
+    .tab .ico {
+      width: 22px;
+      height: 22px;
+      display: grid;
+      place-items: center;
+      color: currentColor;
+      font-size: 20px;
+      line-height: 1;
+    }
+    .plus {
+      width: 58px;
+      height: 58px;
+      margin: -19px auto 0;
+      border-radius: 50%;
+      border: 3px solid #fff;
+      background: radial-gradient(circle at 45% 35%, #ff8b53, #ff7043 70%, #ff583e);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font: 300 42px/42px var(--font-family);
+      box-shadow: 0 4px 12px rgba(255,112,67,.35);
+    }
+    .service-tabs { gap: 26px; padding-left: 20px; }
+    .service-card .place-mini { height: 138px; background-color: #fbfbfc; }
+    .service-card .place-dot { background: #5867c9; box-shadow: 0 0 0 10px rgba(88,103,201,.12); }
+    .bars {
+      margin: 6px 0 4px;
+      display: grid;
+      gap: 5px;
+      grid-template-columns: 30px 1fr 24px;
+      align-items: center;
+      color: #c8ccd2;
+      font: 400 10px/12px var(--font-family);
+    }
+    .bar {
+      height: 3px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #ff4757 0 72%, var(--success) 72%);
+    }
+    .status-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 4px;
+      margin-top: 5px;
+      color: #b4b8bf;
+      font: 400 11px/15px var(--font-family);
+    }
+    .open-badge {
+      color: var(--success);
+      background: rgba(36,208,108,.12);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-weight: 700;
+    }
+    .book {
+      color: #fff;
+      border-radius: 13px;
+      padding: 5px 9px;
+      background: var(--brand-orange);
+      font: 700 12px/14px var(--font-family);
+    }
+    .publish .scrim {
+      position: absolute;
+      inset: 0;
+      z-index: 60;
+      background: var(--surface-overlay);
+      backdrop-filter: blur(1px);
+    }
+    .hot-panel {
+      position: absolute;
+      z-index: 62;
+      top: 126px;
+      left: 22px;
+      right: 22px;
+      height: 200px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(164,73,130,.7), rgba(38,42,49,.94) 46%, rgba(38,42,49,.96));
+      color: #fff;
+      padding: 24px 24px 18px;
+      box-shadow: var(--shadow-overlay-card);
+    }
+    .hot-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font: 700 18px/24px var(--font-family);
+    }
+    .hot-head span:last-child { font-size: 12px; color: rgba(255,255,255,.8); }
+    .hot-list {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .hot-card {
+      height: 95px;
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(255,255,255,.32), rgba(255,255,255,.06));
+      padding: 12px 9px;
+      color: rgba(255,255,255,.88);
+      font: 700 13px/18px var(--font-family);
+    }
+    .hot-card .hash {
+      display: block;
+      margin-bottom: 22px;
+      text-align: center;
+      font-size: 24px;
+      color: rgba(255,255,255,.6);
+    }
+    .hot-card small { display: block; color: rgba(255,255,255,.58); margin-top: 2px; }
+    .publish-sheet {
+      position: absolute;
+      z-index: 63;
+      left: 42px;
+      right: 42px;
+      bottom: 82px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .publish-action {
+      height: 54px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.96);
+      display: grid;
+      place-items: center;
+      color: #555;
+      font: 500 16px/22px var(--font-family);
+      box-shadow: 0 1px 4px rgba(0,0,0,.12);
+    }
+    .publish-action.primary {
+      grid-column: 1 / -1;
+      height: 76px;
+      color: #222;
+      font-weight: 700;
+    }
+    .plus.close {
+      position: absolute;
+      z-index: 64;
+      left: 50%;
+      bottom: 36px;
+      transform: translateX(-50%) rotate(45deg);
+      background: linear-gradient(135deg, #ff4db5, #b647ea);
+      font-size: 48px;
+      box-shadow: 0 0 26px rgba(236,63,200,.45);
+    }
+    .message-page { background: #fff; }
+    .message-top {
+      position: absolute;
+      z-index: 10;
+      top: 68px;
+      left: 18px;
+      right: 18px;
+      display: grid;
+      grid-template-columns: 1fr 42px 42px 84px;
+      gap: 10px;
+      align-items: center;
+    }
+    .message-search {
+      height: 32px;
+      border-radius: 17px;
+      background: #f1f2f4;
+      color: #b7bac0;
+      display: grid;
+      place-items: center;
+      font: 400 13px/18px var(--font-family);
+    }
+    .ghost-circle { width: 32px; height: 32px; border-radius: 50%; background: #f1f2f4; }
+    .message-tabs {
+      position: absolute;
+      top: 120px;
+      left: 0;
+      right: 0;
+      height: 50px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      align-items: center;
+      text-align: center;
+      color: #9a9a9a;
+      border-bottom: 1px solid var(--divider);
+      font: 700 16px/22px var(--font-family);
+    }
+    .message-tabs .active { color: var(--brand-orange); position: relative; }
+    .message-tabs .active::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -13px;
+      width: 28px;
+      height: 3px;
+      border-radius: 3px;
+      transform: translateX(-50%);
+      background: var(--brand-orange);
+    }
+    .rail {
+      position: absolute;
+      left: 0;
+      top: 170px;
+      bottom: var(--tabbar-height);
+      width: 72px;
+      border-right: 1px solid var(--divider);
+      background: #f5f6f8;
+      padding-top: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .rail::before {
+      content: "";
+      position: absolute;
+      left: 8px;
+      top: 22px;
+      width: 4px;
+      height: 42px;
+      background: var(--brand-orange);
+      border-radius: 3px;
+    }
+    .avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      position: relative;
+    }
+    .avatar.blue { background: #4a94dd; }
+    .avatar.green { background: #2dcc68; }
+    .avatar.orange { background: #ff9400; }
+    .avatar.red { background: #ff3b35; }
+    .avatar.purple { background: #a94de2; }
+    .avatar.cyan { background: #56c4ef; }
+    .badge-count {
+      position: absolute;
+      right: -4px;
+      top: -5px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 9px;
+      color: #fff;
+      background: #ff3b35;
+      font: 700 10px/18px var(--font-family);
+      text-align: center;
+    }
+    .message-list {
+      position: absolute;
+      top: 170px;
+      left: 72px;
+      right: 0;
+      bottom: var(--tabbar-height);
+      background: #fff;
+    }
+    .message-row {
+      height: 64px;
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--divider);
+    }
+    .message-row.selected { background: #fff6ef; }
+    .msg-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font: 700 18px/18px var(--font-family);
+    }
+    .msg-icon.blue { background: #4593de; }
+    .msg-icon.orange { background: #ff9800; }
+    .msg-icon.green { background: #34c867; }
+    .msg-icon.red { background: #ff3b35; }
+    .msg-icon.coral { background: #ff7c3f; }
+    .msg-title { color: #242424; font: 700 16px/20px var(--font-family); }
+    .msg-text { color: #777; font: 400 13px/18px var(--font-family); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .profile-hero {
+      position: absolute;
+      inset: 0 0 auto;
+      height: 386px;
+      background: linear-gradient(180deg, #eeeeee 0%, #dedede 80%, #dadada 100%);
+      text-align: center;
+      padding-top: 102px;
+    }
+    .profile-avatar {
+      width: 82px;
+      height: 82px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      background: #29a63a;
+      border: 3px solid rgba(255,255,255,.85);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font: 700 58px/58px var(--font-family);
+    }
+    .profile-name { font: 700 24px/32px var(--font-family); color: #333; }
+    .profile-desc { margin-top: 6px; color: #777; font: 400 15px/20px var(--font-family); }
+    .profile-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      margin: 38px 64px 0;
+      color: #666;
+      font: 400 13px/18px var(--font-family);
+    }
+    .profile-stats strong {
+      display: block;
+      color: #333;
+      font: 700 22px/28px var(--font-family);
+    }
+    .profile-sheet {
+      position: absolute;
+      z-index: 12;
+      left: 0;
+      right: 0;
+      bottom: var(--tabbar-height);
+      height: 376px;
+      background: #f8f8f8;
+      box-shadow: var(--shadow-sheet);
+      overflow: hidden;
+    }
+    .module-row {
+      height: 52px;
+      padding: 9px 16px 7px;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 40px;
+      gap: 8px;
+      align-items: center;
+    }
+    .module-pill {
+      height: 32px;
+      border-radius: 13px;
+      background: #eef1f4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      color: #6d747e;
+      font: 700 12px/16px var(--font-family);
+    }
+    .module-pill.active {
+      color: #fff;
+      background: var(--brand-purple);
+      box-shadow: 0 2px 8px rgba(118,80,200,.25);
+    }
+    .chip-row {
+      height: 38px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      overflow: hidden;
+      padding: 0 12px 6px;
+      border-bottom: 1px solid var(--divider);
+    }
+    .chip {
+      height: 28px;
+      padding: 0 11px;
+      border-radius: 14px;
+      background: #fff;
+      color: #747b85;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      box-shadow: 0 1px 5px rgba(0,0,0,.04);
+      font: 700 12px/16px var(--font-family);
+    }
+    .chip.active { background: var(--brand-blue); color: #fff; }
+    .profile-feed { height: calc(100% - 90px); padding-top: 8px; }
+    .token-board {
+      padding: 22px;
+      background: #fff;
+      height: auto;
+      min-height: var(--device-height);
+      overflow: visible;
+      border-radius: 18px;
+    }
+    .token-section { margin-bottom: 22px; }
+    .token-section h3 { margin: 0 0 10px; font: 700 16px/22px var(--font-family); color: #222; }
+    .swatches { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .swatch { height: 58px; border-radius: 8px; padding: 8px; color: #fff; font: 700 10px/14px var(--font-family); }
+    .components { display: grid; gap: 12px; }
+    .component-line { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .subpage { background: #f7f8fa; }
+    .top-nav {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      z-index: 30;
+      height: 86px;
+      padding: 38px 16px 0;
+      background: rgba(255,255,255,.96);
+      border-bottom: 1px solid var(--divider);
+      display: grid;
+      grid-template-columns: 44px 1fr 44px;
+      align-items: center;
+      text-align: center;
+      color: #20242a;
+      font: 700 17px/24px var(--font-family);
+    }
+    .nav-back, .nav-more {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #30343b;
+      background: #f2f3f5;
+      font: 700 18px/18px var(--font-family);
+    }
+    .page-scroll { position: absolute; inset: 86px 0 0; overflow: hidden; padding: 14px 14px 110px; }
+    .detail-hero {
+      height: 268px;
+      border-radius: 0 0 18px 18px;
+      overflow: hidden;
+      margin: -14px -14px 0;
+      position: relative;
+      background:
+        linear-gradient(90deg, rgba(82,42,24,.85) 0 24%, transparent 24% 72%, rgba(82,42,24,.9) 72%),
+        linear-gradient(135deg, transparent 0 42%, #202933 42% 44%, transparent 44% 49%, #202933 49% 51%, transparent 51%),
+        linear-gradient(180deg, #55bdf6 0%, #d6f2ff 48%, #e4e9e2 49%, #7a442e 100%);
+    }
+    .detail-hero::after { content: ""; position: absolute; inset: auto 0 0; height: 100px; background: linear-gradient(180deg, transparent, rgba(0,0,0,.55)); }
+    .hero-count { position: absolute; z-index: 2; right: 16px; bottom: 16px; padding: 3px 9px; border-radius: 14px; color: #fff; background: rgba(0,0,0,.45); font: 700 12px/16px var(--font-family); }
+    .detail-card { margin-top: 10px; border-radius: 12px; background: #fff; box-shadow: var(--shadow-card); padding: 14px; }
+    .detail-title { margin: 0; color: #20242a; font: 800 22px/30px var(--font-family); }
+    .author-line { margin-top: 10px; display: flex; align-items: center; gap: 9px; color: #7f8791; font: 400 13px/18px var(--font-family); }
+    .avatar-sm { width: 28px; height: 28px; border-radius: 50%; background: #edf0f3; }
+    .follow-btn, .primary-btn, .ghost-btn { height: 30px; padding: 0 13px; border-radius: 15px; display: inline-grid; place-items: center; color: #fff; background: var(--brand-orange); font: 700 12px/16px var(--font-family); }
+    .ghost-btn { color: #5f6670; background: #f1f3f5; }
+    .detail-text { margin: 12px 0 0; color: #4d5560; font: 400 14px/23px var(--font-family); }
+    .detail-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .detail-bottom { position: absolute; left: 0; right: 0; bottom: 0; z-index: 35; height: 76px; padding: 10px 14px 18px; display: grid; grid-template-columns: 1fr 52px 52px 92px; gap: 8px; align-items: center; background: rgba(255,255,255,.98); border-top: 1px solid var(--divider); }
+    .comment-input { height: 36px; border-radius: 18px; background: #f1f3f5; color: #9aa1aa; display: flex; align-items: center; padding: 0 14px; font: 400 13px/18px var(--font-family); }
+    .round-action { height: 38px; border-radius: 19px; background: #f7f8fa; display: grid; place-items: center; color: #7b828b; font: 700 16px/18px var(--font-family); }
+    .comments { display: grid; gap: 14px; margin-top: 12px; }
+    .comment-row { display: grid; grid-template-columns: 32px 1fr; gap: 10px; }
+    .comment-name { color: #30343b; font: 700 13px/18px var(--font-family); }
+    .comment-copy { color: #68707b; font: 400 13px/20px var(--font-family); }
+    .search-screen { background: #fff; }
+    .search-head { position: absolute; left: 0; right: 0; top: 0; z-index: 20; height: 92px; padding: 42px 14px 0; display: grid; grid-template-columns: 1fr 42px; gap: 10px; background: #fff; border-bottom: 1px solid var(--divider); }
+    .search-box-lg { height: 36px; border-radius: 18px; background: #f2f4f7; color: #222; display: flex; align-items: center; gap: 8px; padding: 0 14px; font: 500 14px/18px var(--font-family); }
+    .cancel-text { display: grid; place-items: center; color: #747b85; font: 500 14px/18px var(--font-family); }
+    .search-body { position: absolute; inset: 92px 0 0; padding: 14px; overflow: hidden; }
+    .section-label { color: #222; font: 800 16px/22px var(--font-family); margin-bottom: 10px; }
+    .hot-keywords { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .result-row { display: grid; grid-template-columns: 58px 1fr 52px; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--divider); }
+    .result-thumb { width: 58px; height: 58px; border-radius: 8px; background: #edf0f3; overflow: hidden; }
+    .result-thumb.photo { background: linear-gradient(135deg, #69c8ff, #5d3528); }
+    .result-thumb.place { background: linear-gradient(38deg, #eefaff 0 46%, #c7e6df 46% 56%, #eefaff 56%); }
+    .result-title { color: #252a31; font: 700 15px/20px var(--font-family); }
+    .result-desc { color: #89919c; font: 400 12px/17px var(--font-family); margin-top: 2px; }
+    .map-cta { height: 28px; border-radius: 14px; display: grid; place-items: center; color: var(--brand-blue); background: rgba(36,140,245,.1); font: 700 12px/16px var(--font-family); }
+    .media-preview { background: #050506; color: #fff; }
+    .media-main { position: absolute; inset: 96px 0 150px; background: linear-gradient(90deg, rgba(82,42,24,.9) 0 24%, transparent 24% 72%, rgba(82,42,24,.9) 72%), linear-gradient(135deg, transparent 0 42%, #1e2936 42% 44%, transparent 44% 49%, #1e2936 49% 51%, transparent 51%), linear-gradient(180deg, #55bdf6 0%, #d6f2ff 48%, #e4e9e2 49%, #7a442e 100%); }
+    .media-caption { position: absolute; left: 16px; right: 16px; bottom: 88px; color: rgba(255,255,255,.92); font: 400 14px/22px var(--font-family); }
+    .media-actions { position: absolute; right: 16px; bottom: 178px; display: grid; gap: 16px; }
+    .media-action { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: rgba(255,255,255,.16); font: 700 17px/20px var(--font-family); }
+    .place-hero-map { height: 250px; margin: -14px -14px 0; position: relative; overflow: hidden; background: linear-gradient(40deg, transparent 0 48%, rgba(117,198,173,.35) 48% 55%, transparent 55%), linear-gradient(120deg, transparent 0 54%, rgba(255,185,90,.55) 54% 59%, transparent 59%), linear-gradient(90deg, rgba(160,168,175,.24) 1px, transparent 1px), linear-gradient(rgba(160,168,175,.2) 1px, transparent 1px), #eefaff; background-size: 100% 100%, 100% 100%, 34px 34px, 34px 34px, auto; }
+    .place-panel { margin-top: -26px; position: relative; z-index: 2; }
+    .route-line { height: 170px; border-radius: 12px; position: relative; overflow: hidden; background: linear-gradient(33deg, transparent 0 36%, rgba(70,140,255,.32) 36% 42%, transparent 42%), linear-gradient(120deg, transparent 0 54%, rgba(44,201,120,.28) 54% 58%, transparent 58%), linear-gradient(90deg, rgba(160,168,175,.2) 1px, transparent 1px), linear-gradient(rgba(160,168,175,.18) 1px, transparent 1px), #f2fbff; background-size: 100% 100%, 100% 100%, 24px 24px, 24px 24px, auto; }
+    .route-path { position: absolute; left: 48px; top: 86px; width: 260px; height: 8px; border-radius: 8px; background: linear-gradient(90deg, var(--brand-blue), var(--success)); transform: rotate(-16deg); box-shadow: 0 0 0 5px rgba(36,140,245,.12); }
+    .route-node { position: absolute; width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 6px solid var(--brand-orange); }
+    .route-node.start { left: 38px; top: 112px; border-color: var(--success); }
+    .route-node.end { right: 44px; top: 45px; }
+    .booking-card { position: absolute; left: 14px; right: 14px; top: 104px; border-radius: 16px; background: #fff; padding: 16px; box-shadow: var(--shadow-card); }
+    .booking-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--divider); color: #68707b; font: 400 14px/20px var(--font-family); }
+    .booking-row strong { color: #242931; }
+    .pay-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 82px; padding: 10px 14px 20px; background: #fff; border-top: 1px solid var(--divider); display: grid; grid-template-columns: 1fr 150px; gap: 12px; align-items: center; }
+    .price { color: var(--brand-red); font: 800 22px/28px var(--font-family); }
+    .canvas > section:has(#home-map-feed) { order: 10; }
+    .canvas > section:has(#home-search-results) { order: 11; }
+    .canvas > section:has(#home-content-detail) { order: 12; }
+    .canvas > section:has(#home-media-preview) { order: 13; }
+    .canvas > section:has(#home-place-detail) { order: 14; }
+    .canvas > section:has(#home-track-detail) { order: 15; }
+    .canvas > section:has(#home-booking-confirm) { order: 16; }
+    .canvas > section:has(#service-map-feed) { order: 20; }
+    .canvas > section:has(#service-detail) { order: 21; }
+    .canvas > section:has(#service-booking) { order: 22; }
+    .canvas > section:has(#service-payment) { order: 23; }
+    .canvas > section:has(#service-success) { order: 24; }
+    .canvas > section:has(#publish-entry) { order: 30; }
+    .canvas > section:has(#publish-editor) { order: 31; }
+    .canvas > section:has(#publish-topic-picker) { order: 32; }
+    .canvas > section:has(#publish-location-picker) { order: 33; }
+    .canvas > section:has(#publish-preview) { order: 34; }
+    .canvas > section:has(#publish-success) { order: 35; }
+    .canvas > section:has(#sandbox-editor) { order: 40; }
+    .canvas > section:has(#sandbox-schedule) { order: 41; }
+    .canvas > section:has(#sandbox-test-share) { order: 42; }
+    .canvas > section:has(#ip-editor) { order: 50; }
+    .canvas > section:has(#ip-selector) { order: 51; }
+    .canvas > section:has(#ip-auth-settings) { order: 52; }
+    .canvas > section:has(#ip-success) { order: 53; }
+    .canvas > section:has(#message-center) { order: 60; }
+    .canvas > section:has(#message-search) { order: 61; }
+    .canvas > section:has(#chat-detail) { order: 62; }
+    .canvas > section:has(#notification-detail) { order: 63; }
+    .canvas > section:has(#contact-profile) { order: 64; }
+    .canvas > section:has(#my-profile) { order: 70; }
+    .canvas > section:has(#my-location-map) { order: 71; }
+    .canvas > section:has(#my-favorites) { order: 72; }
+    .canvas > section:has(#my-calendar) { order: 73; }
+    .canvas > section:has(#my-settings) { order: 74; }
+    .canvas > section:has(#my-profile-edit) { order: 75; }
+    .canvas > section:has(#token-board) { order: 99; }
+    .form-area { display: grid; gap: 12px; }
+    .text-box {
+      min-height: 120px;
+      border-radius: 12px;
+      background: #fff;
+      padding: 14px;
+      color: #9aa1aa;
+      font: 400 14px/22px var(--font-family);
+      box-shadow: var(--shadow-card);
+    }
+    .media-grid-small { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .media-slot {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      background: #f0f2f5;
+      display: grid;
+      place-items: center;
+      color: #b0b6bf;
+      font: 700 24px/24px var(--font-family);
+    }
+    .option-list { border-radius: 12px; overflow: hidden; background: #fff; box-shadow: var(--shadow-card); }
+    .option-item {
+      min-height: 50px;
+      padding: 0 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--divider);
+      color: #30343b;
+      font: 600 14px/20px var(--font-family);
+    }
+    .option-item:last-child { border-bottom: 0; }
+    .option-sub { display: block; color: #969da7; font: 400 12px/17px var(--font-family); margin-top: 2px; }
+    .toggle-mini {
+      width: 42px;
+      height: 24px;
+      border-radius: 12px;
+      background: var(--success);
+      position: relative;
+    }
+    .toggle-mini::after { content: ""; position: absolute; right: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; }
+    .success-mark {
+      width: 76px;
+      height: 76px;
+      margin: 118px auto 18px;
+      border-radius: 50%;
+      background: var(--success);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font: 800 40px/40px var(--font-family);
+      box-shadow: 0 10px 24px rgba(36,208,108,.28);
+    }
+    .success-title { text-align: center; color: #222; font: 800 22px/30px var(--font-family); }
+    .success-desc { margin: 8px 38px 0; text-align: center; color: #737b86; font: 400 14px/22px var(--font-family); }
+    .chat-list { position: absolute; inset: 86px 0 78px; padding: 14px; overflow: hidden; background: #f3f5f8; }
+    .bubble { max-width: 255px; margin: 10px 0; padding: 10px 12px; border-radius: 14px; background: #fff; color: #30343b; font: 400 14px/21px var(--font-family); box-shadow: var(--shadow-card); }
+    .bubble.me { margin-left: auto; background: #dff6cc; }
+    .chat-input-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 78px; padding: 10px 12px 18px; display: grid; grid-template-columns: 36px 1fr 36px; gap: 8px; align-items: center; background: #fff; border-top: 1px solid var(--divider); }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+    .day-cell { height: 38px; border-radius: 10px; display: grid; place-items: center; background: #f5f6f8; color: #7b828b; font: 700 12px/16px var(--font-family); }
+    .day-cell.active { background: var(--brand-orange); color: #fff; }
+    .canvas > section:has(#home-anchor-layer-lab) { order: 17; }
+    .canvas > section:has(#home-anchor-action) { order: 18; }
+    .canvas > section:has(#home-map-share) { order: 19; }
+    .canvas > section:has(#home-fog-unlock) { order: 20; }
+    .canvas > section:has(#ai-search) { order: 21; }
+    .canvas > section:has(#service-map-feed) { order: 30; }
+    .canvas > section:has(#service-card-types) { order: 31; }
+    .canvas > section:has(#service-detail) { order: 32; }
+    .canvas > section:has(#service-merchant-channel) { order: 33; }
+    .canvas > section:has(#service-wiki-edit) { order: 34; }
+    .canvas > section:has(#service-booking) { order: 35; }
+    .canvas > section:has(#service-payment) { order: 36; }
+    .canvas > section:has(#service-success) { order: 37; }
+    .canvas > section:has(#publish-entry) { order: 40; }
+    .canvas > section:has(#publish-type-center) { order: 41; }
+    .canvas > section:has(#publish-editor) { order: 42; }
+    .canvas > section:has(#publish-ai-template) { order: 43; }
+    .canvas > section:has(#publish-track-editor) { order: 44; }
+    .canvas > section:has(#publish-map-cocreate) { order: 45; }
+    .canvas > section:has(#creator-center) { order: 46; }
+    .canvas > section:has(#message-center) { order: 70; }
+    .canvas > section:has(#channel-map) { order: 71; }
+    .canvas > section:has(#channel-detail) { order: 72; }
+    .canvas > section:has(#channel-thread-card) { order: 73; }
+    .canvas > section:has(#channel-permissions) { order: 74; }
+    .canvas > section:has(#my-profile) { order: 80; }
+    .canvas > section:has(#my-services-manage) { order: 81; }
+    .canvas > section:has(#my-heatmap-stats) { order: 82; }
+    .canvas > section:has(#my-timeline-review) { order: 83; }
+    .canvas > section:has(#my-privacy-control) { order: 84; }
+    .canvas > section:has(#monetization-center) { order: 90; }
+    .anchor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .anchor-type {
+      min-height: 96px;
+      border-radius: 12px;
+      padding: 12px;
+      background: #fff;
+      box-shadow: var(--shadow-card);
+      display: grid;
+      align-content: space-between;
+    }
+    .anchor-symbol {
+      width: 34px;
+      height: 34px;
+      border-radius: 17px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font: 800 16px/18px var(--font-family);
+    }
+    .anchor-name { color: #252a31; font: 800 14px/18px var(--font-family); }
+    .anchor-desc { color: #8a929d; font: 400 11px/16px var(--font-family); }
+    .layer-stack { display: grid; gap: 8px; }
+    .layer-row { height: 42px; border-radius: 12px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; background: #fff; box-shadow: var(--shadow-card); color: #30343b; font: 700 13px/18px var(--font-family); }
+    .radar {
+      height: 210px;
+      border-radius: 18px;
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(circle at 50% 50%, rgba(36,140,245,.16) 0 18%, transparent 19% 36%, rgba(36,140,245,.1) 37% 38%, transparent 39% 58%, rgba(36,140,245,.08) 59% 60%, transparent 61%), linear-gradient(135deg, #f0fbff, #f7fff2);
+    }
+    .radar::after { content: ""; position: absolute; left: 50%; top: 50%; width: 160px; height: 5px; background: linear-gradient(90deg, var(--brand-blue), transparent); transform-origin: left center; transform: rotate(32deg); }
+    .mini-node { position: absolute; width: 24px; height: 24px; border-radius: 50%; background: #fff; border: 7px solid var(--brand-orange); box-shadow: 0 0 0 10px rgba(255,112,67,.12); }
+    .node-a { left: 74px; top: 54px; border-color: #f6b33b; }
+    .node-b { right: 66px; top: 86px; border-color: var(--brand-purple); }
+    .node-c { left: 166px; bottom: 42px; border-color: var(--brand-blue); }
+    .share-card { border-radius: 18px; overflow: hidden; background: #fff; box-shadow: 0 18px 42px rgba(0,0,0,.16); }
+    .share-map { height: 230px; position: relative; background: linear-gradient(40deg, transparent 0 48%, rgba(117,198,173,.35) 48% 55%, transparent 55%), linear-gradient(120deg, transparent 0 54%, rgba(255,185,90,.55) 54% 59%, transparent 59%), #eefaff; }
+    .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .metric-card { min-height: 78px; border-radius: 12px; background: #fff; padding: 10px; box-shadow: var(--shadow-card); }
+    .metric-card strong { display: block; color: #20242a; font: 800 20px/26px var(--font-family); }
+    .metric-card span { color: #89919c; font: 400 11px/15px var(--font-family); }
+    .timeline { position: relative; padding-left: 18px; display: grid; gap: 12px; }
+    .timeline::before { content: ""; position: absolute; left: 6px; top: 4px; bottom: 4px; width: 2px; background: #e2e6ec; }
+    .timeline-item { position: relative; border-radius: 12px; background: #fff; padding: 10px 12px; box-shadow: var(--shadow-card); color: #56606c; font: 400 12px/18px var(--font-family); }
+    .timeline-item::before { content: ""; position: absolute; left: -17px; top: 13px; width: 10px; height: 10px; border-radius: 50%; background: var(--brand-orange); }
+    .mini-board { display: grid; grid-template-columns: 84px 1fr; gap: 10px; }
+    .left-tree { border-radius: 12px; background: #fff; padding: 8px; box-shadow: var(--shadow-card); display: grid; gap: 6px; align-content: start; }
+    .tree-item { min-height: 30px; border-radius: 9px; display: grid; place-items: center; background: #f4f6f8; color: #747b85; font: 700 11px/14px var(--font-family); }
+    .tree-item.active { background: var(--brand-blue); color: #fff; }
+    .flow-divider {
+      grid-column: 1 / -1;
+      min-height: 86px;
+      border-radius: 18px;
+      padding: 18px 22px;
+      background: linear-gradient(135deg, #ffffff, #f7fbff);
+      border: 1px solid rgba(36, 140, 245, .12);
+      box-shadow: 0 10px 28px rgba(40, 52, 70, .08);
+      display: grid;
+      gap: 6px;
+      align-content: center;
+    }
+    .flow-divider-title {
+      color: #172033;
+      font: 900 22px/28px var(--font-family);
+    }
+    .flow-divider-desc {
+      color: #647080;
+      font: 400 13px/20px var(--font-family);
+      max-width: 980px;
+    }
+    .board-note {
+      margin: -4px 0 10px;
+      min-height: 58px;
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #fff;
+      border: 1px solid rgba(148, 163, 184, .2);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, .06);
+    }
+    .board-note-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+    .level-badge {
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 11px;
+      color: #fff;
+      background: var(--brand-blue);
+      font: 900 11px/22px var(--font-family);
+    }
+    .path-code {
+      color: #7b8491;
+      font: 700 11px/16px var(--font-family);
+    }
+    .board-note-copy {
+      color: #4c5665;
+      font: 400 12px/18px var(--font-family);
+    }
+    .state-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .state-chip {
+      height: 22px;
+      padding: 0 8px;
+      border-radius: 11px;
+      color: #53606f;
+      background: #f2f5f8;
+      font: 700 10px/22px var(--font-family);
+    }
+    .state-chip.selected { color: #fff; background: var(--brand-blue); }
+    .state-chip.highlighted { color: #6a4100; background: #ffe6ad; }
+    .state-chip.locked { color: #6b536f; background: #f3e8ff; }
+    .state-chip.verified { color: #0a7d40; background: #dbf8e7; }
+    .state-chip.pending { color: #9a5b00; background: #fff3d1; }
+    .canvas > section:has(#home-map-feed) { order: 10; }
+    .canvas > section:has(#home-search-results) { order: 11; }
+    .canvas > section:has(#home-content-detail) { order: 12; }
+    .canvas > section:has(#home-media-preview) { order: 13; }
+    .canvas > section:has(#home-place-detail) { order: 14; }
+    .canvas > section:has(#home-track-detail) { order: 15; }
+    .canvas > section:has(#home-booking-confirm) { order: 16; }
+    .canvas > section:has(#home-anchor-layer-lab) { order: 17; }
+    .canvas > section:has(#home-anchor-action) { order: 18; }
+    .canvas > section:has(#home-map-share) { order: 19; }
+    .canvas > section:has(#home-fog-unlock) { order: 20; }
+    .canvas > section:has(#ai-search) { order: 21; }
+    .canvas > section:has(#home-map-component-board) { order: 22; }
+    .canvas > section:has(#service-map-feed) { order: 30; }
+    .canvas > section:has(#service-card-types) { order: 31; }
+    .canvas > section:has(#service-detail) { order: 32; }
+    .canvas > section:has(#service-merchant-channel) { order: 33; }
+    .canvas > section:has(#service-wiki-edit) { order: 34; }
+    .canvas > section:has(#service-booking) { order: 35; }
+    .canvas > section:has(#service-payment) { order: 36; }
+    .canvas > section:has(#service-success) { order: 37; }
+    .canvas > section:has(#publish-entry) { order: 40; }
+    .canvas > section:has(#publish-type-center) { order: 41; }
+    .canvas > section:has(#publish-editor) { order: 42; }
+    .canvas > section:has(#publish-ai-template) { order: 43; }
+    .canvas > section:has(#publish-track-editor) { order: 44; }
+    .canvas > section:has(#publish-map-cocreate) { order: 45; }
+    .canvas > section:has(#creator-center) { order: 46; }
+    .canvas > section:has(#publish-topic-picker) { order: 47; }
+    .canvas > section:has(#publish-location-picker) { order: 48; }
+    .canvas > section:has(#publish-preview) { order: 49; }
+    .canvas > section:has(#publish-success) { order: 50; }
+    .canvas > section:has(#sandbox-editor) { order: 51; }
+    .canvas > section:has(#sandbox-schedule) { order: 52; }
+    .canvas > section:has(#sandbox-test-share) { order: 53; }
+    .canvas > section:has(#ip-editor) { order: 54; }
+    .canvas > section:has(#ip-selector) { order: 55; }
+    .canvas > section:has(#ip-auth-settings) { order: 56; }
+    .canvas > section:has(#ip-success) { order: 57; }
+    .canvas > section:has(#message-center) { order: 60; }
+    .canvas > section:has(#channel-map) { order: 61; }
+    .canvas > section:has(#channel-detail) { order: 62; }
+    .canvas > section:has(#channel-thread-card) { order: 63; }
+    .canvas > section:has(#channel-permissions) { order: 64; }
+    .canvas > section:has(#message-search) { order: 65; }
+    .canvas > section:has(#chat-detail) { order: 66; }
+    .canvas > section:has(#notification-detail) { order: 67; }
+    .canvas > section:has(#contact-profile) { order: 68; }
+    .canvas > section:has(#my-profile) { order: 70; }
+    .canvas > section:has(#my-services-manage) { order: 71; }
+    .canvas > section:has(#my-location-map) { order: 72; }
+    .canvas > section:has(#my-favorites) { order: 73; }
+    .canvas > section:has(#my-calendar) { order: 74; }
+    .canvas > section:has(#my-heatmap-stats) { order: 75; }
+    .canvas > section:has(#my-timeline-review) { order: 76; }
+    .canvas > section:has(#my-settings) { order: 77; }
+    .canvas > section:has(#my-privacy-control) { order: 78; }
+    .canvas > section:has(#my-profile-edit) { order: 79; }
+    .canvas > section:has(#monetization-center) { order: 90; }
+    .canvas > section:has(#token-board) { order: 99; }
+
+    /* Current UI refinement boards, based on latest app screenshots */
+    .canvas > section:has(#home-map-feed) { order: 10; }
+    .canvas > section:has(#home-map-card-focus) { order: 11; }
+    .canvas > section:has(#home-map-sheet-low) { order: 12; }
+    .canvas > section:has(#home-search-results) { order: 13; }
+    .canvas > section:has(#home-content-detail) { order: 14; }
+    .canvas > section:has(#home-content-location-comments) { order: 15; }
+    .canvas > section:has(#home-activity-detail) { order: 16; }
+    .canvas > section:has(#home-activity-register-detail) { order: 17; }
+    .canvas > section:has(#home-media-preview) { order: 18; }
+    .canvas > section:has(#home-place-detail) { order: 19; }
+    .canvas > section:has(#home-track-detail) { order: 20; }
+    .canvas > section:has(#home-booking-confirm) { order: 21; }
+    .canvas > section:has(#home-anchor-layer-lab) { order: 22; }
+    .canvas > section:has(#home-anchor-action) { order: 23; }
+    .canvas > section:has(#home-map-share) { order: 24; }
+    .canvas > section:has(#home-fog-unlock) { order: 25; }
+    .canvas > section:has(#ai-search) { order: 26; }
+    .canvas > section:has(#home-map-component-board) { order: 27; }
+    .canvas > section:has(#service-map-feed) { order: 40; }
+    .canvas > section:has(#service-card-types) { order: 41; }
+    .canvas > section:has(#service-detail) { order: 42; }
+    .canvas > section:has(#service-detail-current) { order: 43; }
+    .canvas > section:has(#service-merchant-channel) { order: 44; }
+    .canvas > section:has(#service-wiki-edit) { order: 45; }
+    .canvas > section:has(#service-booking) { order: 46; }
+    .canvas > section:has(#service-payment) { order: 47; }
+    .canvas > section:has(#service-success) { order: 48; }
+    .canvas > section:has(#my-location-map) { order: 72; }
+    .canvas > section:has(#my-footprint-map-current) { order: 73; }
+    .canvas > section:has(#my-favorites) { order: 74; }
+    .canvas > section:has(#my-favorites-current) { order: 75; }
+
+    .current-map {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background:
+        linear-gradient(31deg, transparent 0 44%, rgba(255, 184, 90, .62) 44% 49%, transparent 49%),
+        linear-gradient(101deg, transparent 0 50%, rgba(226, 78, 188, .66) 50% 51%, transparent 51%),
+        linear-gradient(141deg, transparent 0 43%, rgba(28, 164, 82, .55) 43% 45%, transparent 45%),
+        linear-gradient(90deg, rgba(151, 163, 176, .25) 1px, transparent 1px),
+        linear-gradient(rgba(151, 163, 176, .25) 1px, transparent 1px),
+        linear-gradient(135deg, #fafbf6 0%, #f7f7f2 48%, #e6f7df 49%, #f7fbff 72%, #e4f2ff 100%);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 42px 42px, 42px 42px, 100% 100%;
+    }
+    .current-map .map-label { font-size: 13px; color: #587692; text-shadow: 0 1px 0 rgba(255,255,255,.85); }
+    .current-map .poi-orange { color: #d88421; font-weight: 800; }
+    .current-pin {
+      position: absolute;
+      z-index: 2;
+      width: 28px;
+      height: 28px;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      background: #f34f55;
+      box-shadow: 0 3px 10px rgba(238, 74, 82, .28);
+    }
+    .current-pin::after {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      border-radius: 50%;
+      background: #fff;
+    }
+    .current-pin.blue {
+      width: 22px;
+      height: 22px;
+      background: #2d9ce8;
+      border: 4px solid rgba(255,255,255,.85);
+      transform: none;
+      box-shadow: 0 0 0 8px rgba(45,156,232,.15);
+    }
+    .current-pin.blue::after { display: none; }
+    .map-float-grid {
+      position: absolute;
+      z-index: 8;
+      right: 22px;
+      top: 112px;
+      display: grid;
+      grid-template-columns: repeat(2, 82px);
+      gap: 12px;
+    }
+    .map-float-card {
+      height: 100px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: rgba(255,255,255,.9);
+      border: 1px solid rgba(255,112,67,.48);
+      box-shadow: 0 6px 16px rgba(32, 44, 62, .12);
+    }
+    .map-float-card .thumb {
+      height: 58px;
+      background: #f2f3f5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #c1c5cb;
+      font-size: 20px;
+    }
+    .map-float-card .thumb.photo-current,
+    .shot-photo-cover {
+      background:
+        radial-gradient(circle at 72% 20%, #b07141 0 6%, transparent 7%),
+        radial-gradient(circle at 58% 38%, #1b1712 0 18%, transparent 19%),
+        linear-gradient(135deg, #7a4b32 0 31%, #2c1b14 32% 62%, #c28e5b 63% 100%);
+    }
+    .map-float-card .thumb.video-current {
+      background: #303030;
+      color: #1f2833;
+    }
+    .map-float-card .float-title {
+      padding: 6px 7px 0;
+      font: 700 11px/14px var(--font-family);
+      color: #333;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .map-float-card .float-meta {
+      padding: 1px 7px 0;
+      font: 400 10px/14px var(--font-family);
+      color: #89919b;
+    }
+    .test-red-card {
+      position: absolute;
+      z-index: 9;
+      left: 58px;
+      top: 126px;
+      width: 72px;
+      height: 92px;
+      padding-top: 8px;
+      background: #f10f10;
+      color: #fff;
+      text-align: center;
+      font: 800 13px/18px var(--font-family);
+    }
+    .bottom-search-dock {
+      position: absolute;
+      z-index: 12;
+      left: 0;
+      right: 0;
+      bottom: 82px;
+      height: 70px;
+      border-radius: 18px 18px 0 0;
+      background: rgba(255,255,255,.96);
+      box-shadow: 0 -4px 18px rgba(0,0,0,.08);
+      padding: 12px 22px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .bottom-search-dock .search-mini {
+      flex: 1;
+      height: 36px;
+      border-radius: 18px;
+      background: #f6f7f8;
+      color: #9aa1aa;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      font: var(--font-body);
+    }
+    .orange-pill {
+      width: 54px;
+      height: 36px;
+      border-radius: 18px;
+      background: var(--cta-primary);
+      box-shadow: var(--shadow-float);
+    }
+    .sheet.low-state {
+      top: 454px;
+      height: 306px;
+      background: rgba(248,248,248,.95);
+    }
+    .sheet.low-state .feed { height: 214px; overflow: hidden; }
+    .detail-current-top {
+      height: 388px;
+      background: #111;
+      background-image:
+        radial-gradient(circle at 69% 25%, rgba(181,117,62,.75) 0 5%, transparent 6%),
+        radial-gradient(circle at 56% 45%, rgba(12,12,12,.95) 0 16%, transparent 17%),
+        linear-gradient(120deg, #754c33 0 27%, #2a1913 28% 66%, #b07a44 67% 100%);
+      background-size: cover;
+    }
+    .detail-current-titlebar {
+      position: absolute;
+      z-index: 50;
+      top: 44px;
+      left: 18px;
+      right: 18px;
+      display: grid;
+      grid-template-columns: 34px 1fr 34px;
+      align-items: center;
+      color: #fff;
+      font: 800 17px/24px var(--font-family);
+      text-align: center;
+    }
+    .detail-current-titlebar .back-dot,
+    .detail-current-titlebar .more-dot {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: rgba(0,0,0,.24);
+      display: grid;
+      place-items: center;
+      color: #fff;
+    }
+    .content-sheet-card {
+      position: absolute;
+      z-index: 20;
+      left: 0;
+      right: 0;
+      top: 382px;
+      min-height: 462px;
+      border-radius: 16px 16px 0 0;
+      background: #fff;
+      overflow: hidden;
+    }
+    .content-section {
+      padding: 20px 18px;
+      border-bottom: 8px solid #f7f7f8;
+    }
+    .content-section h1,
+    .content-section h2 {
+      margin: 0 0 12px;
+      font: 800 22px/30px var(--font-family);
+      color: #222;
+    }
+    .content-section h2 { font-size: 18px; }
+    .detail-user {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      color: #666;
+      font: 400 14px/20px var(--font-family);
+    }
+    .green-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #28a83e;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font: 900 22px/1 var(--font-family);
+      box-shadow: inset 0 0 0 3px rgba(255,255,255,.75);
+    }
+    .stat-row-current {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      padding: 20px 0 4px;
+      text-align: center;
+      gap: 1px;
+    }
+    .stat-row-current div { border-right: 1px solid #eef0f2; }
+    .stat-row-current div:last-child { border-right: 0; }
+    .stat-row-current strong { display: block; font: 800 22px/28px var(--font-family); color: #333; }
+    .stat-row-current span { display: block; margin-top: 4px; font: 400 13px/18px var(--font-family); color: #969ba3; }
+    .location-info-card {
+      margin-top: 12px;
+      padding: 18px;
+      border-radius: 12px;
+      background: #fafafa;
+      display: grid;
+      grid-template-columns: 28px 1fr;
+      gap: 12px;
+      color: #666;
+    }
+    .location-info-card .pink-pin {
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      background: #ec3fc8;
+    }
+    .comment-list-current {
+      display: grid;
+      gap: 18px;
+      padding-top: 4px;
+    }
+    .comment-current {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      gap: 12px;
+      align-items: start;
+      color: #555;
+      font: 400 15px/22px var(--font-family);
+    }
+    .detail-input-bar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 40;
+      min-height: 76px;
+      padding: 12px 18px 22px;
+      background: rgba(255,255,255,.97);
+      display: grid;
+      grid-template-columns: 1fr 36px 42px;
+      gap: 10px;
+      align-items: center;
+      border-top: 1px solid #f0f0f0;
+    }
+    .detail-input-bar .fake-input {
+      height: 38px;
+      border-radius: 19px;
+      background: #f4f5f6;
+      color: #b7bbc1;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      font: 400 14px/20px var(--font-family);
+    }
+    .activity-gradient {
+      position: absolute;
+      inset: 0 0 auto;
+      height: 470px;
+      background: linear-gradient(135deg, #6078df 0%, #7d50bb 100%);
+    }
+    .activity-status-pill {
+      position: absolute;
+      top: 212px;
+      left: 50%;
+      z-index: 5;
+      transform: translateX(-50%);
+      padding: 10px 24px;
+      border-radius: 22px;
+      background: rgba(255,255,255,.18);
+      color: #fff;
+      font: 700 15px/20px var(--font-family);
+    }
+    .activity-panel-current {
+      position: absolute;
+      z-index: 10;
+      left: 0;
+      right: 0;
+      top: 396px;
+      min-height: 448px;
+      border-radius: 16px 16px 0 0;
+      background: #fff;
+      padding: 20px 22px 96px;
+    }
+    .activity-info-card,
+    .activity-progress-card,
+    .notice-current-card {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 3px 18px rgba(18,24,38,.07);
+    }
+    .activity-info-row {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+      color: #333;
+      font: 600 15px/22px var(--font-family);
+    }
+    .activity-info-row:last-child { border-bottom: 0; }
+    .activity-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      background: #f2f5ff;
+      color: #ec3fc8;
+      display: grid;
+      place-items: center;
+    }
+    .progress-line-current {
+      height: 6px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #657de7 0 72%, #7650c8 72% 100%);
+      margin: 16px 0;
+    }
+    .avatars-row { display: flex; align-items: center; }
+    .avatars-row .green-avatar {
+      width: 28px;
+      height: 28px;
+      margin-right: -8px;
+      font-size: 18px;
+      border: 2px solid #fff;
+    }
+    .notice-current-card {
+      background: #fff7df;
+      color: #736044;
+      box-shadow: none;
+    }
+    .notice-current-card h3 {
+      margin: 0 0 12px;
+      color: #c99412;
+      font: 800 17px/24px var(--font-family);
+    }
+    .notice-current-card p {
+      margin: 9px 0;
+      font: 400 14px/21px var(--font-family);
+    }
+    .activity-bottom-bar {
+      position: absolute;
+      z-index: 30;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 92px;
+      padding: 12px 16px 22px;
+      background: rgba(255,255,255,.97);
+      display: grid;
+      grid-template-columns: 54px 54px 1fr;
+      gap: 12px;
+      align-items: center;
+      border-top: 1px solid #f0f0f0;
+    }
+    .activity-bottom-bar .small-action { text-align: center; color: #8d939c; font-size: 12px; }
+    .disabled-cta {
+      height: 46px;
+      border-radius: 23px;
+      background: #cfcfcf;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font: 800 16px/22px var(--font-family);
+    }
+    .service-green-hero {
+      position: absolute;
+      inset: 0 0 auto;
+      height: 470px;
+      background: #259b3a;
+      color: #fff;
+      overflow: hidden;
+    }
+    .service-green-hero .big-logo {
+      position: absolute;
+      left: 70px;
+      top: 128px;
+      font: 900 250px/.8 var(--font-family);
+      color: #fff;
+      filter: blur(.6px);
+      text-shadow: 0 0 12px rgba(255,255,255,.5);
+    }
+    .service-green-copy {
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: 22px;
+    }
+    .service-green-copy h1 {
+      margin: 0 0 8px;
+      font: 900 20px/26px var(--font-family);
+    }
+    .service-green-copy .rating-line {
+      color: #ffd867;
+      font: 700 13px/18px var(--font-family);
+    }
+    .service-profile-panel {
+      position: absolute;
+      z-index: 12;
+      left: 0;
+      right: 0;
+      top: 468px;
+      bottom: 78px;
+      background: #f6f7f8;
+      padding: 8px 12px;
+      overflow: hidden;
+    }
+    .service-profile-card {
+      margin-bottom: 10px;
+      padding: 14px;
+      border-radius: 8px;
+      background: #fff;
+      color: #333;
+      font: 400 14px/20px var(--font-family);
+    }
+    .service-number {
+      text-align: center;
+      color: #22a663;
+      font: 900 24px/30px var(--font-family);
+    }
+    .chip-row-current {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .chip-row-current span {
+      padding: 7px 12px;
+      border-radius: 15px;
+      background: #eef3ff;
+      color: #2878ff;
+      font: 600 12px/16px var(--font-family);
+    }
+    .service-bottom-current {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 88px;
+      padding: 10px 12px 22px;
+      background: #fff;
+      display: grid;
+      grid-template-columns: 54px 54px 54px 1fr;
+      gap: 8px;
+      align-items: center;
+      border-top: 1px solid #e9eaec;
+    }
+    .service-bottom-current .reserve-now {
+      height: 42px;
+      border-radius: 21px;
+      background: #ff4f55;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font: 800 15px/20px var(--font-family);
+    }
+    .my-top-filter {
+      position: absolute;
+      z-index: 30;
+      left: 10px;
+      right: 10px;
+      top: 58px;
+      padding: 8px 12px;
+      border-radius: 18px;
+      background: rgba(255,255,255,.86);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(20,30,50,.08);
+    }
+    .my-top-filter span {
+      flex: 1;
+      height: 34px;
+      border-radius: 12px;
+      background: #eceff2;
+      display: grid;
+      place-items: center;
+      color: #666;
+      font: 700 12px/16px var(--font-family);
+    }
+    .my-top-filter span.active {
+      background: #7650c8;
+      color: #fff;
+    }
+    .my-map-card {
+      position: absolute;
+      z-index: 8;
+      width: 86px;
+      min-height: 104px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.9);
+      overflow: hidden;
+      box-shadow: 0 6px 14px rgba(22,30,46,.12);
+    }
+    .my-map-card .cover-blue {
+      height: 76px;
+      background: #96bef8;
+    }
+    .my-map-card .badge-num {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #ff4f55;
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font: 800 11px/1 var(--font-family);
+    }
+    .my-map-bottom {
+      position: absolute;
+      z-index: 14;
+      left: 0;
+      right: 0;
+      bottom: 84px;
+      min-height: 108px;
+      padding: 18px;
+      background: rgba(255,255,255,.86);
+      box-shadow: 0 -4px 18px rgba(0,0,0,.06);
+    }
+    .my-map-bottom h2 {
+      margin: 0 0 8px;
+      font: 900 20px/26px var(--font-family);
+      color: #111;
+    }
+    .fav-current-head {
+      position: absolute;
+      z-index: 24;
+      left: 0;
+      right: 0;
+      top: 58px;
+      height: 86px;
+      background: rgba(255,255,255,.92);
+      border-radius: 0 0 16px 16px;
+      box-shadow: 0 4px 14px rgba(18,24,38,.06);
+      padding: 9px 16px;
+    }
+    .fav-switch-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .fav-switch-row span {
+      height: 34px;
+      border-radius: 12px;
+      background: #eceff2;
+      color: #666;
+      display: grid;
+      place-items: center;
+      font: 700 12px/16px var(--font-family);
+    }
+    .fav-switch-row span.active {
+      background: #7650c8;
+      color: #fff;
+    }
+    .fav-chip-row {
+      display: flex;
+      gap: 8px;
+      overflow: hidden;
+    }
+    .fav-chip-row span {
+      flex: 0 0 auto;
+      height: 28px;
+      padding: 6px 12px;
+      border-radius: 14px;
+      background: #f1f2f4;
+      color: #666;
+      font: 600 12px/16px var(--font-family);
+    }
+    .fav-chip-row span.active {
+      background: #248cf5;
+      color: #fff;
+    }
+    .fav-waterfall-current {
+      position: absolute;
+      z-index: 8;
+      top: 146px;
+      left: 12px;
+      right: 12px;
+      bottom: 86px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      overflow: hidden;
+    }
+    .fav-card-current {
+      min-height: 174px;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 1px 8px rgba(18,24,38,.05);
+      overflow: hidden;
+    }
+    .fav-card-current .empty-cover {
+      height: 112px;
+      display: grid;
+      place-items: center;
+      background: #fafafa;
+      color: #dedede;
+      font: 700 13px/18px var(--font-family);
+    }
+    .fav-card-current .fav-body {
+      padding: 8px 10px;
+      color: #999;
+      font: 400 12px/16px var(--font-family);
+    }
+    .fav-card-current .fav-title {
+      color: #333;
+      font: 700 14px/19px var(--font-family);
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+  <main class="canvas">
+    <section>
+      <h2 class="board-title">首页 / 地图内容流</h2>
+      <div class="phone" id="home-map-feed">
+        <div class="map">
+          <span class="map-label l1">四川保路<br>运动会旧址</span>
+          <span class="map-label l2">自由天地</span>
+          <span class="map-label l3">亚新大厦</span>
+          <i class="pin p1"></i><i class="pin p2"></i><i class="loc-dot home"></i>
+        </div>
+        <div class="status"><span>23:32</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div>
+        <div class="notch"></div>
+        <div class="capsule"><span class="dotset"><i></i><i></i><i></i></span><span class="circle-icon"></span></div>
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="search">搜 <span>搜索</span></div>
+          <div class="tabs"><span class="active">全部</span><span>热门资源</span><span>展会活动</span><span>个人活动</span></div>
+          <span class="floating-locate"></span>
+          <div class="feed">
+            <div class="col">
+              <article class="card">
+                <div class="cover photo-bridge"><span class="tag-dark">商业</span></div>
+                <div class="card-body">
+                  <div class="card-title">推荐打卡 1</div>
+                  <div class="meta"><span class="muted-dot"></span>用户495</div>
+                  <div class="stats">♡ 464　☆</div>
+                </div>
+              </article>
+              <article class="card">
+                <div class="placeholder"><span><span class="big">▧</span>文章</span><span class="type-pill">文</span></div>
+                <div class="card-body">
+                  <div class="card-title">精选文章 3</div>
+                  <div class="stats"><span class="muted-dot"></span>用户167　5805阅读 ♡ 489　☆</div>
+                </div>
+              </article>
+              <article class="card">
+                <div class="placeholder"><span><span class="big">◎</span>活动</span></div>
+                <div class="card-body">
+                  <div class="card-title">周末城市漫游</div>
+                  <div class="stats">线下活动　1280 热度</div>
+                </div>
+              </article>
+            </div>
+            <div class="col">
+              <article class="card video-card">
+                <div class="video-cover">暂无封面<span class="score-pill">2:02</span></div>
+                <div class="card-body">
+                  <div class="card-title">精彩视频 2</div>
+                  <div class="stats"><span class="muted-dot"></span>用户469 <span class="play"></span>1.0万♡426　☆</div>
+                </div>
+              </article>
+              <article class="card">
+                <div class="place-mini"><span class="place-dot"></span><span class="type-pill">地</span></div>
+                <div class="card-body">
+                  <div class="card-title">推荐地点 4</div>
+                  <div class="address">成都市春熙路4号</div>
+                  <div class="stats">热门　推荐 <span style="margin-left:auto;color:#f6b33b">★ 4.3</span></div>
+                  <div class="place-actions"><span class="orange">◎ 导航</span><span class="blue">▣ 预约</span><span>♡ 253　☆</span></div>
+                </div>
+              </article>
+              <article class="card">
+                <div class="cover photo-cloud"></div>
+                <div class="card-body">
+                  <div class="card-title">天空影像记录</div>
+                  <div class="stats">♡ 88　☆</div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+        <nav class="tabbar">
+          <div class="tab active"><span class="ico">⌂</span><span>首页</span></div>
+          <div class="tab"><span class="ico">✦</span><span>服务</span></div>
+          <div class="plus">+</div>
+          <div class="tab"><span class="ico">▣</span><span>消息</span></div>
+          <div class="tab"><span class="ico">♟</span><span>我的</span></div>
+        </nav>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">首页状态 / 地图卡片浮层</h2>
+      <div class="phone" id="home-map-card-focus">
+        <div class="current-map">
+          <span class="map-label" style="left:18px;top:126px">四川保路<br>运动会旧址</span>
+          <span class="map-label" style="left:140px;top:260px">正成 · 财富 ID</span>
+          <span class="map-label" style="left:248px;top:88px">自由天地</span>
+          <span class="map-label poi-orange" style="left:112px;top:672px">成都 IFS</span>
+          <i class="current-pin" style="left:210px;top:38px"></i>
+          <i class="current-pin" style="left:34px;top:578px"></i>
+          <i class="current-pin" style="right:18px;top:254px"></i>
+          <i class="current-pin blue" style="left:206px;top:380px"></i>
+          <div class="test-red-card">测试卡片</div>
+          <div class="map-float-grid">
+            <article class="map-float-card"><div class="thumb photo-current"></div><div class="float-title">推荐打卡 1</div><div class="float-meta">用户23</div></article>
+            <article class="map-float-card"><div class="thumb video-current">▶</div><div class="float-title">精彩视频 2</div><div class="float-meta">用户624</div></article>
+            <article class="map-float-card"><div class="thumb">文</div><div class="float-title">精选文章 3</div><div class="float-meta">用户250</div></article>
+            <article class="map-float-card"><div class="thumb">地</div><div class="float-title">推荐地点 4</div><div class="float-meta">用户412</div></article>
+            <article class="map-float-card"><div class="thumb">彩</div><div class="float-title">推荐活动 5</div><div class="float-meta">用户415</div></article>
+            <article class="map-float-card"><div class="thumb photo-current"></div><div class="float-title">推荐打卡 6</div><div class="float-meta">用户559</div></article>
+          </div>
+        </div>
+        <div class="status"><span>22:37</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div>
+        <div class="notch"></div>
+        <div class="capsule"><span class="dotset"><i></i><i></i><i></i></span><span class="circle-icon"></span></div>
+        <div class="bottom-search-dock"><div class="search-mini">搜索</div><div class="orange-pill"></div></div>
+        <nav class="tabbar">
+          <div class="tab active"><span class="ico">⌂</span><span>首页</span></div>
+          <div class="tab"><span class="ico">✦</span><span>服务</span></div>
+          <div class="plus">+</div>
+          <div class="tab"><span class="ico">▣</span><span>消息</span></div>
+          <div class="tab"><span class="ico">♟</span><span>我的</span></div>
+        </nav>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">首页状态 / 大地图低面板</h2>
+      <div class="phone" id="home-map-sheet-low">
+        <div class="current-map">
+          <span class="map-label" style="left:16px;top:136px">四川保路<br>运动会旧址</span>
+          <span class="map-label" style="left:230px;top:124px">自由天地</span>
+          <span class="map-label" style="left:188px;top:340px">锦都公寓</span>
+          <i class="current-pin" style="left:210px;top:40px"></i>
+          <i class="current-pin" style="right:14px;top:250px"></i>
+          <i class="current-pin blue" style="left:205px;top:312px"></i>
+        </div>
+        <div class="status"><span>22:38</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div>
+        <div class="notch"></div>
+        <div class="capsule"><span class="dotset"><i></i><i></i><i></i></span><span class="circle-icon"></span></div>
+        <div class="sheet low-state">
+          <div class="sheet-handle"></div>
+          <div class="search">搜 <span>搜索</span></div>
+          <div class="tabs"><span class="active">全部</span><span>热门资源</span><span>展会活动</span><span>个人活动</span></div>
+          <span class="floating-locate"></span>
+          <div class="feed">
+            <div class="col">
+              <article class="card"><div class="cover shot-photo-cover"><span class="tag-dark">高热</span></div><div class="card-body"><div class="card-title">推荐打卡 1</div><div class="meta"><span class="muted-dot"></span>用户23</div><div class="stats">♡ 447　☆</div></div></article>
+            </div>
+            <div class="col">
+              <article class="card video-card"><div class="video-cover">暂无封面<span class="score-pill">8:56</span></div><div class="card-body"><div class="card-title">精彩视频 2</div><div class="stats"><span class="muted-dot"></span>用户624 ▶ 4.5万♡408 ☆</div></div></article>
+            </div>
+          </div>
+        </div>
+        <nav class="tabbar">
+          <div class="tab active"><span class="ico">⌂</span><span>首页</span></div>
+          <div class="tab"><span class="ico">✦</span><span>服务</span></div>
+          <div class="plus">+</div>
+          <div class="tab"><span class="ico">▣</span><span>消息</span></div>
+          <div class="tab"><span class="ico">♟</span><span>我的</span></div>
+        </nav>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">首页详情 / 位置与评论滚动态</h2>
+      <div class="phone subpage" id="home-content-location-comments">
+        <div class="status"><span>22:38</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div>
+        <div class="notch"></div>
+        <div class="capsule"><span class="dotset"><i></i><i></i><i></i></span><span class="circle-icon"></span></div>
+        <div class="content-section" style="padding-top:54px;background:#fff">
+          <h1>推荐打卡 1</h1>
+          <div class="detail-user"><span class="green-avatar">凵</span><span>用户23　刚刚</span></div>
+        </div>
+        <div class="content-section" style="background:#fff">
+          <div class="stat-row-current"><div><strong>447</strong><span>点赞</span></div><div><strong>0</strong><span>收藏</span></div><div><strong>0</strong><span>浏览</span></div></div>
+        </div>
+        <div class="content-section">
+          <h2>内容介绍</h2>
+          <p class="detail-text">这是推荐打卡的描述内容，包含了丰富的信息和详细的介绍。</p>
+        </div>
+        <div class="content-section">
+          <h2>位置信息 <span class="primary-btn" style="float:right;width:58px;height:34px;border-radius:17px;font-size:13px">导航</span></h2>
+          <div class="location-info-card"><span class="pink-pin"></span><div><div style="font-weight:700">30.6598, 104.0893</div><div style="margin-top:8px;color:#aaa">点击查看地图</div></div></div>
+        </div>
+        <div class="content-section" style="border-bottom:0">
+          <h2>评论 (6)</h2>
+          <div class="comment-list-current">
+            <div class="comment-current"><span class="green-avatar">凵</span><div><strong>小明</strong><br>太棒了，支持！<br><span style="color:#aaa;font-size:12px">1小时前</span></div><span style="color:#aaa">♡ 41</span></div>
+            <div class="comment-current"><span class="green-avatar">凵</span><div><strong>小红</strong><br>打卡成功~<br><span style="color:#aaa;font-size:12px">2小时前</span></div><span style="color:#aaa">♡ 17</span></div>
+          </div>
+        </div>
+        <div class="detail-input-bar"><div class="fake-input">说点什么...</div><div style="color:#aaa;text-align:center">♡<br><small>447</small></div><div style="color:#aaa;text-align:center">☆<br><small>收藏</small></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">首页详情 / 活动首屏</h2>
+      <div class="phone subpage" id="home-activity-detail">
+        <div class="activity-gradient"></div>
+        <div class="status" style="color:#111"><span>22:38</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div>
+        <div class="notch"></div>
+        <div class="detail-current-titlebar"><span class="back-dot">‹</span><span>活动详情</span><span class="more-dot">↗</span></div>
+        <div class="capsule"><span class="dotset"><i></i><i></i><i></i></span><span class="circle-icon"></span></div>
+        <div class="activity-status-pill">进行中</div>
+        <div class="activity-panel-current">
+          <h1 style="margin:0 0 12px;font:900 22px/30px var(--font-family)">推荐活动 5</h1>
+          <div class="detail-user"><span class="green-avatar">凵</span><span>主办方：用户415</span></div>
+          <div class="activity-info-card">
+            <div class="activity-info-row"><span class="activity-icon">日</span><div><span style="color:#999">活动时间</span><br>7月6日 7:36 - 10:36</div></div>
+            <div class="activity-info-row"><span class="activity-icon">位</span><div><span style="color:#999">活动地点</span><br>成都市测试地址 5</div></div>
+          </div>
+          <div class="activity-progress-card"><div style="display:flex;justify-content:space-between;font-weight:800"><span>报名情况</span><span style="font-weight:400;color:#777">364 / 266 人</span></div><div class="progress-line-current"></div></div>
+        </div>
+        <div class="activity-bottom-bar"><div class="small-action">♡<br>270</div><div class="small-action">↗<br>分享</div><div class="disabled-cta">报名已截止</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">首页详情 / 活动报名与注意事项</h2>
+      <div class="phone subpage" id="home-activity-register-detail">
+        <div class="activity-gradient" style="height:118px"></div>
+        <div class="status"><span>22:38</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div>
+        <div class="notch"></div>
+        <div class="detail-current-titlebar" style="top:44px"><span class="back-dot">‹</span><span>活动详情</span><span></span></div>
+        <div class="capsule"><span class="dotset"><i></i><i></i><i></i></span><span class="circle-icon"></span></div>
+        <div style="position:absolute;left:0;right:0;top:72px;bottom:92px;background:#fff;padding:22px 22px 20px;overflow:hidden;border-radius:14px 14px 0 0">
+          <h1 style="margin:0 0 12px;font:900 22px/30px var(--font-family)">推荐活动 5</h1>
+          <div class="detail-user"><span class="green-avatar">凵</span><span>主办方：用户415</span></div>
+          <div class="activity-info-card"><div class="activity-info-row"><span class="activity-icon">日</span><div><span style="color:#999">活动时间</span><br>7月6日 7:36 - 10:36</div></div><div class="activity-info-row"><span class="activity-icon">位</span><div><span style="color:#999">活动地点</span><br>成都市测试地址 5</div></div></div>
+          <div class="activity-progress-card"><div style="display:flex;justify-content:space-between;font-weight:800"><span>报名情况</span><span style="font-weight:400;color:#777">364 / 266 人</span></div><div class="progress-line-current"></div><div class="avatars-row"><span class="green-avatar">凵</span><span class="green-avatar">凵</span><span class="green-avatar">凵</span><span class="green-avatar">凵</span><span class="green-avatar">凵</span><span style="margin-left:12px;color:#999">+358</span></div></div>
+          <div style="padding:16px 0"><h2 style="font:800 18px/24px var(--font-family)">活动详情</h2><p class="detail-text">这是推荐活动的描述内容，包含了丰富的信息和详细的介绍。</p></div>
+          <div class="notice-current-card"><h3>注意事项</h3><p><b>1</b>　请准时参加活动，迟到超过15分钟将取消报名资格</p><p><b>2</b>　活动开始前24小时可免费取消报名</p><p><b>3</b>　活动期间请遵守相关规定</p></div>
+        </div>
+        <div class="activity-bottom-bar"><div class="small-action">♡<br>270</div><div class="small-action">↗<br>分享</div><div class="disabled-cta">报名已截止</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">服务 / 地图服务流</h2>
+      <div class="phone" id="service-map-feed">
+        <div class="map">
+          <span class="map-label l2">和风楼</span>
+          <span class="map-label l3">何氏·双流<br>老妈兔头</span>
+          <i class="loc-dot service"></i>
+        </div>
+        <div class="status"><span>23:32</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div>
+        <div class="notch"></div>
+        <div class="capsule"><span class="dotset"><i></i><i></i><i></i></span><span class="circle-icon"></span></div>
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="search">搜 <span>搜索</span></div>
+          <div class="tabs service-tabs"><span class="active">全部服务</span><span>维修服务</span><span>清洁服务</span><span>配送服务</span></div>
+          <span class="floating-locate"></span>
+          <div class="feed">
+            <div class="col">
+              <article class="card service-card">
+                <div class="place-mini"><span class="place-dot"></span><span class="score-pill">2.5 分</span><span class="type-pill">服务</span></div>
+                <div class="card-body">
+                  <div class="card-title">全部服务 1</div>
+                  <div class="bars"><span>现在</span><span class="bar"></span><span>+6h</span><span></span><span class="bar"></span><span>+12h</span></div>
+                  <div class="status-line"><span><b class="open-badge">• 营业中</b> 成都市测试地址 1</span><span>♡ ☆</span><span class="book">预约</span></div>
+                </div>
+              </article>
+              <article class="card service-card">
+                <div class="place-mini"><span class="place-dot"></span><span class="score-pill">3.6 分</span><span class="type-pill">服务</span></div>
+                <div class="card-body">
+                  <div class="card-title">全部服务 3</div>
+                  <div class="bars"><span>现在</span><span class="bar"></span><span>+6h</span><span></span><span class="bar"></span><span>+12h</span></div>
+                  <div class="status-line"><span><b class="open-badge">• 营业中</b> 成都市测试地址 3</span><span>♡ ☆</span><span class="book">预约</span></div>
+                </div>
+              </article>
+            </div>
+            <div class="col">
+              <article class="card service-card">
+                <div class="place-mini"><span class="place-dot"></span><span class="score-pill">2.3 分</span><span class="type-pill">服务</span></div>
+                <div class="card-body">
+                  <div class="card-title">全部服务 2</div>
+                  <div class="bars"><span>现在</span><span class="bar"></span><span>+6h</span><span></span><span class="bar"></span><span>+12h</span></div>
+                  <div class="status-line"><span><b class="open-badge">• 营业中</b> 成都市测试地址 2</span><span>♡ ☆</span><span class="book">预约</span></div>
+                </div>
+              </article>
+              <article class="card service-card">
+                <div class="place-mini"><span class="place-dot"></span><span class="score-pill">4.1 分</span><span class="type-pill">服务</span></div>
+                <div class="card-body">
+                  <div class="card-title">全部服务 4</div>
+                  <div class="bars"><span>现在</span><span class="bar"></span><span>+6h</span><span></span><span class="bar"></span><span>+12h</span></div>
+                  <div class="status-line"><span><b class="open-badge">• 营业中</b> 成都市测试地址 4</span><span>♡ ☆</span><span class="book">预约</span></div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+        <nav class="tabbar">
+          <div class="tab"><span class="ico">⌂</span><span>首页</span></div>
+          <div class="tab active"><span class="ico">✦</span><span>服务</span></div>
+          <div class="plus">+</div>
+          <div class="tab"><span class="ico">▣</span><span>消息</span></div>
+          <div class="tab"><span class="ico">♟</span><span>我的</span></div>
+        </nav>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">发布入口浮层</h2>
+      <div class="phone publish" id="publish-entry">
+        <div class="map">
+          <span class="map-label l2">和风楼</span><span class="map-label l3">何氏·双流</span><i class="loc-dot service"></i>
+        </div>
+        <div class="status"><span>23:32</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div>
+        <div class="notch"></div>
+        <div class="capsule"><span class="dotset"><i></i><i></i><i></i></span><span class="circle-icon"></span></div>
+        <div class="sheet">
+          <div class="sheet-handle"></div>
+          <div class="search">搜 <span>搜索</span></div>
+          <div class="tabs service-tabs"><span class="active">全部服务</span><span>维修服务</span><span>清洁服务</span></div>
+          <span class="floating-locate"></span>
+          <div class="feed">
+            <div class="col"><article class="card service-card"><div class="place-mini"><span class="place-dot"></span><span class="score-pill">2.5 分</span></div><div class="card-body"><div class="card-title">全部服务 1</div><div class="bars"><span>现在</span><span class="bar"></span><span>+6h</span></div></div></article></div>
+            <div class="col"><article class="card service-card"><div class="place-mini"><span class="place-dot"></span><span class="score-pill">2.3 分</span></div><div class="card-body"><div class="card-title">全部服务 2</div><div class="bars"><span>现在</span><span class="bar"></span><span>+6h</span></div></div></article></div>
+          </div>
+        </div>
+        <nav class="tabbar">
+          <div class="tab"><span class="ico">⌂</span><span>首页</span></div>
+          <div class="tab active"><span class="ico">✦</span><span>服务</span></div>
+          <div class="plus">+</div>
+          <div class="tab"><span class="ico">▣</span><span>消息</span></div>
+          <div class="tab"><span class="ico">♟</span><span>我的</span></div>
+        </nav>
+        <div class="scrim"></div>
+        <div class="hot-panel">
+          <div class="hot-head"><span>热点推送</span><span>更多</span></div>
+          <div class="hot-list">
+            <div class="hot-card"><span class="hash">#</span>周末骑行<small>12800 热度</small></div>
+            <div class="hot-card"><span class="hash">#</span>城市露营<small>9650 热度</small></div>
+            <div class="hot-card"><span class="hash">#</span>探店打卡<small>8400 热度</small></div>
+          </div>
+        </div>
+        <div class="publish-sheet">
+          <div class="publish-action primary">发布</div>
+          <div class="publish-action">沙盒</div>
+          <div class="publish-action">原创IP</div>
+        </div>
+        <div class="plus close">+</div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">消息中心</h2>
+      <div class="phone message-page" id="message-center">
+        <div class="status"><span>23:32</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div>
+        <div class="notch"></div>
+        <div class="message-top">
+          <div class="message-search">搜索消息/联系人</div>
+          <div class="ghost-circle"></div>
+          <div class="ghost-circle"></div>
+          <div class="capsule" style="position:static"><span class="dotset"><i></i><i></i><i></i></span><span class="circle-icon"></span></div>
+        </div>
+        <div class="message-tabs"><span class="active">频道与朋友</span><span>关注与粉丝</span><span>点赞与评论</span></div>
+        <div class="rail">
+          <div class="avatar blue"><span class="badge-count">3</span></div>
+          <div class="avatar green"><span class="badge-count">5</span></div>
+          <div class="avatar orange"><span class="badge-count">2</span></div>
+          <div class="avatar red"><span class="badge-count">99+</span></div>
+          <div class="avatar purple"></div>
+          <div class="avatar cyan"></div>
+        </div>
+        <div class="message-list">
+          <div class="message-row selected"><div class="msg-icon blue">系</div><div><div class="msg-title">• 系统通知</div><div class="msg-text">系统：您有一条新的活动通知</div></div></div>
+          <div class="message-row"><div class="msg-icon orange">服</div><div><div class="msg-title">服务助手</div><div class="msg-text">您的预约已确认，请准时到店</div></div></div>
+          <div class="message-row"><div class="msg-icon green">王</div><div><div class="msg-title">小王</div><div class="msg-text">好的，明天见！</div></div></div>
+          <div class="message-row"><div class="msg-icon coral">群</div><div><div class="msg-title">美食探店群 <span class="badge" style="color:#aaa;background:#eee">免</span></div><div class="msg-text">李明：这家店真的很推荐...</div></div></div>
+          <div class="message-row"><div class="msg-icon red">活</div><div><div class="msg-title">活动通知</div><div class="msg-text">您参与的周末徒步活动已更新集合点</div></div></div>
+        </div>
+        <nav class="tabbar">
+          <div class="tab active"><span class="ico">⌂</span><span>首页</span></div>
+          <div class="tab"><span class="ico">✦</span><span>服务</span></div>
+          <div class="plus">+</div>
+          <div class="tab"><span class="ico">▣</span><span>消息</span></div>
+          <div class="tab"><span class="ico">♟</span><span>我的</span></div>
+        </nav>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">我的 / 个人主页</h2>
+      <div class="phone" id="my-profile">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div>
+        <div class="notch"></div>
+        <div class="capsule"><span class="dotset"><i></i><i></i><i></i></span><span class="circle-icon"></span></div>
+        <div class="profile-hero">
+          <div class="profile-avatar">凵</div>
+          <div class="profile-name">用户名</div>
+          <div class="profile-desc">这里是用户描述信息</div>
+          <div class="profile-stats">
+            <span><strong>128</strong>关注</span>
+            <span><strong>256</strong>粉丝</span>
+            <span><strong>32</strong>动态</span>
+          </div>
+        </div>
+        <div class="profile-sheet">
+          <div class="sheet-handle"></div>
+          <div class="module-row">
+            <div class="module-pill">位 位置</div>
+            <div class="module-pill active">⭐ 收藏</div>
+            <div class="module-pill">日 日期</div>
+            <div class="module-pill">⚙</div>
+          </div>
+          <div class="chip-row">
+            <span class="chip active">全 全部</span><span class="chip">图 照片</span><span class="chip">视 视频</span><span class="chip">文 文章</span><span class="chip">音 音乐</span><span class="chip">位 地点</span>
+          </div>
+          <div class="feed profile-feed">
+            <div class="col">
+              <article class="card"><div class="placeholder">暂无封面<span class="type-pill">推荐</span></div><div class="card-body"><div class="card-title">美丽的日落</div><div class="stats"><span class="muted-dot"></span>摄影师小王</div><div class="stats">♡ 128　☆</div></div></article>
+              <article class="card"><div class="placeholder">暂无封面<span class="type-pill">推荐</span></div><div class="card-body"><div class="card-title">春天的花朵</div><div class="stats"><span class="muted-dot"></span>花卉爱好者</div></div></article>
+            </div>
+            <div class="col">
+              <article class="card"><div class="placeholder">暂无封面<span class="type-pill">附近</span></div><div class="card-body"><div class="card-title">城市夜景</div><div class="stats"><span class="muted-dot"></span>夜拍达人</div><div class="stats">♡ 89　☆</div></div></article>
+              <article class="card"><div class="placeholder">暂无封面</div><div class="card-body"><div class="card-title">收藏地点</div><div class="stats">♡ 43　☆</div></div></article>
+            </div>
+          </div>
+        </div>
+        <nav class="tabbar">
+          <div class="tab"><span class="ico">⌂</span><span>首页</span></div>
+          <div class="tab"><span class="ico">✦</span><span>服务</span></div>
+          <div class="plus">+</div>
+          <div class="tab"><span class="ico">▣</span><span>消息</span></div>
+          <div class="tab active"><span class="ico">♟</span><span>我的</span></div>
+        </nav>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">二级 / 搜索与筛选结果</h2>
+      <div class="phone search-screen" id="home-search-results">
+        <div class="status"><span>23:32</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div>
+        <div class="notch"></div>
+        <div class="search-head">
+          <div class="search-box-lg">搜 春熙路 周末打卡</div>
+          <div class="cancel-text">取消</div>
+        </div>
+        <div class="search-body">
+          <div class="section-label">热门搜索</div>
+          <div class="hot-keywords">
+            <span class="chip active">全部</span><span class="chip">地点</span><span class="chip">图片</span><span class="chip">视频</span><span class="chip">附近</span><span class="chip">可预约</span>
+          </div>
+          <div class="section-label">搜索结果</div>
+          <div class="result-row"><div class="result-thumb photo"></div><div><div class="result-title">推荐打卡 1</div><div class="result-desc">用户495 · 图片内容 · 464 赞</div></div><div class="map-cta">查看</div></div>
+          <div class="result-row"><div class="result-thumb place"></div><div><div class="result-title">推荐地点 4</div><div class="result-desc">成都市春熙路4号 · 1.2km</div></div><div class="map-cta">定位</div></div>
+          <div class="result-row"><div class="result-thumb"></div><div><div class="result-title">精彩视频 2</div><div class="result-desc">1.0万播放 · 426 赞 · 2:02</div></div><div class="map-cta">播放</div></div>
+          <div class="result-row"><div class="result-thumb"></div><div><div class="result-title">精选文章 3</div><div class="result-desc">5805 阅读 · 城市路线攻略</div></div><div class="map-cta">阅读</div></div>
+          <div class="detail-card" style="margin-top:18px">
+            <div class="section-label">地图联动状态</div>
+            <p class="detail-text">点击“定位”后，结果点会回填到首页顶部地图；点击普通内容进入详情，不把普通卡封面替换成地图。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">二级 / 普通内容详情</h2>
+      <div class="phone subpage" id="home-content-detail">
+        <div class="status"><span>23:32</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div>
+        <div class="notch"></div>
+        <div class="top-nav"><span class="nav-back">‹</span><span>推荐打卡</span><span class="nav-more">⋯</span></div>
+        <div class="page-scroll">
+          <div class="detail-hero"><span class="hero-count">1 / 3</span></div>
+          <div class="detail-card">
+            <h1 class="detail-title">推荐打卡 1</h1>
+            <div class="author-line"><span class="avatar-sm"></span><span>用户495 · 今天 18:20</span><span style="margin-left:auto" class="follow-btn">关注</span></div>
+            <p class="detail-text">这是一条来自用户上传图片的城市打卡内容。封面保持真实媒体，不默认画成地图；需要定位时通过底部地点入口或卡片定位动作触发。</p>
+            <div class="detail-tags"><span class="chip active">照片</span><span class="chip">春熙路</span><span class="chip">周末</span><span class="chip">城市漫游</span></div>
+          </div>
+          <div class="detail-card">
+            <div class="section-label">关联地点</div>
+            <div class="result-row" style="padding-bottom:0;border-bottom:0"><div class="result-thumb place"></div><div><div class="result-title">亚新大厦附近</div><div class="result-desc">30.66, 104.08 · 点击后地图定位</div></div><div class="map-cta">定位</div></div>
+          </div>
+          <div class="detail-card">
+            <div class="section-label">评论 489</div>
+            <div class="comments">
+              <div class="comment-row"><span class="avatar-sm"></span><div><div class="comment-name">星白</div><div class="comment-copy">这个角度很好看，适合傍晚去拍。</div></div></div>
+              <div class="comment-row"><span class="avatar-sm"></span><div><div class="comment-name">城市漫游者</div><div class="comment-copy">收藏了，周末跟着路线走一遍。</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="detail-bottom"><div class="comment-input">说点什么...</div><div class="round-action">♡</div><div class="round-action">☆</div><div class="primary-btn">分享</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">三级 / 图片预览与评论</h2>
+      <div class="phone media-preview" id="home-media-preview">
+        <div class="status" style="color:#fff"><span>23:32</span><span class="status-icons"><i class="wifi" style="border-color:#fff"></i><i class="battery" style="border-color:#fff"></i></span></div>
+        <div class="notch"></div>
+        <div class="top-nav" style="background:transparent;border:0;color:#fff"><span class="nav-back" style="background:rgba(255,255,255,.14);color:#fff">‹</span><span>1 / 3</span><span class="nav-more" style="background:rgba(255,255,255,.14);color:#fff">⋯</span></div>
+        <div class="media-main"></div>
+        <div class="media-actions"><div class="media-action">♡</div><div class="media-action">☆</div><div class="media-action">↗</div></div>
+        <div class="media-caption">推荐打卡 1：用户上传图片原图预览。这里承接详情页图片点击后的三级体验。</div>
+        <div class="detail-bottom" style="background:#111;border-color:#242424"><div class="comment-input" style="background:#222;color:#aaa">添加评论...</div><div class="round-action" style="background:#222;color:#fff">♡</div><div class="round-action" style="background:#222;color:#fff">☆</div><div class="primary-btn">发送</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">二级 / 地点详情</h2>
+      <div class="phone subpage" id="home-place-detail">
+        <div class="status"><span>23:32</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div>
+        <div class="notch"></div>
+        <div class="top-nav"><span class="nav-back">‹</span><span>地点详情</span><span class="nav-more">⋯</span></div>
+        <div class="page-scroll">
+          <div class="place-hero-map"><span class="place-dot" style="left:50%;top:48%"></span></div>
+          <div class="detail-card place-panel">
+            <h1 class="detail-title">推荐地点 4</h1>
+            <div class="author-line"><span class="badge badge-soft">地点</span><span>成都市春熙路4号</span><span style="margin-left:auto;color:#f6b33b">★ 4.3</span></div>
+            <p class="detail-text">地点详情强调地图定位、地址、距离、导航和预约入口。它可以由首页地点卡进入，也可以由普通内容详情里的关联地点进入。</p>
+            <div class="detail-tags"><span class="chip active">附近</span><span class="chip">热门</span><span class="chip">可预约</span></div>
+          </div>
+          <div class="detail-card">
+            <div class="section-label">附近内容</div>
+            <div class="result-row"><div class="result-thumb photo"></div><div><div class="result-title">天空影像记录</div><div class="result-desc">距离 120m · 图片</div></div><div class="map-cta">查看</div></div>
+            <div class="result-row" style="border-bottom:0"><div class="result-thumb"></div><div><div class="result-title">周末城市漫游</div><div class="result-desc">距离 280m · 活动</div></div><div class="map-cta">报名</div></div>
+          </div>
+        </div>
+        <div class="detail-bottom" style="grid-template-columns:1fr 1fr 1fr"><div class="ghost-btn">收藏</div><div class="ghost-btn">导航</div><div class="primary-btn">预约</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">二级 / 轨迹详情</h2>
+      <div class="phone subpage" id="home-track-detail">
+        <div class="status"><span>23:32</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div>
+        <div class="notch"></div>
+        <div class="top-nav"><span class="nav-back">‹</span><span>轨迹详情</span><span class="nav-more">⋯</span></div>
+        <div class="page-scroll">
+          <div class="route-line"><span class="route-path"></span><span class="route-node start"></span><span class="route-node end"></span></div>
+          <div class="detail-card">
+            <h1 class="detail-title">周末骑行路线</h1>
+            <div class="author-line"><span class="avatar-sm"></span><span>用户711 · 8.6km · 52分钟</span><span style="margin-left:auto" class="badge badge-soft">轨迹</span></div>
+            <p class="detail-text">轨迹详情承接首页轨迹卡。进入后展示整段路线、起终点、距离、时长、途经地点和跟随导航入口。</p>
+            <div class="detail-tags"><span class="chip active">骑行</span><span class="chip">城市露营</span><span class="chip">低难度</span></div>
+          </div>
+          <div class="detail-card">
+            <div class="section-label">途经地点</div>
+            <div class="result-row"><div class="result-thumb place"></div><div><div class="result-title">自由天地</div><div class="result-desc">第 1 站 · 1.8km</div></div><div class="map-cta">定位</div></div>
+            <div class="result-row" style="border-bottom:0"><div class="result-thumb place"></div><div><div class="result-title">亚新大厦</div><div class="result-desc">第 2 站 · 3.4km</div></div><div class="map-cta">定位</div></div>
+          </div>
+        </div>
+        <div class="detail-bottom" style="grid-template-columns:1fr 1fr 1fr"><div class="ghost-btn">收藏</div><div class="ghost-btn">分享</div><div class="primary-btn">开始导航</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">三级 / 预约确认</h2>
+      <div class="phone subpage" id="home-booking-confirm">
+        <div class="status"><span>23:32</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div>
+        <div class="notch"></div>
+        <div class="top-nav"><span class="nav-back">‹</span><span>预约确认</span><span></span></div>
+        <div class="booking-card">
+          <h1 class="detail-title">推荐地点 4 预约</h1>
+          <p class="detail-text">从地点详情或服务卡预约进入，确认服务项目、时间、联系人和备注。</p>
+          <div class="booking-row"><span>服务项目</span><strong>到店咨询 / 场地预约</strong></div>
+          <div class="booking-row"><span>预约时间</span><strong>今天 19:30</strong></div>
+          <div class="booking-row"><span>联系人</span><strong>用户495</strong></div>
+          <div class="booking-row"><span>手机号</span><strong>138 **** 4950</strong></div>
+          <div class="booking-row"><span>备注</span><strong>靠窗位置，需导航</strong></div>
+        </div>
+        <div class="detail-card" style="position:absolute;left:14px;right:14px;top:420px">
+          <div class="section-label">预约后状态</div>
+          <p class="detail-text">确认后返回详情页显示已预约状态，同时消息中心收到“服务助手”通知。</p>
+        </div>
+        <div class="pay-bar"><div><div class="price">¥ 0</div><div class="result-desc">无需预付，现场确认</div></div><div class="primary-btn" style="height:44px;border-radius:22px">确认预约</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">首页二级 / 锚点与智能图层</h2>
+      <div class="phone subpage" id="home-anchor-layer-lab">
+        <div class="status"><span>23:34</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="top-nav"><span class="nav-back">‹</span><span>锚点与图层</span><span class="nav-more">层</span></div>
+        <div class="page-scroll">
+          <div class="radar"><span class="mini-node node-a"></span><span class="mini-node node-b"></span><span class="mini-node node-c"></span></div>
+          <div class="detail-card">
+            <div class="section-label">智能图层</div>
+            <div class="layer-stack">
+              <div class="layer-row"><span>兴趣雷达</span><span class="toggle-mini"></span></div>
+              <div class="layer-row"><span>活动倒计时</span><span class="toggle-mini"></span></div>
+              <div class="layer-row"><span>服务曝光</span><span class="toggle-mini"></span></div>
+              <div class="layer-row"><span>未探索迷雾</span><span class="toggle-mini" style="background:#9aa1aa"></span></div>
+            </div>
+          </div>
+          <div class="anchor-grid">
+            <div class="anchor-type"><span class="anchor-symbol" style="background:#f6b33b">360</span><div><div class="anchor-name">互动地标</div><div class="anchor-desc">导览 / 活动 / 频道</div></div></div>
+            <div class="anchor-type"><span class="anchor-symbol" style="background:#24d06c">POI</span><div><div class="anchor-name">兴趣 POI</div><div class="anchor-desc">雷达高亮推荐</div></div></div>
+            <div class="anchor-type"><span class="anchor-symbol" style="background:#7650c8">24h</span><div><div class="anchor-name">活动锚点</div><div class="anchor-desc">倒计时 / 报名</div></div></div>
+            <div class="anchor-type"><span class="anchor-symbol" style="background:#248cf5">评</span><div><div class="anchor-name">内容锚点</div><div class="anchor-desc">评论红点 / 内容流</div></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">首页三级 / 锚点快捷卡</h2>
+      <div class="phone subpage" id="home-anchor-action">
+        <div class="map" style="height:100%"><i class="pin p1"></i><i class="loc-dot home"></i><span class="map-label l1">互动地标锚点</span></div>
+        <div class="status"><span>23:34</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="capsule"><span class="dotset"><i></i><i></i><i></i></span><span class="circle-icon"></span></div>
+        <div class="sheet" style="height:390px">
+          <div class="sheet-handle"></div>
+          <div class="detail-card" style="margin:0 14px 10px"><h1 class="detail-title">自由天地 · 地标锚点</h1><div class="author-line"><span class="badge badge-soft">360 导览</span><span>热度 9650</span><span style="margin-left:auto">好友 3 人来过</span></div><p class="detail-text">点击锚点弹出快捷功能卡片，滑动选择导览、活动、频道等入口。</p></div>
+          <div class="anchor-grid" style="padding:0 14px"><div class="anchor-type"><span class="anchor-symbol" style="background:#f6b33b">导</span><div><div class="anchor-name">地标导览</div><div class="anchor-desc">历史沿革与路线</div></div></div><div class="anchor-type"><span class="anchor-symbol" style="background:#7650c8">活</span><div><div class="anchor-name">发起活动</div><div class="anchor-desc">报名与日历</div></div></div><div class="anchor-type"><span class="anchor-symbol" style="background:#248cf5">频</span><div><div class="anchor-name">进入频道</div><div class="anchor-desc">区域讨论</div></div></div><div class="anchor-type"><span class="anchor-symbol" style="background:#24d06c">修</span><div><div class="anchor-name">修建锚点</div><div class="anchor-desc">共建编辑</div></div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">首页三级 / 地图分享卡</h2>
+      <div class="phone subpage" id="home-map-share">
+        <div class="status"><span>23:34</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>地图分享</span><span class="follow-btn">发送</span></div>
+        <div class="page-scroll">
+          <div class="share-card"><div class="share-map"><span class="mini-node node-a"></span><span class="mini-node node-b"></span><span class="mini-node node-c"></span></div><div style="padding:14px"><h1 class="detail-title">春熙路周末足迹</h1><p class="detail-text">锚点卡片 + 图层状态一起分享，好友打开后可直接定位到同一地图副本。</p><div class="detail-tags"><span class="chip active">3 个锚点</span><span class="chip">2 条路线</span><span class="chip">1 个活动</span></div></div></div>
+          <div class="option-list" style="margin-top:14px"><div class="option-item"><span>分享给好友</span><span>›</span></div><div class="option-item"><span>生成海报</span><span>›</span></div><div class="option-item"><span>复制地图链接</span><span>›</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">首页四级 / 迷雾解锁与修建锚点</h2>
+      <div class="phone subpage" id="home-fog-unlock">
+        <div class="map" style="height:100%;filter:grayscale(.15)"><span class="map-label l1">未探索区域</span><i class="pin p2" style="opacity:.35"></i></div>
+        <div style="position:absolute;inset:0;background:rgba(120,128,140,.42);z-index:4"></div>
+        <div class="status"><span>23:34</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="booking-card" style="z-index:10;top:220px"><h1 class="detail-title">解锁普通定位锚点</h1><p class="detail-text">普通定位锚点可收藏、命名、备注；探索后可“修建锚点”，把地点升级为内容节点或频道节点。</p><div class="booking-row"><span>探索距离</span><strong>120m</strong></div><div class="booking-row"><span>解锁奖励</span><strong>+20 积分</strong></div><div class="booking-row"><span>共建状态</span><strong>待提交</strong></div><div class="detail-tags"><span class="chip active">收藏</span><span class="chip">导航</span><span class="chip">发布内容</span></div></div>
+        <div class="detail-bottom" style="z-index:11;grid-template-columns:1fr 1fr"><div class="ghost-btn">稍后</div><div class="primary-btn">修建锚点</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">全局二级 / AI 语义搜索</h2>
+      <div class="phone search-screen" id="ai-search">
+        <div class="status"><span>23:34</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="search-head"><div class="search-box-lg">搜 附近有猫咖和适合拍照的路线吗？</div><div class="cancel-text">取消</div></div>
+        <div class="search-body"><div class="detail-card"><div class="section-label">AI 汇总</div><p class="detail-text">为你找到 2 个兴趣 POI、1 条轨迹和 3 条用户内容。结果会同步高亮地图锚点。</p></div><div class="result-row"><div class="result-thumb place"></div><div><div class="result-title">猫咖兴趣 POI</div><div class="result-desc">距离 820m · 服务可预约</div></div><div class="map-cta">定位</div></div><div class="result-row"><div class="result-thumb"></div><div><div class="result-title">城市夜景摄影路线</div><div class="result-desc">8.6km · 52分钟 · 轨迹</div></div><div class="map-cta">路线</div></div><div class="result-row"><div class="result-thumb photo"></div><div><div class="result-title">用户上传图片内容</div><div class="result-desc">同频道 24 条相关内容</div></div><div class="map-cta">查看</div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">首页组件 / 地图闭环组件板</h2>
+      <div class="phone token-board" id="home-map-component-board">
+        <div class="token-section">
+          <h3>Marker Variants</h3>
+          <div class="anchor-grid">
+            <div class="anchor-type"><span class="anchor-symbol" style="background:#f6b33b">360</span><div><div class="anchor-name">互动地标</div><div class="anchor-desc">selected / verified</div></div></div>
+            <div class="anchor-type"><span class="anchor-symbol" style="background:#24d06c">POI</span><div><div class="anchor-name">兴趣 POI</div><div class="anchor-desc">highlighted / radar</div></div></div>
+            <div class="anchor-type"><span class="anchor-symbol" style="background:#7650c8">24h</span><div><div class="anchor-name">活动锚点</div><div class="anchor-desc">countdown / joined</div></div></div>
+            <div class="anchor-type"><span class="anchor-symbol" style="background:#248cf5">评</span><div><div class="anchor-name">内容锚点</div><div class="anchor-desc">comment-dot / share</div></div></div>
+            <div class="anchor-type"><span class="anchor-symbol" style="background:#8b949e">?</span><div><div class="anchor-name">普通定位</div><div class="anchor-desc">locked / fog</div></div></div>
+          </div>
+        </div>
+        <div class="token-section">
+          <h3>Layer Switches</h3>
+          <div class="layer-stack">
+            <div class="layer-row"><span>兴趣雷达</span><span class="toggle-mini"></span></div>
+            <div class="layer-row"><span>活动倒计时</span><span class="toggle-mini"></span></div>
+            <div class="layer-row"><span>服务曝光</span><span class="toggle-mini"></span></div>
+            <div class="layer-row"><span>未探索迷雾</span><span class="toggle-mini" style="background:#9aa1aa"></span></div>
+          </div>
+        </div>
+        <div class="token-section">
+          <h3>Card States</h3>
+          <div class="components">
+            <div class="state-strip"><span class="state-chip">loading</span><span class="state-chip">empty</span><span class="state-chip selected">selected</span><span class="state-chip highlighted">highlighted</span><span class="state-chip locked">locked</span><span class="state-chip verified">verified</span><span class="state-chip pending">pending review</span></div>
+            <article class="card" style="width:164px"><div class="cover photo-bridge"><span class="tag-dark">用户上传</span></div><div class="card-body"><div class="card-title">普通内容卡</div><div class="stats">封面优先真实媒体</div></div></article>
+            <article class="card" style="width:164px"><div class="place-mini"><span class="place-dot"></span><span class="type-pill">地</span></div><div class="card-body"><div class="card-title">地点/轨迹/服务</div><div class="stats">可使用地图结构图形</div></div></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">服务二级 / 服务类型矩阵</h2>
+      <div class="phone subpage" id="service-card-types">
+        <div class="status"><span>23:35</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="top-nav"><span class="nav-back">‹</span><span>服务类型</span><span class="nav-more">筛</span></div>
+        <div class="page-scroll">
+          <div class="detail-card"><h1 class="detail-title">三类服务卡</h1><p class="detail-text">来自策划书：个人兴趣服务、商家场景服务、活动协作服务。三类都与地图锚点绑定，并可进入频道或预约闭环。</p></div>
+          <div class="anchor-grid">
+            <div class="anchor-type"><span class="anchor-symbol" style="background:#f6b33b">技</span><div><div class="anchor-name">个人兴趣服务</div><div class="anchor-desc">1v1 定制 / 作品展示</div></div></div>
+            <div class="anchor-type"><span class="anchor-symbol" style="background:#248cf5">店</span><div><div class="anchor-name">商家场景服务</div><div class="anchor-desc">预约 / 会员 / 优惠</div></div></div>
+            <div class="anchor-type"><span class="anchor-symbol" style="background:#ff7043">组</span><div><div class="anchor-name">活动协作服务</div><div class="anchor-desc">组队 / 行前资料</div></div></div>
+            <div class="anchor-type"><span class="anchor-symbol" style="background:#24d06c">频</span><div><div class="anchor-name">服务频道</div><div class="anchor-desc">售后 / 评价 / 通知</div></div></div>
+          </div>
+          <div class="detail-card"><div class="section-label">解锁机制</div><div class="booking-row"><span>个人服务</span><strong>加入私信频道</strong></div><div class="booking-row"><span>商家服务</span><strong>关注商家频道</strong></div><div class="booking-row"><span>活动服务</span><strong>加入活动频道</strong></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">服务二级 / 服务详情</h2>
+      <div class="phone subpage" id="service-detail">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="top-nav"><span class="nav-back">‹</span><span>服务详情</span><span class="nav-more">⋯</span></div>
+        <div class="page-scroll">
+          <div class="detail-hero" style="background:linear-gradient(135deg,#eaf7ff,#f8fbff 48%,#d9ecff)"><span class="place-dot" style="left:50%;top:48%"></span><span class="hero-count">服务</span></div>
+          <div class="detail-card place-panel"><h1 class="detail-title">全部服务 1</h1><div class="author-line"><span class="badge badge-soft">营业中</span><span>成都市测试地址 1</span><span style="margin-left:auto;color:#f6b33b">★ 4.8</span></div><p class="detail-text">服务详情承接服务卡，展示服务范围、营业时间、评价摘要和预约入口。</p><div class="detail-tags"><span class="chip active">维修</span><span class="chip">上门</span><span class="chip">30分钟响应</span></div></div>
+          <div class="detail-card"><div class="section-label">服务项目</div><div class="booking-row"><span>基础检查</span><strong>¥ 39</strong></div><div class="booking-row"><span>深度清洁</span><strong>¥ 99</strong></div><div class="booking-row"><span>加急服务</span><strong>¥ 129</strong></div></div>
+          <div class="detail-card"><div class="section-label">评价</div><div class="comments"><div class="comment-row"><span class="avatar-sm"></span><div><div class="comment-name">用户469</div><div class="comment-copy">预约很快，服务态度不错。</div></div></div></div></div>
+        </div>
+        <div class="detail-bottom" style="grid-template-columns:1fr 1fr 1fr"><div class="ghost-btn">客服</div><div class="ghost-btn">收藏</div><div class="primary-btn">立即预约</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">服务详情 / 当前绿色主页态</h2>
+      <div class="phone subpage" id="service-detail-current">
+        <div class="service-green-hero">
+          <div class="big-logo">凵</div>
+          <div class="service-green-copy">
+            <h1>全部服务 3</h1>
+            <div class="rating-line">★★★★★ 4.8 <span style="color:#fff">(300 条评价)</span><span style="float:right;background:rgba(0,0,0,.28);color:#fff;border-radius:12px;padding:3px 9px">1/3</span></div>
+          </div>
+        </div>
+        <div class="status"><span>22:39</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div>
+        <div class="notch"></div>
+        <div class="detail-current-titlebar" style="top:44px"><span class="back-dot">‹</span><span style="background:rgba(0,0,0,.24);border-radius:18px;padding:5px 14px"><span class="green-avatar" style="width:26px;height:26px;display:inline-grid;font-size:16px;vertical-align:middle">凵</span> 全部服务 3</span><span class="more-dot">⌂</span></div>
+        <div class="capsule"><span class="dotset"><i></i><i></i><i></i></span><span class="circle-icon"></span></div>
+        <div class="service-profile-panel">
+          <div class="service-profile-card"><strong>关于我</strong>这是一个全部服务测试描述 3</div>
+          <div class="service-profile-card"><div class="service-number">2,652</div><div style="text-align:center;color:#777">已完成服务</div></div>
+          <div class="service-profile-card"><strong>兴趣</strong><div class="chip-row-current"><span>书籍与小说</span><span>电影</span><span>建筑</span></div></div>
+          <div class="service-profile-card"><strong>偏好</strong><div class="chip-row-current"><span style="background:#f1f1f1;color:#777">朋友</span><span style="background:#f1f1f1;color:#777">商务</span><span style="background:#f1f1f1;color:#777">女性</span></div></div>
+        </div>
+        <div class="service-bottom-current"><div class="small-action">☆<br>收藏</div><div class="small-action">客<br>客服</div><div class="small-action">车<br>购物车</div><div class="reserve-now">立即预约</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">服务三级 / 商家频道会员</h2>
+      <div class="phone subpage" id="service-merchant-channel">
+        <div class="status"><span>23:35</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="top-nav"><span class="nav-back">‹</span><span>商家频道</span><span class="follow-btn">关注</span></div>
+        <div class="page-scroll">
+          <div class="detail-card"><div class="author-line"><span class="anchor-symbol" style="background:#248cf5">店</span><div><div class="result-title">春熙路咖啡馆频道</div><div class="result-desc">商家场景服务 · 会员特权</div></div></div><p class="detail-text">关注商家频道后获得专属优惠、活动通知和预约优先权。</p></div>
+          <div class="metric-grid"><div class="metric-card"><strong>3</strong><span>会员券</span></div><div class="metric-card"><strong>12</strong><span>频道内容</span></div><div class="metric-card"><strong>4.8</strong><span>真实评价</span></div></div>
+          <div class="detail-card"><div class="section-label">频道子功能</div><div class="booking-row"><span>预约表单</span><strong>可用</strong></div><div class="booking-row"><span>订单看板</span><strong>2 个进行中</strong></div><div class="booking-row"><span>公告优惠</span><strong>今日折扣</strong></div></div>
+        </div>
+        <div class="detail-bottom" style="grid-template-columns:1fr 1fr"><div class="ghost-btn">进入频道</div><div class="primary-btn">领取会员券</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">服务四级 / 服务共建审核</h2>
+      <div class="phone subpage" id="service-wiki-edit">
+        <div class="status"><span>23:35</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="top-nav"><span class="nav-back">‹</span><span>共建审核</span><span class="follow-btn">提交</span></div>
+        <div class="page-scroll">
+          <div class="detail-card"><h1 class="detail-title">补充服务信息</h1><p class="detail-text">DDS 提到服务共建机制：用户可补充服务字段，店主/平台审核，支持编辑日志和版本回退。</p></div>
+          <div class="option-list"><div class="option-item"><span>补充营业时间<span class="option-sub">10:00 - 22:00</span></span><span>待审</span></div><div class="option-item"><span>补充服务照片<span class="option-sub">3 张</span></span><span>待审</span></div><div class="option-item"><span>补充避坑备注<span class="option-sub">节假日需预约</span></span><span>待审</span></div></div>
+          <div class="detail-card"><div class="section-label">编辑日志</div><div class="timeline"><div class="timeline-item">用户495 提交营业时间补充</div><div class="timeline-item">店主确认图片有效</div><div class="timeline-item">平台等待最终审核</div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">服务三级 / 选择时间</h2>
+      <div class="phone subpage" id="service-booking">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="top-nav"><span class="nav-back">‹</span><span>选择预约</span><span></span></div>
+        <div class="page-scroll">
+          <div class="detail-card"><h1 class="detail-title">全部服务 1</h1><p class="detail-text">选择服务项目、日期、时段和上门地址。</p></div>
+          <div class="detail-card"><div class="section-label">服务项目</div><div class="hot-keywords"><span class="chip active">基础检查</span><span class="chip">深度清洁</span><span class="chip">加急服务</span></div></div>
+          <div class="detail-card"><div class="section-label">日期</div><div class="hot-keywords"><span class="chip active">今天</span><span class="chip">明天</span><span class="chip">周四</span><span class="chip">周五</span></div></div>
+          <div class="detail-card"><div class="section-label">可选时段</div><div class="hot-keywords"><span class="chip">10:00</span><span class="chip active">14:30</span><span class="chip">16:00</span><span class="chip">19:00</span></div></div>
+          <div class="option-list"><div class="option-item"><span>服务地址<span class="option-sub">成都市测试地址 1</span></span><span>›</span></div><div class="option-item"><span>联系人<span class="option-sub">用户495 · 138 **** 4950</span></span><span>›</span></div></div>
+        </div>
+        <div class="pay-bar"><div><div class="price">¥ 39</div><div class="result-desc">基础检查</div></div><div class="primary-btn" style="height:44px;border-radius:22px">提交预约</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">服务四级 / 支付确认</h2>
+      <div class="phone subpage" id="service-payment">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="top-nav"><span class="nav-back">‹</span><span>支付确认</span><span></span></div>
+        <div class="booking-card"><h1 class="detail-title">确认订单</h1><div class="booking-row"><span>服务</span><strong>基础检查</strong></div><div class="booking-row"><span>时间</span><strong>今天 14:30</strong></div><div class="booking-row"><span>地址</span><strong>成都市测试地址 1</strong></div><div class="booking-row"><span>优惠</span><strong>- ¥ 0</strong></div><div class="booking-row"><span>支付方式</span><strong>微信支付</strong></div></div>
+        <div class="pay-bar"><div><div class="price">¥ 39</div><div class="result-desc">含服务保障</div></div><div class="primary-btn" style="height:44px;border-radius:22px">确认支付</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">服务四级 / 预约成功</h2>
+      <div class="phone subpage" id="service-success">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="success-mark">✓</div><div class="success-title">预约成功</div><div class="success-desc">服务助手会在消息中心同步提醒，并在服务开始前再次通知。</div>
+        <div class="detail-card" style="margin:28px 14px"><div class="booking-row"><span>订单号</span><strong>MQ20260707001</strong></div><div class="booking-row"><span>服务时间</span><strong>今天 14:30</strong></div><div class="booking-row"><span>服务人员</span><strong>等待接单</strong></div></div>
+        <div class="detail-bottom" style="grid-template-columns:1fr 1fr"><div class="ghost-btn">查看订单</div><div class="primary-btn">返回首页</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">发布二级 / 内容类型中心</h2>
+      <div class="phone subpage" id="publish-type-center">
+        <div class="status"><span>23:36</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="top-nav"><span class="nav-back">‹</span><span>选择创作类型</span><span></span></div>
+        <div class="page-scroll">
+          <div class="anchor-grid">
+            <div class="anchor-type"><span class="anchor-symbol" style="background:#248cf5">图</span><div><div class="anchor-name">图文动态</div><div class="anchor-desc">图片 / 视频 / 文章</div></div></div>
+            <div class="anchor-type"><span class="anchor-symbol" style="background:#24d06c">轨</span><div><div class="anchor-name">轨迹内容</div><div class="anchor-desc">路径 + 多媒体节点</div></div></div>
+            <div class="anchor-type"><span class="anchor-symbol" style="background:#7650c8">协</span><div><div class="anchor-name">地图共创</div><div class="anchor-desc">锚点 / Wiki / 审核</div></div></div>
+            <div class="anchor-type"><span class="anchor-symbol" style="background:#ff7043">AI</span><div><div class="anchor-name">AI 模板</div><div class="anchor-desc">摘要 / 标题 / 模板</div></div></div>
+          </div>
+          <div class="detail-card"><div class="section-label">创作体系</div><p class="detail-text">文档要求内容支持图片、视频、文章、地点、服务、轨迹，并允许从频道发言升级为内容卡片。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">发布二级 / 动态编辑</h2>
+      <div class="phone subpage" id="publish-editor">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="top-nav"><span class="ghost-btn">取消</span><span>发布动态</span><span class="follow-btn">发布</span></div>
+        <div class="page-scroll"><div class="form-area"><div class="text-box">分享你的创作、想法或日常...</div><div class="media-grid-small"><div class="media-slot">+</div><div class="media-slot"></div><div class="media-slot"></div></div><div class="option-list"><div class="option-item"><span># 添加话题</span><span>›</span></div><div class="option-item"><span>@ 好友</span><span>›</span></div><div class="option-item"><span>位 添加位置</span><span>›</span></div><div class="option-item"><span>谁可以看<span class="option-sub">公开</span></span><span>›</span></div><div class="option-item"><span>原创声明</span><span class="toggle-mini"></span></div></div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">发布三级 / AI 模板助手</h2>
+      <div class="phone subpage" id="publish-ai-template">
+        <div class="status"><span>23:36</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="top-nav"><span class="nav-back">‹</span><span>AI 模板助手</span><span class="follow-btn">应用</span></div>
+        <div class="page-scroll">
+          <div class="detail-card"><h1 class="detail-title">从素材生成内容</h1><p class="detail-text">AI 自动识别地点、提取摘要、生成标题和标签，适配节日/地点/类型模板。</p></div>
+          <div class="option-list"><div class="option-item"><span>标题建议</span><strong>春熙路的傍晚光影</strong></div><div class="option-item"><span>地点识别</span><strong>亚新大厦附近</strong></div><div class="option-item"><span>推荐标签</span><strong>#城市漫游 #摄影</strong></div></div>
+          <div class="detail-card"><div class="section-label">模板</div><div class="hot-keywords"><span class="chip active">探店</span><span class="chip">路线</span><span class="chip">活动</span><span class="chip">年终回顾</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">发布三级 / 轨迹编辑器</h2>
+      <div class="phone subpage" id="publish-track-editor">
+        <div class="status"><span>23:36</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="top-nav"><span class="nav-back">‹</span><span>轨迹编辑</span><span class="follow-btn">保存</span></div>
+        <div class="page-scroll">
+          <div class="route-line"><span class="route-path"></span><span class="route-node start"></span><span class="route-node end"></span></div>
+          <div class="detail-card"><h1 class="detail-title">城市夜景摄影路线</h1><p class="detail-text">支持在线编辑轨迹路径，插入照片、音频、视频节点，也可多人非实时共创。</p></div>
+          <div class="timeline"><div class="timeline-item">起点：自由天地，插入封面照片</div><div class="timeline-item">节点 2：亚新大厦，插入语音备注</div><div class="timeline-item">终点：春熙路，生成路线摘要</div></div>
+        </div>
+        <div class="detail-bottom" style="grid-template-columns:1fr 1fr 1fr"><div class="ghost-btn">插入节点</div><div class="ghost-btn">协作</div><div class="primary-btn">发布</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">发布四级 / 地图共创审核</h2>
+      <div class="phone subpage" id="publish-map-cocreate">
+        <div class="status"><span>23:36</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="top-nav"><span class="nav-back">‹</span><span>地图共创</span><span class="follow-btn">提交</span></div>
+        <div class="page-scroll">
+          <div class="detail-card"><h1 class="detail-title">修建新锚点</h1><p class="detail-text">把普通定位点升级为内容锚点/频道锚点。提交后进入自动审核与人工审核队列。</p></div>
+          <div class="option-list"><div class="option-item"><span>锚点名称</span><strong>天台观景点</strong></div><div class="option-item"><span>锚点类型</span><strong>互动地标</strong></div><div class="option-item"><span>坐标位置</span><strong>已绑定</strong></div><div class="option-item"><span>协作者</span><strong>3 人</strong></div></div>
+          <div class="detail-card"><div class="section-label">审核状态</div><div class="timeline"><div class="timeline-item">AI 审核：图片通过</div><div class="timeline-item">社区审核：2/3 点赞</div><div class="timeline-item">平台审核：等待确认</div></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">发布/我的二级 / 创作者中心</h2>
+      <div class="phone subpage" id="creator-center">
+        <div class="status"><span>23:36</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="top-nav"><span class="nav-back">‹</span><span>创作者中心</span><span class="nav-more">⋯</span></div>
+        <div class="page-scroll">
+          <div class="metric-grid"><div class="metric-card"><strong>12.8k</strong><span>内容曝光</span></div><div class="metric-card"><strong>426</strong><span>互动</span></div><div class="metric-card"><strong>86</strong><span>积分</span></div></div>
+          <div class="detail-card"><div class="section-label">激励任务</div><div class="booking-row"><span>补充地点 Wiki</span><strong>+20 积分</strong></div><div class="booking-row"><span>发布轨迹内容</span><strong>+50 积分</strong></div><div class="booking-row"><span>频道内容置顶</span><strong>待审核</strong></div></div>
+          <div class="detail-card"><div class="section-label">收益入口</div><p class="detail-text">创作者可通过服务预约、频道运营、内容推广和地图共创积分获得成长权益。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">发布三级 / 话题选择</h2>
+      <div class="phone search-screen" id="publish-topic-picker">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="search-head"><div class="search-box-lg"># 城市漫游</div><div class="cancel-text">完成</div></div>
+        <div class="search-body"><div class="section-label">推荐话题</div><div class="hot-keywords"><span class="chip active">#周末骑行</span><span class="chip">#城市露营</span><span class="chip">#探店打卡</span><span class="chip">#春熙路</span></div><div class="section-label">搜索结果</div><div class="result-row"><div class="result-thumb"></div><div><div class="result-title">#城市漫游</div><div class="result-desc">12800 热度 · 482 条内容</div></div><div class="map-cta">添加</div></div><div class="result-row"><div class="result-thumb"></div><div><div class="result-title">#城市影像</div><div class="result-desc">9650 热度 · 321 条内容</div></div><div class="map-cta">添加</div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">发布三级 / 位置选择</h2>
+      <div class="phone subpage" id="publish-location-picker">
+        <div class="map" style="height:100%"><i class="loc-dot home"></i><span class="map-label l2">当前位置</span></div><div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>添加位置</span><span class="follow-btn">完成</span></div>
+        <div class="sheet" style="height:360px"><div class="sheet-handle"></div><div class="search">搜 搜索地点</div><div class="result-row" style="margin:0 14px"><div class="result-thumb place"></div><div><div class="result-title">亚新大厦</div><div class="result-desc">距离 120m</div></div><div class="map-cta">选择</div></div><div class="result-row" style="margin:0 14px"><div class="result-thumb place"></div><div><div class="result-title">自由天地</div><div class="result-desc">距离 360m</div></div><div class="map-cta">选择</div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">发布三级 / 发布预览</h2>
+      <div class="phone subpage" id="publish-preview">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>预览</span><span class="follow-btn">发布</span></div>
+        <div class="page-scroll"><div class="detail-hero"><span class="hero-count">预览</span></div><div class="detail-card"><h1 class="detail-title">城市漫游记录</h1><div class="author-line"><span class="avatar-sm"></span><span>用户495 · 即将发布</span></div><p class="detail-text">分享你的创作、想法或日常。预览页用于确认媒体、文案、话题、位置和可见范围。</p><div class="detail-tags"><span class="chip active">#城市漫游</span><span class="chip">亚新大厦</span><span class="chip">公开</span></div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">发布四级 / 发布成功</h2>
+      <div class="phone subpage" id="publish-success"><div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="success-mark">✓</div><div class="success-title">发布成功</div><div class="success-desc">内容已进入首页信息流，并可通过地点定位在地图上被发现。</div><div class="detail-bottom" style="grid-template-columns:1fr 1fr"><div class="ghost-btn">查看内容</div><div class="primary-btn">返回首页</div></div></div>
+    </section>
+
+    <section>
+      <h2 class="board-title">沙盒二级 / 草稿编辑</h2>
+      <div class="phone subpage" id="sandbox-editor">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="top-nav"><span class="ghost-btn">取消</span><span>沙盒创作</span><span class="follow-btn">保存</span></div>
+        <div class="page-scroll"><div class="form-area"><div class="text-box">记录你的灵感草稿，仅自己可见...</div><div class="media-grid-small"><div class="media-slot">+</div><div class="media-slot"></div><div class="media-slot"></div></div><div class="detail-card"><div class="section-label">沙盒功能</div><div class="hot-keywords"><span class="chip active">灵感</span><span class="chip">待完善</span><span class="chip">测试</span><span class="chip">+ 自定义</span></div></div><div class="option-list"><div class="option-item"><span>定时发布</span><span class="toggle-mini" style="background:#d8dce2"></span></div><div class="option-item"><span>预览发布效果</span><span>›</span></div><div class="option-item"><span>分享给指定好友测试<span class="option-sub">不影响公开记录</span></span><span>›</span></div></div></div></div>
+        <div class="detail-bottom" style="grid-template-columns:1fr 1fr"><div class="ghost-btn">存入草稿箱</div><div class="primary-btn">发布到公开</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">沙盒三级 / 定时发布</h2>
+      <div class="phone subpage" id="sandbox-schedule">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>定时发布</span><span class="follow-btn">完成</span></div>
+        <div class="page-scroll"><div class="detail-card"><div class="section-label">选择日期</div><div class="calendar-grid"><span class="day-cell">一</span><span class="day-cell">二</span><span class="day-cell active">三</span><span class="day-cell">四</span><span class="day-cell">五</span><span class="day-cell">六</span><span class="day-cell">日</span></div></div><div class="detail-card"><div class="section-label">发布时间</div><div class="hot-keywords"><span class="chip">09:00</span><span class="chip active">12:30</span><span class="chip">18:00</span><span class="chip">21:00</span></div></div><div class="detail-card"><p class="detail-text">到时后自动转为发布流程，仍会保留预览确认。</p></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">沙盒三级 / 测试分享</h2>
+      <div class="phone subpage" id="sandbox-test-share">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>选择好友</span><span class="follow-btn">发送</span></div>
+        <div class="page-scroll"><div class="search">搜 搜索好友</div><div class="option-list"><div class="option-item"><span><span class="avatar-sm" style="display:inline-block;vertical-align:middle;margin-right:8px"></span>小王<span class="option-sub">最近聊天</span></span><span class="toggle-mini"></span></div><div class="option-item"><span><span class="avatar-sm" style="display:inline-block;vertical-align:middle;margin-right:8px"></span>美食探店群<span class="option-sub">群聊 · 免打扰</span></span><span>›</span></div><div class="option-item"><span><span class="avatar-sm" style="display:inline-block;vertical-align:middle;margin-right:8px"></span>活动通知群</span><span>›</span></div></div><div class="detail-card"><p class="detail-text">测试分享仅指定对象可见，不进入公开首页信息流。</p></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">原创IP二级 / IP 内容编辑</h2>
+      <div class="phone subpage" id="ip-editor">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="ghost-btn">取消</span><span>IP 内容发布</span><span class="follow-btn">发布</span></div>
+        <div class="page-scroll"><div class="detail-card"><div class="author-line"><span class="profile-avatar" style="width:54px;height:54px;margin:0;font-size:34px">凵</span><div><div class="result-title">治愈系小怪兽</div><div class="result-desc">治愈系小怪兽 IP</div></div><span style="margin-left:auto" class="ghost-btn">更换</span></div></div><div class="text-box">分享你的 IP 故事、新作品或周边...</div><div class="media-grid-small"><div class="media-slot">+</div><div class="media-slot"></div><div class="media-slot"></div></div><div class="option-list"><div class="option-item"><span>IP 标签<span class="option-sub">#原创IP #日常篇</span></span><span>编辑</span></div><div class="option-item"><span>版权声明<span class="option-sub">发布后带保护标识</span></span><span class="toggle-mini"></span></div><div class="option-item"><span>选择 IP 系列</span><span>日常篇 ›</span></div><div class="option-item"><span>授权方式</span><span>禁止转载 ›</span></div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">原创IP三级 / 选择 IP</h2>
+      <div class="phone subpage" id="ip-selector">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>选择 IP</span><span class="follow-btn">完成</span></div>
+        <div class="page-scroll"><div class="option-list"><div class="option-item"><span><span class="profile-avatar" style="display:inline-grid;width:42px;height:42px;margin:0 8px 0 0;font-size:24px;vertical-align:middle">凵</span>治愈系小怪兽<span class="option-sub">默认 IP · 42 条内容</span></span><span class="toggle-mini"></span></div><div class="option-item"><span><span class="profile-avatar" style="display:inline-grid;width:42px;height:42px;margin:0 8px 0 0;font-size:24px;vertical-align:middle;background:#7650c8">U</span>城市观察员<span class="option-sub">12 条内容</span></span><span>›</span></div></div><div class="detail-card"><div class="primary-btn" style="height:42px;border-radius:21px">创建新 IP</div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">原创IP三级 / 授权与版权</h2>
+      <div class="phone subpage" id="ip-auth-settings">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>授权方式</span><span class="follow-btn">保存</span></div>
+        <div class="page-scroll"><div class="option-list"><div class="option-item"><span>禁止转载<span class="option-sub">仅平台内浏览</span></span><span class="toggle-mini"></span></div><div class="option-item"><span>署名转载<span class="option-sub">允许转发但需署名</span></span><span>›</span></div><div class="option-item"><span>商业授权<span class="option-sub">需联系作者授权</span></span><span>›</span></div></div><div class="detail-card"><div class="section-label">版权标识</div><p class="detail-text">开启后，IP 内容详情页和分享页会显示版权保护标识。</p></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">原创IP四级 / 发布成功</h2>
+      <div class="phone subpage" id="ip-success"><div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="success-mark">✓</div><div class="success-title">IP 内容已发布</div><div class="success-desc">内容将进入 IP 系列页，同时可在首页信息流展示。</div><div class="detail-bottom" style="grid-template-columns:1fr 1fr"><div class="ghost-btn">查看 IP</div><div class="primary-btn">继续创作</div></div></div>
+    </section>
+
+    <section>
+      <h2 class="board-title">消息二级 / 地图频道副本</h2>
+      <div class="phone subpage" id="channel-map">
+        <div class="map" style="height:100%"><i class="pin p1"></i><i class="pin p2"></i><span class="map-label l1">成都</span><span class="map-label l2">春熙路频道</span><span class="mini-node node-b"></span></div>
+        <div class="status"><span>23:37</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="top-nav"><span class="nav-back">‹</span><span>地图频道</span><span class="follow-btn">加入</span></div>
+        <div class="sheet" style="height:360px"><div class="sheet-handle"></div><div class="mini-board" style="padding:0 14px"><div class="left-tree"><span class="tree-item active">成都</span><span class="tree-item">春熙路</span><span class="tree-item">环球中心</span></div><div><div class="detail-card" style="margin:0"><h1 class="detail-title">春熙路副本</h1><p class="detail-text">进入频道后地图范围锁定在频道边界内，只加载副本内容、服务和发言气泡。</p><div class="detail-tags"><span class="chip active">区域热点</span><span class="chip">商铺优惠</span></div></div></div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">消息三级 / 频道详情</h2>
+      <div class="phone subpage" id="channel-detail">
+        <div class="status"><span>23:37</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>频道详情</span><span class="nav-more">管</span></div>
+        <div class="page-scroll"><div class="detail-card"><h1 class="detail-title">春熙路频道</h1><div class="author-line"><span class="badge badge-soft">地理位置类</span><span>1280 成员</span><span style="margin-left:auto">公开</span></div><p class="detail-text">区域热点讨论、地理围栏通知、活动直播、商铺优惠推送都聚合在频道内。</p></div><div class="option-list"><div class="option-item"><span>子频道</span><strong>活动 / 商铺 / 地标</strong></div><div class="option-item"><span>频道 Wiki</span><span>共建中 ›</span></div><div class="option-item"><span>地图副本</span><span>已绑定 ›</span></div><div class="option-item"><span>成员权限</span><span>4 类角色 ›</span></div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">消息三级 / 线程卡片</h2>
+      <div class="phone subpage" id="channel-thread-card">
+        <div class="status"><span>23:37</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>频道线程</span><span class="nav-more">⋯</span></div>
+        <div class="chat-list"><div class="detail-card" style="margin:0"><div class="author-line"><span class="avatar-sm"></span><span>频道主理人 · 置顶</span><span style="margin-left:auto" class="badge badge-soft">活动</span></div><h1 class="detail-title" style="font-size:18px">周末夜景摄影集合</h1><p class="detail-text">集合点：自由天地东门。可报名、添加日历、分享到地图锚点。</p><div class="detail-tags"><span class="chip active">报名 36</span><span class="chip">好友 3</span><span class="chip">倒计时 24h</span></div></div><div class="bubble">我可以带三脚架。</div><div class="bubble me">已添加到日程。</div></div><div class="chat-input-bar"><div class="round-action">＋</div><div class="comment-input">回复线程</div><div class="round-action">↗</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">消息四级 / 频道权限角色</h2>
+      <div class="phone subpage" id="channel-permissions">
+        <div class="status"><span>23:37</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>权限角色</span><span class="follow-btn">保存</span></div>
+        <div class="page-scroll"><div class="option-list"><div class="option-item"><span>频道所有者<span class="option-sub">创建子频道、分配角色、数据导出</span></span><strong>1</strong></div><div class="option-item"><span>管理员<span class="option-sub">置顶/删除、成员审核、关键词屏蔽</span></span><strong>3</strong></div><div class="option-item"><span>成员<span class="option-sub">发言、互动、申请贡献者</span></span><strong>1280</strong></div><div class="option-item"><span>访客<span class="option-sub">只读 / 24 小时临时访问</span></span><strong>公开</strong></div></div><div class="detail-card"><div class="section-label">审核策略</div><p class="detail-text">频道发言、评论和共建内容接入自动审核 + 举报 + 人工干预。</p></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">消息二级 / 消息搜索</h2>
+      <div class="phone search-screen" id="message-search">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="search-head"><div class="search-box-lg">搜 活动通知</div><div class="cancel-text">取消</div></div>
+        <div class="search-body"><div class="section-label">最近搜索</div><div class="hot-keywords"><span class="chip">系统通知</span><span class="chip">服务助手</span><span class="chip">小王</span></div><div class="section-label">搜索结果</div><div class="result-row"><div class="msg-icon red">活</div><div><div class="result-title">活动通知</div><div class="result-desc">集合点已更新</div></div><div class="map-cta">打开</div></div><div class="result-row"><div class="msg-icon orange">服</div><div><div class="result-title">服务助手</div><div class="result-desc">您的预约已确认</div></div><div class="map-cta">打开</div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">消息二级 / 聊天详情</h2>
+      <div class="phone subpage" id="chat-detail">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>小王</span><span class="nav-more">⋯</span></div>
+        <div class="chat-list"><div class="bubble">这个周末要不要去春熙路附近打卡？</div><div class="bubble me">可以，我收藏了一个地点。</div><div class="bubble">发我看看。</div><div class="bubble me">推荐地点 4，距离很近，还能预约。</div></div>
+        <div class="chat-input-bar"><div class="round-action">＋</div><div class="comment-input">输入消息</div><div class="round-action">↗</div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">消息三级 / 通知详情</h2>
+      <div class="phone subpage" id="notification-detail">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>系统通知</span><span></span></div>
+        <div class="page-scroll"><div class="detail-card"><h1 class="detail-title">活动集合点已更新</h1><div class="author-line"><span class="msg-icon red" style="width:28px;height:28px;font-size:14px">活</span><span>今天 19:20</span></div><p class="detail-text">您参与的周末徒步活动集合点已更新为“自由天地东门”。请提前查看地图并预留出行时间。</p><div class="result-row" style="border-bottom:0"><div class="result-thumb place"></div><div><div class="result-title">自由天地东门</div><div class="result-desc">点击查看地图定位</div></div><div class="map-cta">定位</div></div></div><div class="detail-card"><div class="primary-btn" style="height:42px;border-radius:21px">查看活动详情</div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">消息三级 / 联系人资料</h2>
+      <div class="phone subpage" id="contact-profile">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>联系人资料</span><span class="nav-more">⋯</span></div>
+        <div class="profile-hero" style="height:310px;padding-top:92px"><div class="profile-avatar" style="background:#34c867">王</div><div class="profile-name">小王</div><div class="profile-desc">城市漫游爱好者</div></div>
+        <div class="profile-sheet" style="height:448px"><div class="detail-card" style="margin:20px 14px"><div class="booking-row"><span>来源</span><strong>频道与朋友</strong></div><div class="booking-row"><span>共同活动</span><strong>3 个</strong></div><div class="booking-row"><span>备注</span><strong>未设置</strong></div></div><div class="detail-bottom" style="grid-template-columns:1fr 1fr"><div class="ghost-btn">设为关注</div><div class="primary-btn">发消息</div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">我的二级 / 我的服务管理</h2>
+      <div class="phone subpage" id="my-services-manage">
+        <div class="status"><span>23:38</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>我的服务</span><span class="nav-more">＋</span></div>
+        <div class="page-scroll"><div class="metric-grid"><div class="metric-card"><strong>6</strong><span>服务项目</span></div><div class="metric-card"><strong>18</strong><span>预约</span></div><div class="metric-card"><strong>4.9</strong><span>评价</span></div></div><div class="option-list" style="margin-top:14px"><div class="option-item"><span>摄影跟拍<span class="option-sub">个人兴趣服务 · 可预约</span></span><span>管理</span></div><div class="option-item"><span>路线策划<span class="option-sub">活动协作服务 · 审核中</span></span><span>编辑</span></div><div class="option-item"><span>服务频道<span class="option-sub">售后 / 评价 / 私信</span></span><span>进入</span></div></div><div class="detail-card"><p class="detail-text">文档要求个人主页聚合服务记录、展示服务提供信息与“预约我”入口。</p></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">我的三级 / 数据热力统计</h2>
+      <div class="phone subpage" id="my-heatmap-stats">
+        <div class="status"><span>23:38</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>足迹数据</span><span class="nav-more">导</span></div>
+        <div class="page-scroll"><div class="radar"><span class="mini-node node-a"></span><span class="mini-node node-b"></span><span class="mini-node node-c"></span></div><div class="metric-grid"><div class="metric-card"><strong>128</strong><span>打卡点</span></div><div class="metric-card"><strong>32</strong><span>动态</span></div><div class="metric-card"><strong>9</strong><span>频道</span></div></div><div class="detail-card"><div class="section-label">行为统计</div><div class="booking-row"><span>收藏</span><strong>256</strong></div><div class="booking-row"><span>浏览</span><strong>5805</strong></div><div class="booking-row"><span>互动</span><strong>489</strong></div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">我的三级 / 时间轴回顾</h2>
+      <div class="phone subpage" id="my-timeline-review">
+        <div class="status"><span>23:38</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>时间轴回顾</span><span class="follow-btn">生成</span></div>
+        <div class="page-scroll"><div class="detail-card"><h1 class="detail-title">2026 城市足迹</h1><p class="detail-text">按时间维度生成事件列表，支持动态插入内容、编辑节点和年终回顾。</p></div><div class="timeline"><div class="timeline-item">07/07 预约全部服务 1</div><div class="timeline-item">07/06 收藏城市夜景地点</div><div class="timeline-item">07/03 发布推荐打卡内容</div><div class="timeline-item">06/28 加入春熙路频道</div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">我的四级 / 隐私控制</h2>
+      <div class="phone subpage" id="my-privacy-control">
+        <div class="status"><span>23:38</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>隐私控制</span><span class="follow-btn">保存</span></div>
+        <div class="page-scroll"><div class="option-list"><div class="option-item"><span>公开我的足迹地图<span class="option-sub">允许别人查看打卡点</span></span><span class="toggle-mini"></span></div><div class="option-item"><span>公开收藏列表<span class="option-sub">仅关注者可见</span></span><span>关注者 ›</span></div><div class="option-item"><span>服务是否可预约<span class="option-sub">关闭后隐藏预约我入口</span></span><span class="toggle-mini"></span></div><div class="option-item"><span>频道参与记录<span class="option-sub">只自己可见</span></span><span>私密 ›</span></div></div><div class="detail-card"><p class="detail-text">DDS 要求字段级权限控制：可视范围、是否公开、是否可预约。</p></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">我的二级 / 足迹地图</h2>
+      <div class="phone subpage" id="my-location-map">
+        <div class="map" style="height:100%"><i class="pin p1"></i><i class="pin p2"></i><i class="loc-dot home"></i><span class="map-label l1">我的足迹</span><span class="map-label l2">收藏地点</span></div><div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>我的足迹地图</span><span class="nav-more">⋯</span></div>
+        <div class="sheet" style="height:320px"><div class="sheet-handle"></div><div class="tabs"><span class="active">全部</span><span>照片</span><span>地点</span><span>服务</span></div><div class="result-row" style="margin:8px 14px"><div class="result-thumb photo"></div><div><div class="result-title">美丽的日落</div><div class="result-desc">春熙路 · 128 赞</div></div><div class="map-cta">定位</div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">我的状态 / 足迹地图当前态</h2>
+      <div class="phone subpage" id="my-footprint-map-current">
+        <div class="current-map">
+          <span class="map-label" style="left:42px;top:222px">成都站</span>
+          <span class="map-label" style="left:230px;top:180px;color:#2e9e4d">成都动物园</span>
+          <span class="map-label" style="left:248px;top:430px">塔子山公园</span>
+          <i class="current-pin blue" style="left:198px;top:388px"></i>
+          <i class="current-pin" style="left:38px;top:492px"></i>
+          <i class="current-pin" style="left:248px;top:504px"></i>
+          <div class="my-map-card" style="left:8px;top:326px"><div class="cover-blue"></div><span class="badge-num">5</span><div style="padding:6px;font-size:10px;color:#666">成都旅游攻略<br>旅游达人</div></div>
+          <div class="my-map-card" style="right:96px;top:326px"><div class="cover-blue"></div><span class="badge-num">2</span><div style="padding:6px;font-size:10px;color:#666">川菜文化探索<br>文化学者</div></div>
+          <div class="my-map-card" style="left:52px;top:604px"><div class="cover-blue"></div><span class="badge-num">4</span><div style="padding:6px;font-size:10px;color:#666">美食制作</div></div>
+        </div>
+        <div class="status"><span>22:39</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div>
+        <div class="notch"></div>
+        <div class="my-top-filter"><span class="active">位置</span><span>收藏</span><span>日期</span><span>设</span></div>
+        <div class="capsule"><span class="dotset"><i></i><i></i><i></i></span><span class="circle-icon"></span></div>
+        <div class="my-map-bottom"><h2>我的足迹地图</h2><div style="font:400 17px/24px var(--font-family);color:#555">我的内容轨迹 (13个地点)</div></div>
+        <nav class="tabbar">
+          <div class="tab"><span class="ico">⌂</span><span>首页</span></div>
+          <div class="tab"><span class="ico">✦</span><span>服务</span></div>
+          <div class="plus">+</div>
+          <div class="tab"><span class="ico">▣</span><span>消息</span></div>
+          <div class="tab active"><span class="ico">♟</span><span>我的</span></div>
+        </nav>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">我的二级 / 收藏列表</h2>
+      <div class="phone subpage" id="my-favorites">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>我的收藏</span><span class="nav-more">筛</span></div>
+        <div class="page-scroll"><div class="hot-keywords"><span class="chip active">全部</span><span class="chip">照片</span><span class="chip">视频</span><span class="chip">文章</span><span class="chip">地点</span></div><div class="result-row"><div class="result-thumb photo"></div><div><div class="result-title">美丽的日落</div><div class="result-desc">摄影师小王 · 图片</div></div><div class="map-cta">查看</div></div><div class="result-row"><div class="result-thumb place"></div><div><div class="result-title">城市夜景</div><div class="result-desc">夜拍达人 · 附近</div></div><div class="map-cta">定位</div></div><div class="result-row"><div class="result-thumb"></div><div><div class="result-title">精选文章 3</div><div class="result-desc">5805 阅读</div></div><div class="map-cta">阅读</div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">我的状态 / 收藏瀑布流当前态</h2>
+      <div class="phone subpage" id="my-favorites-current">
+        <div class="status"><span>22:39</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div>
+        <div class="notch"></div>
+        <div class="fav-current-head">
+          <div class="fav-switch-row"><span>位置</span><span class="active">收藏</span><span>日期</span><span>设</span></div>
+          <div class="fav-chip-row"><span class="active">全部</span><span>照片</span><span>视频</span><span>文章</span><span>音乐</span><span>地点</span></div>
+        </div>
+        <div class="capsule"><span class="dotset"><i></i><i></i><i></i></span><span class="circle-icon"></span></div>
+        <div class="fav-waterfall-current">
+          <article class="fav-card-current"><div class="empty-cover">暂无封面</div><div class="fav-body"><div class="fav-title">美丽的日落</div><span class="muted-dot"></span> 摄影师小王<br>♡ 128　☆</div></article>
+          <article class="fav-card-current"><div class="empty-cover">暂无封面</div><div class="fav-body"><div class="fav-title">城市夜景</div><span class="muted-dot"></span> 夜拍达人<br>♡ 89　☆</div></article>
+          <article class="fav-card-current"><div class="empty-cover">暂无封面</div><div class="fav-body"><div class="fav-title">春天的花朵</div><span class="muted-dot"></span> 花卉爱好者<br>♡ 156　☆</div></article>
+          <article class="fav-card-current"><div class="empty-cover">暂无封面</div><div class="fav-body"><div class="fav-title">街头表演</div><span class="muted-dot"></span> 街拍小哥<br>♡ 234　☆</div></article>
+          <article class="fav-card-current"><div class="empty-cover">暂无封面</div><div class="fav-body"><div class="fav-title">美食制作</div><span class="muted-dot"></span> 美食博主<br>♡ 312　☆</div></article>
+          <article class="fav-card-current"><div class="empty-cover">暂无封面</div><div class="fav-body"><div class="fav-title">成都旅游攻略</div><span class="muted-dot"></span> 旅游达人<br>♡ 445　☆</div></article>
+        </div>
+        <nav class="tabbar">
+          <div class="tab"><span class="ico">⌂</span><span>首页</span></div>
+          <div class="tab"><span class="ico">✦</span><span>服务</span></div>
+          <div class="plus">+</div>
+          <div class="tab"><span class="ico">▣</span><span>消息</span></div>
+          <div class="tab active"><span class="ico">♟</span><span>我的</span></div>
+        </nav>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">我的二级 / 日期日程</h2>
+      <div class="phone subpage" id="my-calendar">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>日期</span><span class="nav-more">＋</span></div>
+        <div class="page-scroll"><div class="detail-card"><div class="section-label">2026 年 7 月</div><div class="calendar-grid"><span class="day-cell">1</span><span class="day-cell">2</span><span class="day-cell active">3</span><span class="day-cell">4</span><span class="day-cell">5</span><span class="day-cell">6</span><span class="day-cell active">7</span><span class="day-cell">8</span><span class="day-cell">9</span><span class="day-cell">10</span><span class="day-cell">11</span><span class="day-cell">12</span><span class="day-cell">13</span><span class="day-cell">14</span></div></div><div class="detail-card"><div class="section-label">今天</div><div class="booking-row"><span>14:30</span><strong>全部服务 1 预约</strong></div><div class="booking-row"><span>19:30</span><strong>周末活动准备</strong></div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">我的三级 / 设置</h2>
+      <div class="phone subpage" id="my-settings">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>设置</span><span></span></div>
+        <div class="page-scroll"><div class="option-list"><div class="option-item"><span>编辑资料</span><span>›</span></div><div class="option-item"><span>账号与安全</span><span>›</span></div><div class="option-item"><span>消息通知</span><span class="toggle-mini"></span></div><div class="option-item"><span>隐私设置</span><span>›</span></div><div class="option-item"><span>清理缓存</span><span>12.8 MB</span></div></div><div class="detail-card"><div class="ghost-btn" style="height:42px;border-radius:21px;color:#ff3b35">退出登录</div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">我的四级 / 编辑资料</h2>
+      <div class="phone subpage" id="my-profile-edit">
+        <div class="status"><span>23:33</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div><div class="top-nav"><span class="nav-back">‹</span><span>编辑资料</span><span class="follow-btn">保存</span></div>
+        <div class="page-scroll"><div class="detail-card" style="text-align:center"><div class="profile-avatar" style="margin:0 auto 12px">凵</div><div class="ghost-btn">更换头像</div></div><div class="option-list"><div class="option-item"><span>用户名</span><strong>用户名</strong></div><div class="option-item"><span>个人描述</span><strong>这里是用户描述信息</strong></div><div class="option-item"><span>地区</span><strong>成都</strong></div><div class="option-item"><span>主页背景</span><span>›</span></div></div></div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">商业二级 / 会员积分与推广</h2>
+      <div class="phone subpage" id="monetization-center">
+        <div class="status"><span>23:39</span><span class="status-icons"><i class="wifi"></i><i class="battery"></i></span></div><div class="notch"></div>
+        <div class="top-nav"><span class="nav-back">‹</span><span>会员与积分</span><span class="nav-more">?</span></div>
+        <div class="page-scroll">
+          <div class="detail-card"><h1 class="detail-title">足迹成长权益</h1><p class="detail-text">商业计划书中的变现模型落地为会员、积分、商家频道特权、内容推广和创作者激励。</p></div>
+          <div class="metric-grid"><div class="metric-card"><strong>86</strong><span>积分</span></div><div class="metric-card"><strong>Lv.3</strong><span>等级</span></div><div class="metric-card"><strong>3</strong><span>权益券</span></div></div>
+          <div class="option-list" style="margin-top:14px"><div class="option-item"><span>会员特权<span class="option-sub">高级图层、频道数据、专属优惠</span></span><span>开通</span></div><div class="option-item"><span>内容推广<span class="option-sub">投放到兴趣 POI 和频道热点</span></span><span>创建</span></div><div class="option-item"><span>商家频道广告<span class="option-sub">地理围栏触发优惠</span></span><span>管理</span></div><div class="option-item"><span>创作者收益<span class="option-sub">服务、共创、积分兑换</span></span><span>查看</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="board-title">Design Tokens / 组件板</h2>
+      <div class="phone token-board" id="token-board">
+        <div class="token-section">
+          <h3>颜色</h3>
+          <div class="swatches">
+            <div class="swatch" style="background:#248cf5">Blue<br>#248CF5</div>
+            <div class="swatch" style="background:#ffd400;color:#5b4a00">Yellow<br>#FFD400</div>
+            <div class="swatch" style="background:#ff7043">Orange<br>#FF7043</div>
+            <div class="swatch" style="background:#24d06c">Success<br>#24D06C</div>
+            <div class="swatch" style="background:#7650c8">Purple<br>#7650C8</div>
+            <div class="swatch" style="background:#ec3fc8">Pink<br>#EC3FC8</div>
+            <div class="swatch" style="background:#f8f8f8;color:#555;border:1px solid #ddd">Panel<br>#F8F8F8</div>
+            <div class="swatch" style="background:#222">Text<br>#222222</div>
+          </div>
+        </div>
+        <div class="token-section">
+          <h3>组件</h3>
+          <div class="components">
+            <div class="component-line"><span class="chip active">全部</span><span class="chip">照片</span><span class="badge badge-soft">推荐</span><span class="badge">服务</span><span class="book">预约</span></div>
+            <div class="component-line"><div class="search" style="width:250px;margin:0">搜 搜索</div><span class="floating-locate" style="position:relative;right:auto;top:auto"></span></div>
+            <article class="card" style="width:164px"><div class="cover photo-bridge"><span class="tag-dark">商业</span></div><div class="card-body"><div class="card-title">用户上传图片卡</div><div class="stats">♡ 464　☆</div></div></article>
+            <article class="card service-card" style="width:164px"><div class="place-mini"><span class="place-dot"></span><span class="score-pill">4.1 分</span></div><div class="card-body"><div class="card-title">服务卡</div><div class="status-line"><b class="open-badge">• 营业中</b><span class="book">预约</span></div></div></article>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script>
+    (() => {
+      const flows = [
+        {
+          key: 'home',
+          title: '首页地图闭环',
+          order: 9,
+          desc: '从首页地图、搜索、内容详情、地点/轨迹、锚点、图层、分享、迷雾到 AI 搜索的核心体验链路。',
+          ids: ['home-map-feed','home-map-card-focus','home-map-sheet-low','home-search-results','home-content-detail','home-content-location-comments','home-activity-detail','home-activity-register-detail','home-media-preview','home-place-detail','home-track-detail','home-booking-confirm','home-anchor-layer-lab','home-anchor-action','home-map-share','home-fog-unlock','ai-search','home-map-component-board']
+        },
+        {
+          key: 'service',
+          title: '服务与预约闭环',
+          order: 29,
+          desc: '服务列表、三类服务卡、服务详情、商家频道、共建审核、预约、支付与成功态。',
+          ids: ['service-map-feed','service-card-types','service-detail','service-detail-current','service-merchant-channel','service-wiki-edit','service-booking','service-payment','service-success']
+        },
+        {
+          key: 'publish',
+          title: '发布、共创与创作者',
+          order: 39,
+          desc: '发布入口、类型中心、动态编辑、AI 模板、轨迹编辑、地图共创、创作者中心与发布完成。',
+          ids: ['publish-entry','publish-type-center','publish-editor','publish-ai-template','publish-track-editor','publish-map-cocreate','creator-center','publish-topic-picker','publish-location-picker','publish-preview','publish-success','sandbox-editor','sandbox-schedule','sandbox-test-share','ip-editor','ip-selector','ip-auth-settings','ip-success']
+        },
+        {
+          key: 'message',
+          title: '消息与频道空间',
+          order: 59,
+          desc: '消息中心、地图频道副本、频道详情、线程卡片、频道权限、搜索、聊天、通知和联系人资料。',
+          ids: ['message-center','channel-map','channel-detail','channel-thread-card','channel-permissions','message-search','chat-detail','notification-detail','contact-profile']
+        },
+        {
+          key: 'my',
+          title: '个人主页与数据资产',
+          order: 69,
+          desc: '个人主页、我的服务、足迹地图、收藏、日程、热力统计、时间轴、设置、隐私和编辑资料。',
+          ids: ['my-profile','my-services-manage','my-location-map','my-footprint-map-current','my-favorites','my-favorites-current','my-calendar','my-heatmap-stats','my-timeline-review','my-settings','my-privacy-control','my-profile-edit']
+        },
+        {
+          key: 'commerce',
+          title: '商业化与系统组件',
+          order: 89,
+          desc: '会员积分、内容推广、商家频道广告、创作者收益，以及设计 tokens 和首页地图组件状态。',
+          ids: ['monetization-center','token-board']
+        }
+      ];
+      const levelMap = {
+        'home-map-feed': 1, 'home-map-card-focus': 1, 'home-map-sheet-low': 1, 'home-search-results': 2, 'home-content-detail': 2, 'home-content-location-comments': 2, 'home-activity-detail': 2, 'home-activity-register-detail': 2, 'home-media-preview': 3, 'home-place-detail': 2, 'home-track-detail': 2, 'home-booking-confirm': 3, 'home-anchor-layer-lab': 2, 'home-anchor-action': 3, 'home-map-share': 3, 'home-fog-unlock': 4, 'ai-search': 2, 'home-map-component-board': 0,
+        'service-map-feed': 1, 'service-card-types': 2, 'service-detail': 2, 'service-detail-current': 2, 'service-merchant-channel': 3, 'service-wiki-edit': 4, 'service-booking': 3, 'service-payment': 4, 'service-success': 4,
+        'publish-entry': 1, 'publish-type-center': 2, 'publish-editor': 2, 'publish-ai-template': 3, 'publish-track-editor': 3, 'publish-map-cocreate': 4, 'creator-center': 2, 'publish-topic-picker': 3, 'publish-location-picker': 3, 'publish-preview': 3, 'publish-success': 4, 'sandbox-editor': 2, 'sandbox-schedule': 3, 'sandbox-test-share': 3, 'ip-editor': 2, 'ip-selector': 3, 'ip-auth-settings': 3, 'ip-success': 4,
+        'message-center': 1, 'channel-map': 2, 'channel-detail': 3, 'channel-thread-card': 3, 'channel-permissions': 4, 'message-search': 2, 'chat-detail': 2, 'notification-detail': 3, 'contact-profile': 3,
+        'my-profile': 1, 'my-services-manage': 2, 'my-location-map': 2, 'my-footprint-map-current': 2, 'my-favorites': 2, 'my-favorites-current': 2, 'my-calendar': 2, 'my-heatmap-stats': 3, 'my-timeline-review': 3, 'my-settings': 3, 'my-privacy-control': 4, 'my-profile-edit': 4,
+        'monetization-center': 2, 'token-board': 0
+      };
+      const notes = {
+        'home-map-feed': '默认态：地图作为空间上下文，普通内容卡封面优先用户上传图片，地点定位只由用户点击触发。',
+        'home-map-card-focus': '地图展开态：卡片直接浮在地图上，表达内容卡可见范围与地图 marker 一一对应的联动关系。',
+        'home-map-sheet-low': '低面板态：地图占据主导视野，底部面板只保留搜索和首行卡片，适合向外探索更大空间范围。',
+        'home-search-results': '搜索态：统一召回内容、地点、视频、文章；地点结果提供定位，普通内容进入详情。',
+        'home-content-detail': '详情态：媒体、作者、正文、话题、关联地点和评论摘要形成内容消费闭环。',
+        'home-content-location-comments': '详情滚动态：补齐位置模块、导航按钮和评论区，明确地点定位只由位置模块触发。',
+        'home-activity-detail': '活动首屏态：紫色活动封面、进行中状态、时间地点卡和报名情况形成活动详情第一屏。',
+        'home-activity-register-detail': '活动报名态：展示报名进度、参与头像、活动介绍和注意事项，底部 CTA 明确截止状态。',
+        'home-media-preview': '沉浸态：点击媒体进入原图/视频预览，保留评论和互动操作，不承担地图定位。',
+        'home-place-detail': '地点态：地图定位、地址、评分、附近内容、导航和预约组成地点闭环。',
+        'home-track-detail': '轨迹态：路线、起终点、途经点、距离时长和开始导航组成轨迹闭环。',
+        'home-booking-confirm': '预约态：从地点或服务 CTA 进入，确认时间、联系人、备注和费用。',
+        'home-anchor-layer-lab': '图层态：五类锚点和智能图层集中管理，覆盖兴趣雷达、活动倒计时、服务曝光和迷雾。',
+        'home-anchor-action': '锚点点击态：导览、活动、频道、修建锚点四个快捷动作，承接地图 marker 点击。',
+        'home-map-share': '分享态：把地图副本、锚点和图层状态作为可传播内容输出。',
+        'home-fog-unlock': '锁定态：普通定位锚点被迷雾遮罩，探索后可收藏、导航、发布内容或修建锚点。',
+        'ai-search': 'AI 搜索态：自然语言同时召回地图、服务、轨迹、频道和内容。',
+        'home-map-component-board': '组件板：首页地图闭环的 marker、图层、卡片封面和状态样式集中沉淀。',
+        'service-card-types': '服务类型矩阵：个人兴趣服务、商家场景服务、活动协作服务三类卡片统一分发。',
+        'service-detail-current': '服务主页态：还原当前绿色服务详情，包含大封面、评分、完成量、兴趣偏好和立即预约底栏。',
+        'service-wiki-edit': '共建审核态：用户补充服务信息，店主/平台审核，保留编辑日志。',
+        'publish-ai-template': 'AI 创作态：从素材生成标题、摘要、地点和标签建议。',
+        'publish-track-editor': '轨迹编辑态：路径上插入图片、音频、视频节点，可协作编辑。',
+        'publish-map-cocreate': '地图共创态：把普通定位升级为可审核锚点，进入社区/平台审核。',
+        'channel-map': '频道副本态：进入频道后地图范围被频道边界约束，只加载副本内容。',
+        'channel-permissions': '权限态：频道所有者、管理员、成员、访客的操作权限和审核策略。',
+        'my-footprint-map-current': '足迹地图态：还原我的页地图视图，内容卡按地理分布浮在地图上，并保留底部足迹摘要。',
+        'my-favorites-current': '收藏瀑布流态：还原收藏筛选、内容 chips 和双列收藏卡片，支持无封面占位与推荐/附近标签。',
+        'my-privacy-control': '隐私态：字段级控制足迹、收藏、服务预约和频道参与记录的可见范围。',
+        'monetization-center': '商业化态：会员、积分、推广、广告和创作者收益入口。'
+      };
+      const stateMap = {
+        'home-map-feed': ['loading','empty','selected','highlighted'],
+        'home-map-card-focus': ['selected','highlighted'],
+        'home-map-sheet-low': ['selected'],
+        'home-content-location-comments': ['selected','verified'],
+        'home-activity-detail': ['highlighted'],
+        'home-activity-register-detail': ['highlighted','locked'],
+        'home-anchor-layer-lab': ['selected','highlighted','verified'],
+        'home-anchor-action': ['selected','verified'],
+        'home-fog-unlock': ['locked','pending review'],
+        'home-map-component-board': ['loading','empty','selected','highlighted','locked','verified','pending review'],
+        'service-detail-current': ['selected','verified'],
+        'service-wiki-edit': ['pending review','verified'],
+        'publish-map-cocreate': ['pending review','verified'],
+        'channel-permissions': ['selected','locked'],
+        'my-footprint-map-current': ['selected','highlighted'],
+        'my-favorites-current': ['selected','empty'],
+        'my-privacy-control': ['selected','locked']
+      };
+      const flowById = new Map();
+      flows.forEach(flow => flow.ids.forEach((id, index) => flowById.set(id, { flow, index })));
+      const main = document.querySelector('.canvas');
+      if (!main || main.dataset.enhanced === 'true') return;
+      main.dataset.enhanced = 'true';
+      flows.forEach(flow => {
+        const divider = document.createElement('div');
+        divider.className = 'flow-divider';
+        divider.style.order = flow.order;
+        divider.innerHTML = `<div class="flow-divider-title">${flow.title}</div><div class="flow-divider-desc">${flow.desc}</div>`;
+        main.appendChild(divider);
+      });
+      document.querySelectorAll('.phone[id]').forEach(phone => {
+        const id = phone.id;
+        const section = phone.closest('section');
+        const title = section?.querySelector('.board-title');
+        if (!section || !title || section.querySelector('.board-note')) return;
+        const found = flowById.get(id);
+        const flowName = found ? found.flow.title : '系统';
+        const step = found ? `${found.index + 1}/${found.flow.ids.length}` : '0/0';
+        const level = levelMap[id] ?? 0;
+        const note = notes[id] || `拓扑路径：${flowName}，用于补齐该业务线的页面状态与交互层级。`;
+        const noteEl = document.createElement('div');
+        noteEl.className = 'board-note';
+        const states = stateMap[id] || [];
+        noteEl.innerHTML = `
+          <div class="board-note-top">
+            <span class="level-badge">L${level}</span>
+            <span class="path-code">${flowName} · Step ${step} · #${id}</span>
+          </div>
+          <div class="board-note-copy">${note}</div>
+          ${states.length ? `<div class="state-strip">${states.map(s => `<span class="state-chip ${s.replace(/\s+/g, '-')}">${s}</span>`).join('')}</div>` : ''}
+        `;
+        section.insertBefore(noteEl, phone);
+      });
+    })();
+  </script>
+</body>
+</html>

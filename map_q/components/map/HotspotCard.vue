@@ -1,152 +1,172 @@
 <template>
   <view 
-    class="hotspot-card" 
-    :class="{ highlighted: isHighlighted, dragging: isActuallyDragging }"
+    class="hotspot-card"
+    :class="{ 'hotspot-card-highlight': isHighlighted, 'hotspot-card-hidden': isHidden }"
     :style="cardStyle"
-    @tap="onTap"
-    @longpress="onLongPress"
+    @tap="onCardTap"
     @touchstart="onTouchStart"
-    @touchmove.stop.prevent="onTouchMove"
+    @touchmove="onTouchMove"
     @touchend="onTouchEnd"
     @touchcancel="onTouchEnd"
   >
-    <view class="card-cover">
-      <image v-if="coverImage" class="cover-img" :src="coverImage" mode="aspectFill" />
-      <view v-else class="cover-placeholder" :class="typeClass">
+    <view class="hotspot-cover">
+      <image 
+        v-if="coverImage" 
+        class="cover-image" 
+        :src="coverImage" 
+        mode="aspectFill"
+        @error="onImageError"
+      />
+      <view v-else class="cover-placeholder" :class="'cover-' + type">
         <text class="placeholder-icon">{{ typeIcon }}</text>
       </view>
-      <view class="badge" v-if="count > 1">
-        <text class="badge-text">{{ count }}</text>
-      </view>
+      <view v-if="contentCount > 0" class="hotspot-badge">{{ contentCount }}</view>
+      <view v-if="statusLabel" class="hotspot-status">{{ statusLabel }}</view>
     </view>
-    <view class="card-info">
-      <text class="card-title">{{ title }}</text>
-      <text class="card-subtitle">{{ subtitle }}</text>
+    <view class="hotspot-info">
+      <text class="hotspot-title">{{ title }}</text>
+      <text class="hotspot-author">{{ author }}</text>
     </view>
+    <view v-if="isDragging" class="hotspot-drag-line"></view>
   </view>
 </template>
 
 <script>
 export default {
-  name: 'HotspotCard',
+  name: 'MapHotspotCard',
   props: {
-    item: {
-      type: Object,
-      required: true
-    },
-    isHighlighted: {
-      type: Boolean,
-      default: false
-    },
-    isDragging: {
-      type: Boolean,
-      default: false
-    },
-    scale: {
-      type: Number,
-      default: 1
-    },
-    left: {
-      type: Number,
-      default: 0
-    },
-    top: {
-      type: Number,
-      default: 0
-    }
+    id: { type: String, required: true },
+    title: { type: String, default: '' },
+    author: { type: String, default: '' },
+    type: { type: String, default: 'normal' },
+    coverImage: { type: String, default: '' },
+    contentCount: { type: Number, default: 0 },
+    statusLabel: { type: String, default: '' },
+    x: { type: Number, default: 0 },
+    y: { type: Number, default: 0 },
+    width: { type: Number, default: 140 },
+    height: { type: Number, default: 180 },
+    isHighlighted: { type: Boolean, default: false },
+    isHidden: { type: Boolean, default: false },
+    scale: { type: Number, default: 16 }
   },
-  emits: ['tap', 'long-press', 'drag-start', 'drag-move', 'drag-end'],
   data() {
     return {
-      internalDragging: false,
+      isDragging: false,
+      dragStartX: 0,
+      dragStartY: 0,
       startX: 0,
       startY: 0,
+      currentX: 0,
+      currentY: 0,
+      longPressTimer: null,
       hasMoved: false
     }
   },
   computed: {
-    title() {
-      return this.item.name || this.item.title || '未命名'
-    },
-    subtitle() {
-      return this.item.author || this.item.address || '点击查看'
-    },
-    coverImage() {
-      return this.item.cover || this.item.image || ''
-    },
-    count() {
-      return this.item.count || 1
-    },
-    typeClass() {
-      const type = this.item.type || 'normal'
-      return `type-${type}`
-    },
     typeIcon() {
-      const iconMap = {
-        normal: '📍',
-        video: '▶',
-        article: '📄',
-        place: '🏪',
+      const icons = {
+        normal: '📸',
+        video: '🎬',
+        article: '📝',
+        place: '📍',
         event: '🎉',
-        service: '🛎',
-        track: '🧭'
+        service: '💼',
+        track: '🚶'
       }
-      return iconMap[this.item.type] || '📍'
+      return icons[this.type] || '📌'
     },
     cardStyle() {
-      const baseWidth = 140
-      const baseHeight = 180
-      const s = this.scale
+      const scaleFactor = this.scale < 14 ? 0.8 : this.scale > 18 ? 1.1 : 1
+      const finalWidth = this.width * scaleFactor
+      const finalHeight = this.height * scaleFactor
+      
       return {
-        width: `${baseWidth * s}rpx`,
-        height: `${baseHeight * s}rpx`,
-        left: `${this.left}px`,
-        top: `${this.top}px`
+        left: this.currentX + 'px',
+        top: this.currentY + 'px',
+        width: finalWidth + 'rpx',
+        height: finalHeight + 'rpx',
+        transform: this.isDragging ? 'scale(1.1)' : 'scale(1)'
       }
-    },
-    isActuallyDragging() {
-      return this.isDragging || this.internalDragging
     }
   },
-  methods: {
-    onTap() {
-      if (this.hasMoved) return
-      this.$emit('tap', this.item)
-    },
-    onLongPress() {
-      this.internalDragging = true
-      this.$emit('long-press', this.item)
-    },
-    onTouchStart(e) {
-      const touch = e.touches && e.touches[0]
-      if (!touch) return
-      this.startX = touch.clientX
-      this.startY = touch.clientY
-      this.hasMoved = false
-      if (this.internalDragging || this.isDragging) {
-        this.$emit('drag-start', { item: this.item, event: e })
+  watch: {
+    x(newVal) {
+      if (!this.isDragging) {
+        this.currentX = newVal
+        this.startX = newVal
       }
+    },
+    y(newVal) {
+      if (!this.isDragging) {
+        this.currentY = newVal
+        this.startY = newVal
+      }
+    }
+  },
+  mounted() {
+    this.currentX = this.x
+    this.currentY = this.y
+    this.startX = this.x
+    this.startY = this.y
+  },
+  methods: {
+    onTouchStart(e) {
+      this.hasMoved = false
+      const touch = e.touches[0]
+      this.dragStartX = touch.clientX
+      this.dragStartY = touch.clientY
+      
+      this.longPressTimer = setTimeout(() => {
+        if (!this.hasMoved) {
+          this.isDragging = true
+          uni.vibrateShort({ type: 'light' })
+        }
+      }, 500)
     },
     onTouchMove(e) {
-      const touch = e.touches && e.touches[0]
-      if (!touch) return
-      const dx = Math.abs(touch.clientX - this.startX)
-      const dy = Math.abs(touch.clientY - this.startY)
-      if (dx > 5 || dy > 5) {
+      const touch = e.touches[0]
+      const deltaX = touch.clientX - this.dragStartX
+      const deltaY = touch.clientY - this.dragStartY
+      
+      if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
         this.hasMoved = true
+        if (this.longPressTimer) {
+          clearTimeout(this.longPressTimer)
+          this.longPressTimer = null
+        }
       }
-      if (this.internalDragging || this.isDragging) {
-        this.$emit('drag-move', { item: this.item, event: e })
+      
+      if (this.isDragging) {
+        this.currentX = this.startX + deltaX
+        this.currentY = this.startY + deltaY
       }
     },
     onTouchEnd(e) {
-      if (this.internalDragging) {
-        this.$emit('drag-end', { item: this.item, event: e })
-        this.internalDragging = false
+      if (this.longPressTimer) {
+        clearTimeout(this.longPressTimer)
+        this.longPressTimer = null
       }
-      setTimeout(() => {
-        this.hasMoved = false
-      }, 100)
+      
+      if (this.isDragging) {
+        this.isDragging = false
+        this.startX = this.currentX
+        this.startY = this.currentY
+        
+        this.$emit('drag-end', {
+          id: this.id,
+          x: this.currentX,
+          y: this.currentY
+        })
+      }
+    },
+    onCardTap() {
+      if (!this.isDragging && !this.hasMoved) {
+        this.$emit('card-tap', { id: this.id, type: this.type })
+      }
+    },
+    onImageError() {
+      this.$emit('image-error', this.id)
     }
   }
 }
@@ -155,91 +175,139 @@ export default {
 <style scoped>
 .hotspot-card {
   position: absolute;
-  width: 140rpx;
-  height: 180rpx;
-  background: #fff;
+  background: #ffffff;
   border-radius: 12rpx;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  z-index: 50;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hotspot-card-highlight {
+  box-shadow: 0 6rpx 20rpx rgba(255, 138, 101, 0.3);
   border: 2rpx solid #ff8a65;
-  z-index: 10;
 }
 
-.hotspot-card.highlighted {
-  border-color: #ff8a65;
+.hotspot-card-hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
-.card-cover {
+.hotspot-cover {
   position: relative;
   width: 100%;
-  height: 60%;
-  background: #f0f0f0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding-bottom: 60%;
 }
 
-.cover-img {
+.cover-image {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
 }
 
 .cover-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #e8e8e8;
 }
 
-.cover-placeholder.type-video {
-  background: #333;
+.cover-normal {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.cover-video {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+}
+
+.cover-article {
+  background: linear-gradient(135deg, #f8f8f8 0%, #e8e8e8 100%);
+}
+
+.cover-place, .cover-service {
+  background: 
+    linear-gradient(90deg, rgba(150, 150, 150, 0.08) 1rpx, transparent 1rpx),
+    linear-gradient(rgba(150, 150, 150, 0.06) 1rpx, transparent 1rpx);
+  background-size: 20rpx 20rpx;
+  background-color: #f0f9f4;
+}
+
+.cover-event {
+  background: linear-gradient(135deg, #fff0f3 0%, #ffdee9 100%);
+}
+
+.cover-track {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
 }
 
 .placeholder-icon {
   font-size: 32rpx;
 }
 
-.badge {
+.hotspot-badge {
   position: absolute;
-  top: 6rpx;
-  right: 6rpx;
-  min-width: 28rpx;
+  top: 8rpx;
+  right: 8rpx;
+  width: 28rpx;
   height: 28rpx;
-  padding: 0 8rpx;
-  background: #ff4757;
-  border-radius: 14rpx;
+  background: #ff2442;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 16rpx;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: 600;
 }
 
-.badge-text {
-  font-size: 18rpx;
+.hotspot-status {
+  position: absolute;
+  bottom: 8rpx;
+  left: 8rpx;
+  padding: 4rpx 10rpx;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 6rpx;
   color: #fff;
-}
-
-.card-info {
-  padding: 6rpx 8rpx;
-  height: 40%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.card-title {
-  font-size: 20rpx;
-  color: #000;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.card-subtitle {
   font-size: 16rpx;
-  color: #999;
+}
+
+.hotspot-info {
+  padding: 8rpx 10rpx;
+}
+
+.hotspot-title {
+  display: block;
+  font-size: 14rpx;
+  color: #000;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.hotspot-author {
+  display: block;
+  font-size: 12rpx;
+  color: #999;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 4rpx;
+}
+
+.hotspot-drag-line {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40rpx;
+  height: 4rpx;
+  background: #ccc;
+  border-radius: 2rpx;
 }
 </style>

@@ -7,8 +7,10 @@
       :class="[{ active: selectedIndex === index }, { 'publish-item': item.type === 'publish' }]"
       @tap="onTap(item, index)"
     >
-      <view v-if="item.type === 'publish'" class="plus-wrapper">
-        <text class="plus-sign">+</text>
+      <view v-if="item.type === 'publish'" class="publish-hit-area" @tap.stop="onTap(item, index)">
+        <view class="plus-wrapper">
+          <text class="plus-sign">+</text>
+        </view>
       </view>
       <image v-else class="icon" :src="selectedIndex === index ? item.selectedIconPath : item.iconPath" mode="aspectFit" />
       <text class="label">{{ item.text }}</text>
@@ -35,7 +37,6 @@ export default {
     this.updateSelected()
   },
   mounted() {
-    // 进入页面或切换时刷新选中态
     this.updateSelected()
   },
   methods: {
@@ -46,34 +47,42 @@ export default {
         const route = '/' + page.route
         const idx = this.list.findIndex(i => i.pagePath === route)
         this.selectedIndex = idx >= 0 ? idx : 0
-        // 记录当前选中的 Tab，供 plus 页返回使用
         try {
           const app = getApp()
           if (app && app.globalData) app.globalData.prevTabPath = route
         } catch (e2) {}
       } catch (e) {
-        // 兼容H5或非微信小程序环境
         this.selectedIndex = 0
       }
     },
     onTap(item, index) {
       if (item.type === 'publish') {
-        // 仅在点击“+”时触发弹窗：优先直接驱动 App.vue 响应式状态
-        try {
-          const app = getApp()
-          if (app && app.$vm && typeof app.$vm.showPublishOverlay !== 'undefined') {
-            app.$vm.showPublishOverlay = true
-            if (app.globalData) app.globalData.showPublishOverlay = true
-            return
-          }
-        } catch (e) {}
-        // 备选：事件总线（若上面不可用）
-        try { uni.$emit('showPublishOverlay') } catch (e2) {}
-        // 最终兜底：写入全局标记，页面挂载点将轮询同步
         try {
           const app = getApp()
           if (app && app.globalData) app.globalData.showPublishOverlay = true
-        } catch (e3) {}
+        } catch (e) {}
+        try { uni.$emit('showPublishOverlay') } catch (e2) {}
+        try {
+          const app = getApp()
+          if (app && app.globalData && app.globalData.__overlayHost && app.globalData.__overlayHost.showHandler) {
+            app.globalData.__overlayHost.showHandler()
+          }
+        } catch (e3) {
+          console.warn('调用globalData overlayHost失败:', e3)
+        }
+        try {
+          const pages = getCurrentPages()
+          const page = pages[pages.length - 1]
+          if (page) {
+            if (page.__overlayHost && page.__overlayHost.showHandler) {
+              page.__overlayHost.showHandler()
+            } else if (page.$vm && page.$vm.__overlayHost && page.$vm.__overlayHost.showHandler) {
+              page.$vm.__overlayHost.showHandler()
+            }
+          }
+        } catch (e4) {
+          console.warn('调用页面overlayHost失败:', e4)
+        }
         return
       }
       if (index !== this.selectedIndex) {
@@ -97,9 +106,11 @@ export default {
   flex-direction: row;
   align-items: center;
   justify-content: space-around;
-  height: 86px;
-  background-color: #ffffff;
-  border-top: 1px solid #e6e6e6;
+  height: 66px;
+  background-color: rgba(255,255,255,.96);
+  border-top: 1px solid rgba(226,232,240,.82);
+  box-shadow: 0 -8px 28px rgba(15,23,42,.08);
+  backdrop-filter: blur(18px) saturate(135%);
   padding-bottom: env(safe-area-inset-bottom);
 }
 .tabbar-item {
@@ -110,33 +121,47 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  transition: opacity 160ms ease, transform 160ms ease;
 }
+.tabbar-item:active { opacity: .72; transform: scale(.96); }
 .icon {
   width: 24px;
   height: 24px;
 }
 .label {
   font-size: 12px;
-  color: #7A7E83;
+  color: #64748b;
+  margin-top: 2px;
 }
 .active .label {
-  color: #ffd700;
+  color: #ea580c;
+  font-weight: 600;
 }
 .publish-item {
   position: relative;
-  z-index: 10;
+  z-index: 100;
+  overflow: visible;
 }
 .publish-item .label {
   display: none;
 }
+.publish-hit-area {
+  position: relative;
+  z-index: 100;
+  width: 80px;
+  height: 80px;
+  margin-top: -30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .plus-wrapper {
   width: 60px;
   height: 60px;
-  aspect-ratio: 1 / 1;
   border-radius: 50%;
-  clip-path: circle(50% at 50% 50%);
-  transform: translateY(-15px);
-  background: radial-gradient(circle at 50% 40%, #ff8a3d 0%, #ff6b35 60%, #ff4757 100%);
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
   border: 3px solid #ffffff;
   display: flex;
   align-items: center;
@@ -145,14 +170,20 @@ export default {
               0 2px 8px rgba(255, 107, 53, 0.2),
               0 0 20px rgba(247, 147, 30, 0.1),
               0 8px 32px rgba(0, 0, 0, 0.1);
+  transition: transform 0.15s ease;
 }
-.plus-sign { color: #fff; font-size: 32px; line-height: 1; }
+.plus-wrapper:active {
+  transform: scale(0.92);
+}
+.plus-sign { color: #fff; font-size: 32px; line-height: 1; pointer-events: none; }
 @media screen and (max-width: 375px) {
-  .plus-wrapper { width: 55px; height: 55px; transform: translateY(-12px); }
+  .publish-hit-area { width: 72px; height: 72px; }
+  .plus-wrapper { width: 55px; height: 55px; }
   .plus-sign { font-size: 28px; }
 }
 @media screen and (min-width: 414px) {
-  .plus-wrapper { width: 65px; height: 65px; transform: translateY(-18px); }
+  .publish-hit-area { width: 90px; height: 90px; }
+  .plus-wrapper { width: 65px; height: 65px; }
   .plus-sign { font-size: 36px; }
 }
 </style>

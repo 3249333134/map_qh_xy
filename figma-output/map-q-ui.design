@@ -1,0 +1,1190 @@
+{
+  "data": [
+    {
+      "id": "page-home-map-feed",
+      "title": "首页 / 地图内容流",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 0,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#home-map-feed",
+        "level": 1,
+        "flow": "home"
+      }
+    },
+    {
+      "id": "page-home-map-card-focus",
+      "title": "首页状态 / 地图卡片浮层",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 430,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#home-map-card-focus",
+        "level": 1,
+        "flow": "home"
+      }
+    },
+    {
+      "id": "page-home-map-sheet-low",
+      "title": "首页状态 / 大地图低面板",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 860,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#home-map-sheet-low",
+        "level": 1,
+        "flow": "home"
+      }
+    },
+    {
+      "id": "page-home-search-results",
+      "title": "二级 / 搜索与筛选结果",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1290,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#home-search-results",
+        "level": 2,
+        "flow": "home"
+      }
+    },
+    {
+      "id": "page-home-content-detail",
+      "title": "二级 / 普通内容详情",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1720,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#home-content-detail",
+        "level": 2,
+        "flow": "home"
+      }
+    },
+    {
+      "id": "page-home-content-location-comments",
+      "title": "首页详情 / 位置与评论滚动态",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 2150,
+        "y": 0,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#home-content-location-comments",
+        "level": 2,
+        "flow": "home"
+      }
+    },
+    {
+      "id": "page-home-activity-detail",
+      "title": "首页详情 / 活动首屏",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 0,
+        "y": 900,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#home-activity-detail",
+        "level": 2,
+        "flow": "home"
+      }
+    },
+    {
+      "id": "page-home-activity-register-detail",
+      "title": "首页详情 / 活动报名与注意事项",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 430,
+        "y": 900,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#home-activity-register-detail",
+        "level": 2,
+        "flow": "home"
+      }
+    },
+    {
+      "id": "page-home-media-preview",
+      "title": "三级 / 图片预览与评论",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 860,
+        "y": 900,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#home-media-preview",
+        "level": 3,
+        "flow": "home"
+      }
+    },
+    {
+      "id": "page-home-place-detail",
+      "title": "二级 / 地点详情",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1290,
+        "y": 900,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#home-place-detail",
+        "level": 2,
+        "flow": "home"
+      }
+    },
+    {
+      "id": "page-home-track-detail",
+      "title": "二级 / 轨迹详情",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1720,
+        "y": 900,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#home-track-detail",
+        "level": 2,
+        "flow": "home"
+      }
+    },
+    {
+      "id": "page-home-booking-confirm",
+      "title": "三级 / 预约确认",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 2150,
+        "y": 900,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#home-booking-confirm",
+        "level": 3,
+        "flow": "home"
+      }
+    },
+    {
+      "id": "page-home-anchor-layer-lab",
+      "title": "首页二级 / 锚点与智能图层",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 0,
+        "y": 1800,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#home-anchor-layer-lab",
+        "level": 2,
+        "flow": "home"
+      }
+    },
+    {
+      "id": "page-home-anchor-action",
+      "title": "首页三级 / 锚点快捷卡",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 430,
+        "y": 1800,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#home-anchor-action",
+        "level": 3,
+        "flow": "home"
+      }
+    },
+    {
+      "id": "page-home-map-share",
+      "title": "首页三级 / 地图分享卡",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 860,
+        "y": 1800,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#home-map-share",
+        "level": 3,
+        "flow": "home"
+      }
+    },
+    {
+      "id": "page-home-fog-unlock",
+      "title": "首页四级 / 迷雾解锁与修建锚点",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1290,
+        "y": 1800,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#home-fog-unlock",
+        "level": 4,
+        "flow": "home"
+      }
+    },
+    {
+      "id": "page-ai-search",
+      "title": "全局二级 / AI 语义搜索",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1720,
+        "y": 1800,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#ai-search",
+        "level": 2,
+        "flow": "home"
+      }
+    },
+    {
+      "id": "component-home-map-component-board",
+      "title": "首页组件 / 地图闭环组件板",
+      "type": "component-board",
+      "version": 8,
+      "canvasData": {
+        "x": 2150,
+        "y": 1800,
+        "group": 0
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#home-map-component-board",
+        "level": 0,
+        "flow": "home"
+      }
+    },
+    {
+      "id": "page-service-map-feed",
+      "title": "服务 / 地图服务流",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 0,
+        "y": 2700,
+        "group": 1
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#service-map-feed",
+        "level": 1,
+        "flow": "service"
+      }
+    },
+    {
+      "id": "page-service-card-types",
+      "title": "服务二级 / 服务类型矩阵",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 430,
+        "y": 2700,
+        "group": 1
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#service-card-types",
+        "level": 2,
+        "flow": "service"
+      }
+    },
+    {
+      "id": "page-service-detail",
+      "title": "服务二级 / 服务详情",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 860,
+        "y": 2700,
+        "group": 1
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#service-detail",
+        "level": 2,
+        "flow": "service"
+      }
+    },
+    {
+      "id": "page-service-detail-current",
+      "title": "服务详情 / 当前绿色主页态",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1290,
+        "y": 2700,
+        "group": 1
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#service-detail-current",
+        "level": 2,
+        "flow": "service"
+      }
+    },
+    {
+      "id": "page-service-merchant-channel",
+      "title": "服务三级 / 商家频道会员",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1720,
+        "y": 2700,
+        "group": 1
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#service-merchant-channel",
+        "level": 3,
+        "flow": "service"
+      }
+    },
+    {
+      "id": "page-service-wiki-edit",
+      "title": "服务四级 / 服务共建审核",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 2150,
+        "y": 2700,
+        "group": 1
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#service-wiki-edit",
+        "level": 4,
+        "flow": "service"
+      }
+    },
+    {
+      "id": "page-service-booking",
+      "title": "服务三级 / 选择时间",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 0,
+        "y": 3600,
+        "group": 1
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#service-booking",
+        "level": 3,
+        "flow": "service"
+      }
+    },
+    {
+      "id": "page-service-payment",
+      "title": "服务四级 / 支付确认",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 430,
+        "y": 3600,
+        "group": 1
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#service-payment",
+        "level": 4,
+        "flow": "service"
+      }
+    },
+    {
+      "id": "page-service-success",
+      "title": "服务四级 / 预约成功",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 860,
+        "y": 3600,
+        "group": 1
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#service-success",
+        "level": 4,
+        "flow": "service"
+      }
+    },
+    {
+      "id": "page-publish-entry",
+      "title": "发布入口浮层",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1290,
+        "y": 3600,
+        "group": 2
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#publish-entry",
+        "level": 1,
+        "flow": "publish"
+      }
+    },
+    {
+      "id": "page-publish-type-center",
+      "title": "发布二级 / 内容类型中心",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1720,
+        "y": 3600,
+        "group": 2
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#publish-type-center",
+        "level": 2,
+        "flow": "publish"
+      }
+    },
+    {
+      "id": "page-publish-editor",
+      "title": "发布二级 / 动态编辑",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 2150,
+        "y": 3600,
+        "group": 2
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#publish-editor",
+        "level": 2,
+        "flow": "publish"
+      }
+    },
+    {
+      "id": "page-publish-ai-template",
+      "title": "发布三级 / AI 模板助手",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 0,
+        "y": 4500,
+        "group": 2
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#publish-ai-template",
+        "level": 3,
+        "flow": "publish"
+      }
+    },
+    {
+      "id": "page-publish-track-editor",
+      "title": "发布三级 / 轨迹编辑器",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 430,
+        "y": 4500,
+        "group": 2
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#publish-track-editor",
+        "level": 3,
+        "flow": "publish"
+      }
+    },
+    {
+      "id": "page-publish-map-cocreate",
+      "title": "发布四级 / 地图共创审核",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 860,
+        "y": 4500,
+        "group": 2
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#publish-map-cocreate",
+        "level": 4,
+        "flow": "publish"
+      }
+    },
+    {
+      "id": "page-creator-center",
+      "title": "发布/我的二级 / 创作者中心",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1290,
+        "y": 4500,
+        "group": 2
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#creator-center",
+        "level": 2,
+        "flow": "publish"
+      }
+    },
+    {
+      "id": "page-publish-topic-picker",
+      "title": "发布三级 / 话题选择",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1720,
+        "y": 4500,
+        "group": 2
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#publish-topic-picker",
+        "level": 3,
+        "flow": "publish"
+      }
+    },
+    {
+      "id": "page-publish-location-picker",
+      "title": "发布三级 / 位置选择",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 2150,
+        "y": 4500,
+        "group": 2
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#publish-location-picker",
+        "level": 3,
+        "flow": "publish"
+      }
+    },
+    {
+      "id": "page-publish-preview",
+      "title": "发布三级 / 发布预览",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 0,
+        "y": 5400,
+        "group": 2
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#publish-preview",
+        "level": 3,
+        "flow": "publish"
+      }
+    },
+    {
+      "id": "page-publish-success",
+      "title": "发布四级 / 发布成功",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 430,
+        "y": 5400,
+        "group": 2
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#publish-success",
+        "level": 4,
+        "flow": "publish"
+      }
+    },
+    {
+      "id": "page-sandbox-editor",
+      "title": "沙盒二级 / 草稿编辑",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 860,
+        "y": 5400,
+        "group": 3
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#sandbox-editor",
+        "level": 2,
+        "flow": "sandbox"
+      }
+    },
+    {
+      "id": "page-sandbox-schedule",
+      "title": "沙盒三级 / 定时发布",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1290,
+        "y": 5400,
+        "group": 3
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#sandbox-schedule",
+        "level": 3,
+        "flow": "sandbox"
+      }
+    },
+    {
+      "id": "page-sandbox-test-share",
+      "title": "沙盒三级 / 测试分享",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1720,
+        "y": 5400,
+        "group": 3
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#sandbox-test-share",
+        "level": 3,
+        "flow": "sandbox"
+      }
+    },
+    {
+      "id": "page-ip-editor",
+      "title": "原创IP二级 / IP 内容编辑",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 2150,
+        "y": 5400,
+        "group": 4
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#ip-editor",
+        "level": 2,
+        "flow": "ip-publish"
+      }
+    },
+    {
+      "id": "page-ip-selector",
+      "title": "原创IP三级 / 选择 IP",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 0,
+        "y": 6300,
+        "group": 4
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#ip-selector",
+        "level": 3,
+        "flow": "ip-publish"
+      }
+    },
+    {
+      "id": "page-ip-auth-settings",
+      "title": "原创IP三级 / 授权与版权",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 430,
+        "y": 6300,
+        "group": 4
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#ip-auth-settings",
+        "level": 3,
+        "flow": "ip-publish"
+      }
+    },
+    {
+      "id": "page-ip-success",
+      "title": "原创IP四级 / 发布成功",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 860,
+        "y": 6300,
+        "group": 4
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#ip-success",
+        "level": 4,
+        "flow": "ip-publish"
+      }
+    },
+    {
+      "id": "page-message-center",
+      "title": "消息中心",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1290,
+        "y": 6300,
+        "group": 5
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#message-center",
+        "level": 1,
+        "flow": "message"
+      }
+    },
+    {
+      "id": "page-channel-map",
+      "title": "消息二级 / 地图频道副本",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1720,
+        "y": 6300,
+        "group": 5
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#channel-map",
+        "level": 2,
+        "flow": "message"
+      }
+    },
+    {
+      "id": "page-channel-detail",
+      "title": "消息三级 / 频道详情",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 2150,
+        "y": 6300,
+        "group": 5
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#channel-detail",
+        "level": 3,
+        "flow": "message"
+      }
+    },
+    {
+      "id": "page-channel-thread-card",
+      "title": "消息三级 / 线程卡片",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 0,
+        "y": 7200,
+        "group": 5
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#channel-thread-card",
+        "level": 3,
+        "flow": "message"
+      }
+    },
+    {
+      "id": "page-channel-permissions",
+      "title": "消息四级 / 频道权限角色",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 430,
+        "y": 7200,
+        "group": 5
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#channel-permissions",
+        "level": 4,
+        "flow": "message"
+      }
+    },
+    {
+      "id": "page-message-search",
+      "title": "消息二级 / 消息搜索",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 860,
+        "y": 7200,
+        "group": 5
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#message-search",
+        "level": 2,
+        "flow": "message"
+      }
+    },
+    {
+      "id": "page-chat-detail",
+      "title": "消息二级 / 聊天详情",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1290,
+        "y": 7200,
+        "group": 5
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#chat-detail",
+        "level": 2,
+        "flow": "message"
+      }
+    },
+    {
+      "id": "page-notification-detail",
+      "title": "消息三级 / 通知详情",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1720,
+        "y": 7200,
+        "group": 5
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#notification-detail",
+        "level": 3,
+        "flow": "message"
+      }
+    },
+    {
+      "id": "page-contact-profile",
+      "title": "消息三级 / 联系人资料",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 2150,
+        "y": 7200,
+        "group": 5
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#contact-profile",
+        "level": 3,
+        "flow": "message"
+      }
+    },
+    {
+      "id": "page-my-profile",
+      "title": "我的 / 个人主页",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 0,
+        "y": 8100,
+        "group": 6
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#my-profile",
+        "level": 1,
+        "flow": "my"
+      }
+    },
+    {
+      "id": "page-my-services-manage",
+      "title": "我的二级 / 我的服务管理",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 430,
+        "y": 8100,
+        "group": 6
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#my-services-manage",
+        "level": 2,
+        "flow": "my"
+      }
+    },
+    {
+      "id": "page-my-location-map",
+      "title": "我的二级 / 足迹地图",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 860,
+        "y": 8100,
+        "group": 6
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#my-location-map",
+        "level": 2,
+        "flow": "my"
+      }
+    },
+    {
+      "id": "page-my-footprint-map-current",
+      "title": "我的状态 / 足迹地图当前态",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1290,
+        "y": 8100,
+        "group": 6
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#my-footprint-map-current",
+        "level": 2,
+        "flow": "my"
+      }
+    },
+    {
+      "id": "page-my-favorites",
+      "title": "我的二级 / 收藏列表",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1720,
+        "y": 8100,
+        "group": 6
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#my-favorites",
+        "level": 2,
+        "flow": "my"
+      }
+    },
+    {
+      "id": "page-my-favorites-current",
+      "title": "我的状态 / 收藏瀑布流当前态",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 2150,
+        "y": 8100,
+        "group": 6
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#my-favorites-current",
+        "level": 2,
+        "flow": "my"
+      }
+    },
+    {
+      "id": "page-my-calendar",
+      "title": "我的二级 / 日期日程",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 0,
+        "y": 9000,
+        "group": 6
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#my-calendar",
+        "level": 2,
+        "flow": "my"
+      }
+    },
+    {
+      "id": "page-my-heatmap-stats",
+      "title": "我的三级 / 数据热力统计",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 430,
+        "y": 9000,
+        "group": 6
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#my-heatmap-stats",
+        "level": 3,
+        "flow": "my"
+      }
+    },
+    {
+      "id": "page-my-timeline-review",
+      "title": "我的三级 / 时间轴回顾",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 860,
+        "y": 9000,
+        "group": 6
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#my-timeline-review",
+        "level": 3,
+        "flow": "my"
+      }
+    },
+    {
+      "id": "page-my-settings",
+      "title": "我的三级 / 设置",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1290,
+        "y": 9000,
+        "group": 6
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#my-settings",
+        "level": 3,
+        "flow": "my"
+      }
+    },
+    {
+      "id": "page-my-privacy-control",
+      "title": "我的四级 / 隐私控制",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 1720,
+        "y": 9000,
+        "group": 6
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#my-privacy-control",
+        "level": 4,
+        "flow": "my"
+      }
+    },
+    {
+      "id": "page-my-profile-edit",
+      "title": "我的四级 / 编辑资料",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 2150,
+        "y": 9000,
+        "group": 6
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#my-profile-edit",
+        "level": 4,
+        "flow": "my"
+      }
+    },
+    {
+      "id": "page-monetization-center",
+      "title": "商业二级 / 会员积分与推广",
+      "type": "page",
+      "version": 8,
+      "canvasData": {
+        "x": 0,
+        "y": 9900,
+        "group": 7
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#monetization-center",
+        "level": 2,
+        "flow": "commerce"
+      }
+    },
+    {
+      "id": "component-token-board",
+      "title": "Design Tokens / 组件板",
+      "type": "component-board",
+      "version": 8,
+      "canvasData": {
+        "x": 430,
+        "y": 9900,
+        "group": 8
+      },
+      "devMetadata": {
+        "htmlSrc": "map-q-figma-boards.html#token-board",
+        "level": 0,
+        "flow": "system"
+      }
+    }
+  ],
+  "topology": {
+    "home": [
+      "home-map-feed",
+      "home-map-card-focus",
+      "home-map-sheet-low",
+      "home-search-results",
+      "home-content-detail",
+      "home-content-location-comments",
+      "home-activity-detail",
+      "home-activity-register-detail",
+      "home-media-preview",
+      "home-place-detail",
+      "home-track-detail",
+      "home-booking-confirm",
+      "home-anchor-layer-lab",
+      "home-anchor-action",
+      "home-map-share",
+      "home-fog-unlock",
+      "ai-search",
+      "home-map-component-board"
+    ],
+    "service": [
+      "service-map-feed",
+      "service-card-types",
+      "service-detail",
+      "service-detail-current",
+      "service-merchant-channel",
+      "service-wiki-edit",
+      "service-booking",
+      "service-payment",
+      "service-success"
+    ],
+    "publish": [
+      "publish-entry",
+      "publish-type-center",
+      "publish-editor",
+      "publish-ai-template",
+      "publish-track-editor",
+      "publish-map-cocreate",
+      "creator-center",
+      "publish-topic-picker",
+      "publish-location-picker",
+      "publish-preview",
+      "publish-success"
+    ],
+    "sandbox": [
+      "sandbox-editor",
+      "sandbox-schedule",
+      "sandbox-test-share"
+    ],
+    "ip-publish": [
+      "ip-editor",
+      "ip-selector",
+      "ip-auth-settings",
+      "ip-success"
+    ],
+    "message": [
+      "message-center",
+      "channel-map",
+      "channel-detail",
+      "channel-thread-card",
+      "channel-permissions",
+      "message-search",
+      "chat-detail",
+      "notification-detail",
+      "contact-profile"
+    ],
+    "my": [
+      "my-profile",
+      "my-services-manage",
+      "my-location-map",
+      "my-footprint-map-current",
+      "my-favorites",
+      "my-favorites-current",
+      "my-calendar",
+      "my-heatmap-stats",
+      "my-timeline-review",
+      "my-settings",
+      "my-privacy-control",
+      "my-profile-edit"
+    ],
+    "commerce": [
+      "monetization-center"
+    ],
+    "system": [
+      "token-board"
+    ]
+  },
+  "config": {
+    "autoLayout": true,
+    "deviceType": "mobile",
+    "deviceFrame": {
+      "width": 390,
+      "height": 844
+    },
+    "projectName": "Map Q 首页地图闭环 Figma 设计整理",
+    "importHint": "优先导入 topology.home；HTML 预览会自动生成分组标题、L1-L4 层级标识、路径说明和状态 chips。"
+  }
+}

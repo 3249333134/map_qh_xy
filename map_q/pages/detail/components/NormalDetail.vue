@@ -1,27 +1,26 @@
 <template>
   <view class="detail-page normal-detail">
-    <!-- 封面图（延伸到顶部） -->
-    <view class="cover-section">
+    <!-- 顶部导航（沉浸式） -->
+    <view class="detail-nav immersive">
+      <view class="status-spacer" :style="{ height: statusBarHeight + 'px' }"></view>
+      <view class="nav-row">
+        <view class="nav-back" @tap="back">
+          <text class="back-icon">‹</text>
+        </view>
+        <text class="nav-title">详情</text>
+        <view class="nav-actions">
+          <text class="action-icon" @tap="shareContent">↗</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 封面图（顶到状态栏） -->
+    <view class="cover-section" :style="{ paddingTop: statusBarHeight + 'px' }">
       <image v-if="cardData.cover" class="cover-image" :src="cardData.cover" mode="aspectFill" />
       <view v-else class="cover-placeholder">
         <text class="cover-text">暂无封面</text>
       </view>
       <view class="cover-badge">{{ categoryText }}</view>
-    </view>
-
-    <!-- 顶部导航（透明覆盖在图片上） -->
-    <view class="detail-nav">
-      <view class="nav-back" @tap="back">
-        <view class="back-btn">
-          <text class="back-icon">‹</text>
-        </view>
-      </view>
-      <text class="nav-title">详情</text>
-      <view class="nav-actions">
-        <view class="share-btn" @tap="shareContent">
-          <text class="action-icon">↗</text>
-        </view>
-      </view>
     </view>
 
     <!-- 基本信息 -->
@@ -150,6 +149,7 @@ export default {
     const isCollected = ref(false)
     const comments = ref([])
     const bottomHeight = ref(80)
+    const statusBarHeight = ref(20)
 
     const interaction = useInteraction()
 
@@ -272,6 +272,10 @@ export default {
 
     onMounted(() => {
       loadData()
+      try {
+        const info = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
+        statusBarHeight.value = info.statusBarHeight || 20
+      } catch (e) {}
     })
 
     return {
@@ -280,6 +284,7 @@ export default {
       isCollected,
       comments,
       bottomHeight,
+      statusBarHeight,
       categoryText,
       locationText,
       formattedLikes,
@@ -308,65 +313,52 @@ export default {
   top: 0;
   left: 0;
   right: 0;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--status-bar-height) 24rpx 16rpx;
-  background: transparent;
   z-index: 100;
 }
 
-.nav-back {
-  width: 80rpx;
-  height: 80rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.detail-nav.immersive {
+  background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 100%);
 }
 
-.back-btn {
-  width: 64rpx;
-  height: 64rpx;
+.nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+}
+
+.nav-back {
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 50%;
 }
 
 .back-icon {
-  font-size: 48rpx;
-  font-weight: 300;
-  color: #ffffff;
-  position: relative;
-  top: -4rpx;
+  font-size: 32px;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 .nav-title {
-  font-size: 32rpx;
+  font-size: 17px;
   font-weight: 600;
-  color: #ffffff;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 .nav-actions {
-  width: 80rpx;
+  width: 40px;
   display: flex;
   justify-content: flex-end;
 }
 
-.share-btn {
-  width: 64rpx;
-  height: 64rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 50%;
-}
-
 .action-icon {
-  font-size: 28rpx;
-  color: #ffffff;
+  font-size: 20px;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
 .cover-section {

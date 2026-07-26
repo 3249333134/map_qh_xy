@@ -1,38 +1,25 @@
 <template>
   <view>
-    <!-- 全局弹出菜单组件（App级别兜底渲染） -->
-    <PublishOverlay :show="showPublishOverlay" @close="closePublishOverlay" />
   </view>
 </template>
 
 <script>
-import PublishOverlay from './components/PublishOverlay.vue'
+import { APP_CONFIG } from './utils/config.js'
 
 export default {
-  components: {
-    PublishOverlay
-  },
   data() {
-    return {
-      showPublishOverlay: false
-    }
+    return {}
   },
   onLaunch: function() {
     console.log('App Launch')
     
-    // 初始化全局数据
     this.globalData = {
       showPublishOverlay: false,
-      QQ_MAP_KEY: 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K'
+      QQ_MAP_KEY: APP_CONFIG.TENCENT_MAP.KEY
     }
-    try { uni.setStorageSync('QQ_MAP_KEY', 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K') } catch (e) {}
-    
-    // 监听全局发布按钮点击事件
-    uni.$on('showPublishOverlay', () => {
-      console.log('收到showPublishOverlay事件')
-      this.showPublishOverlay = true
-      this.globalData.showPublishOverlay = true
-    })
+    try { uni.setStorageSync('QQ_MAP_KEY', APP_CONFIG.TENCENT_MAP.KEY) } catch (e) {
+      console.warn('存储地图密钥失败:', e)
+    }
     
     // 全局错误处理
     uni.onError((error) => {
@@ -79,10 +66,12 @@ export default {
     // 计算并缓存系统 TabBar 高度（rpx）与安全区（rpx），用于全局绑定
     computeTabBarMetrics() {
       try {
-        const info = uni.getSystemInfoSync()
+        const info = typeof uni.getWindowInfo === 'function'
+          ? uni.getWindowInfo()
+          : uni.getSystemInfoSync()
         const toRpx = (px) => Math.round((px * 750) / (info.screenWidth || info.windowWidth))
-        // 自定义 TabBar 在 index.wxss 中为 86px
-        const tabHeightPx = 86
+        // 自定义 TabBar 的可点击主体为 64px，安全区单独叠加
+        const tabHeightPx = 64
         const safeBottomPx = info.safeArea ? (info.screenHeight - info.safeArea.bottom) : 0
         const tabHeightRpx = toRpx(tabHeightPx)
         const safeBottomRpx = Math.max(0, toRpx(safeBottomPx))
@@ -93,7 +82,7 @@ export default {
         return metrics
       } catch (e) {
         console.warn('计算 TabBar 高度失败，使用默认值', e)
-        const metrics = { tabHeightPx: 86, safeBottomPx: 0, placeholderHeightPx: 86, tabHeightRpx: 172, safeBottomRpx: 0, placeholderHeightRpx: 172 }
+        const metrics = { tabHeightPx: 64, safeBottomPx: 0, placeholderHeightPx: 64, tabHeightRpx: 128, safeBottomRpx: 0, placeholderHeightRpx: 128 }
         uni.setStorageSync('TABBAR_METRICS', metrics)
         return metrics
       }
@@ -126,14 +115,6 @@ export default {
         return metrics
       }
     },
-    // 关闭弹出菜单
-    closePublishOverlay() {
-      console.log('关闭弹出菜单')
-      this.showPublishOverlay = false
-      if (this.globalData) {
-        this.globalData.showPublishOverlay = false
-      }
-    }
   }
 }
 </script>
@@ -151,37 +132,51 @@ page {
 }
 
 :root {
-  --primary-color: #ff8a65;
-  --primary-gradient: linear-gradient(135deg, #ff8a65 0%, #ff7043 100%);
-  --primary-light: #fff8f5;
-  --primary-dark: #e65100;
+  --primary-color: #ea580c;
+  --primary-gradient: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  --primary-light: #fff7ed;
+  --primary-dark: #c2410c;
+  --accent-color: #2563eb;
+  --accent-light: #eff6ff;
   
   --secondary-blue: #5c6bc0;
   --secondary-green: #66bb6a;
   --secondary-purple: #8e24aa;
   --secondary-orange: #ff8a65;
   
-  --text-primary: #212121;
-  --text-secondary: #757575;
-  --text-tertiary: #bdbdbd;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-tertiary: #94a3b8;
   --text-white: #ffffff;
   
   --bg-primary: #ffffff;
-  --bg-secondary: #fafafa;
-  --bg-tertiary: #f5f5f5;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
   --bg-card: rgba(255, 255, 255, 0.95);
   
-  --border-color: transparent;
+  --border-color: #e2e8f0;
   
-  --radius-sm: 6rpx;
-  --radius-md: 12rpx;
-  --radius-lg: 20rpx;
-  --radius-xl: 28rpx;
+  --radius-sm: 12rpx;
+  --radius-md: 20rpx;
+  --radius-lg: 28rpx;
+  --radius-xl: 40rpx;
   
   --shadow-sm: 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
   --shadow-md: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 6rpx 16rpx rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 12rpx 32rpx rgba(15, 23, 42, 0.08);
+  --shadow-xl: 0 24rpx 64rpx rgba(15, 23, 42, 0.12);
+  --space-1: 8rpx;
+  --space-2: 16rpx;
+  --space-3: 24rpx;
+  --space-4: 32rpx;
+  --space-6: 48rpx;
+  --tap-size: 88rpx;
+  --surface-raised: rgba(255, 255, 255, 0.96);
+  --surface-soft: #fffaf7;
+  --border-soft: rgba(148, 163, 184, 0.22);
+  --shadow-panel: 0 -16rpx 56rpx rgba(15, 23, 42, 0.12);
+  --shadow-card: 0 8rpx 28rpx rgba(15, 23, 42, 0.075);
+  --ease-standard: cubic-bezier(.2, .8, .2, 1);
 }
 
 .card {
@@ -257,12 +252,12 @@ page {
 }
 
 .uni-tabbar__item {
-  color: #999;
+  color: #7A7E83;
 }
 
 .uni-tabbar__item.uni-tabbar__item--selected {
-  color: #ff8a65;
-  font-weight: 500;
+  color: #ff7a45;
+  font-weight: bold;
 }
 
 .uni-tabbar__item-text {
@@ -282,6 +277,57 @@ image {
 
 view {
   box-sizing: border-box;
+}
+
+/* #ifdef MP-WEIXIN */
+/*
+ * Shared WeChat top-bar contract:
+ * custom navigation content sits below the status bar, uses a 44px row,
+ * and keeps all controls to the left of the native capsule.
+ */
+.status-spacer + .nav-bar,
+.status-bar + .nav-bar {
+  min-height: 44px;
+  padding-right: 104px !important;
+  box-sizing: border-box;
+}
+
+.status-spacer + .nav-bar > .nav-right,
+.status-bar + .nav-bar > .nav-right {
+  right: 104px !important;
+}
+/* #endif */
+
+button,
+input,
+textarea,
+view {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.card.map-card {
+  border: 1rpx solid var(--border-soft);
+  border-radius: 24rpx !important;
+  box-shadow: var(--shadow-card);
+  transform: translateZ(0);
+  transition: transform 180ms var(--ease-standard), box-shadow 180ms var(--ease-standard);
+}
+
+.card.map-card:active {
+  transform: scale(.985);
+  box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card.map-card,
+  .btn-primary,
+  .fade-in,
+  .slide-up,
+  .scale-in {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 text {

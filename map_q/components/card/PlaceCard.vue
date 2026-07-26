@@ -200,10 +200,9 @@ export default {
 
 <style>
 .place-card {
-  margin-bottom: 8rpx;
+  margin-bottom: 12rpx;
   border-radius: 12rpx;
-  background-color: transparent;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+  background-color: #fff;
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
@@ -211,7 +210,7 @@ export default {
 
 .place-card .card-media {
   position: relative;
-  height: var(--card-height, 220rpx);
+  height: var(--card-height, 240rpx);
   width: 100%;
   cursor: pointer;
   overflow: hidden;
@@ -230,8 +229,8 @@ export default {
   width: 100%;
   height: 100%;
   background-image:
-    linear-gradient(90deg, rgba(150, 150, 150, 0.06) 1rpx, transparent 1rpx),
-    linear-gradient(rgba(150, 150, 150, 0.05) 1rpx, transparent 1rpx);
+    linear-gradient(90deg, rgba(150, 150, 150, 0.08) 1rpx, transparent 1rpx),
+    linear-gradient(rgba(150, 150, 150, 0.06) 1rpx, transparent 1rpx);
   background-size: 24rpx 24rpx, 24rpx 24rpx;
 }
 
@@ -249,9 +248,9 @@ export default {
   width: 28rpx;
   height: 28rpx;
   border-radius: 50%;
-  background: #ff8a65;
+  background: #22c55e;
   border: 4rpx solid #fff;
-  box-shadow: 0 2rpx 8rpx rgba(255, 138, 101, 0.3);
+  box-shadow: 0 2rpx 8rpx rgba(34, 197, 94, 0.3);
   z-index: 2;
 }
 
@@ -260,7 +259,7 @@ export default {
   width: 52rpx;
   height: 52rpx;
   border-radius: 50%;
-  background: rgba(255, 138, 101, 0.2);
+  background: rgba(34, 197, 94, 0.25);
   animation: pulse 2s ease-out infinite;
 }
 
@@ -269,7 +268,7 @@ export default {
   width: 52rpx;
   height: 52rpx;
   border-radius: 50%;
-  background: rgba(255, 138, 101, 0.2);
+  background: rgba(34, 197, 94, 0.15);
   animation: pulse 2s ease-out infinite;
   animation-delay: 1s;
 }
@@ -287,11 +286,11 @@ export default {
 
 .place-badge {
   position: absolute;
-  bottom: 8rpx;
-  right: 8rpx;
-  padding: 0 10rpx;
-  height: 30rpx;
-  border-radius: 12rpx;
+  top: 10rpx;
+  right: 10rpx;
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 8rpx;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
@@ -300,9 +299,8 @@ export default {
 
 .badge-icon {
   color: #fff;
-  font-size: 18rpx;
-  font-weight: 400;
-  line-height: 30rpx;
+  font-size: 20rpx;
+  font-weight: 600;
 }
 
 .place-card .card-content {
@@ -318,7 +316,7 @@ export default {
   font-size: 26rpx;
   font-weight: 400;
   line-height: 32rpx;
-  margin-bottom: 6rpx;
+  margin-bottom: 4rpx;
   display: -webkit-box;
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
@@ -354,8 +352,8 @@ export default {
 .tag-item {
   padding: 2rpx 8rpx;
   border-radius: 6rpx;
-  background: #f5f5f5;
-  color: #999;
+  background: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
   font-size: 18rpx;
   flex-shrink: 0;
 }
@@ -403,7 +401,7 @@ export default {
 }
 
 .nav-btn {
-  background: transparent;
+  background: rgba(14, 165, 233, 0.1);
 }
 
 .nav-btn .quick-icon {
@@ -412,11 +410,11 @@ export default {
 
 .nav-btn .quick-text {
   font-size: 20rpx;
-  color: #999;
+  color: #0ea5e9;
 }
 
 .reserve-btn {
-  background: transparent;
+  background: rgba(34, 197, 94, 0.1);
 }
 
 .reserve-btn .quick-icon {
@@ -425,7 +423,7 @@ export default {
 
 .reserve-btn .quick-text {
   font-size: 20rpx;
-  color: #999;
+  color: #22c55e;
 }
 
 .place-card .card-actions {

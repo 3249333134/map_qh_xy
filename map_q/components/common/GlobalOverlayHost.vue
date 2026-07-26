@@ -1,41 +1,146 @@
 <template>
-  <!-- 将全局发布弹窗挂载到每个页面的根容器中 -->
-  <PublishOverlay :show="visible" @close="closeHandler" />
+  <view id="globalOverlayHost" class="global-overlay-host">
+    <PublishOverlay :show="visible" @close="closeHandler" />
+  </view>
 </template>
 
-<script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+<script>
+import { ref, onMounted, onUnmounted, getCurrentInstance } from 'vue'
 import PublishOverlay from '../PublishOverlay.vue'
 
-const visible = ref(false)
+export default {
+  name: 'GlobalOverlayHost',
+  components: {
+    PublishOverlay
+  },
+  setup() {
+    const visible = ref(false)
+    let _pollTimer = null
+    const instance = getCurrentInstance()
 
-const showHandler = () => { visible.value = true }
-const closeHandler = () => {
-  visible.value = false
-  try {
-    const app = getApp()
-    if (app && app.globalData) app.globalData.showPublishOverlay = false
-  } catch (e) {}
+    const _startPolling = () => {
+      _stopPolling()
+      _pollTimer = setInterval(() => {
+        try {
+          const app = getApp()
+          if (app && app.globalData) {
+            if (app.globalData.showPublishOverlay && !visible.value) {
+              showHandler()
+            } else if (!app.globalData.showPublishOverlay && visible.value) {
+              hideHandler()
+            }
+          }
+        } catch (e) {}
+      }, 50)
+    }
+
+    const _stopPolling = () => {
+      if (_pollTimer) {
+        clearInterval(_pollTimer)
+        _pollTimer = null
+      }
+    }
+
+    const showHandler = () => {
+      visible.value = true
+      try {
+        const app = getApp()
+        if (app && app.globalData) app.globalData.showPublishOverlay = true
+      } catch (e) {}
+    }
+
+    const hideHandler = () => {
+      visible.value = false
+      try {
+        const app = getApp()
+        if (app && app.globalData) app.globalData.showPublishOverlay = false
+      } catch (e) {}
+    }
+
+    const closeHandler = () => {
+      visible.value = false
+      try {
+        const app = getApp()
+        if (app && app.globalData) app.globalData.showPublishOverlay = false
+      } catch (e) {}
+      try { uni.$emit('hidePublishOverlay') } catch (e2) {}
+    }
+
+    const onShowPublish = () => {
+      showHandler()
+    }
+
+    const onHidePublish = () => {
+      hideHandler()
+    }
+
+    onMounted(() => {
+      try {
+        const app = getApp()
+        if (app) {
+          app.globalData.__overlayHost = {
+            showHandler,
+            hideHandler
+          }
+        }
+      } catch (e) {}
+      try {
+        const pages = getCurrentPages()
+        const page = pages[pages.length - 1]
+        if (page) {
+          page.__overlayHost = {
+            showHandler,
+            hideHandler
+          }
+          if (page.$vm) {
+            page.$vm.__overlayHost = {
+              showHandler,
+              hideHandler
+            }
+          }
+        }
+      } catch (e) {}
+      try {
+        const app = getApp()
+        if (app && app.globalData && app.globalData.showPublishOverlay) {
+          visible.value = true
+        }
+      } catch (e2) {}
+      try { uni.$on('showPublishOverlay', onShowPublish) } catch (e) {}
+      try { uni.$on('hidePublishOverlay', onHidePublish) } catch (e) {}
+      _startPolling()
+    })
+
+    onUnmounted(() => {
+      _stopPolling()
+      try {
+        const app = getApp()
+        if (app && app.globalData && app.globalData.__overlayHost) {
+          app.globalData.__overlayHost = null
+        }
+      } catch (e) {}
+      try { uni.$off('showPublishOverlay', onShowPublish) } catch (e) {}
+      try { uni.$off('hidePublishOverlay', onHidePublish) } catch (e) {}
+    })
+
+    return {
+      visible,
+      showHandler,
+      hideHandler,
+      closeHandler
+    }
+  }
 }
-let pollTimer = null
-
-onMounted(() => {
-  try { uni.$on('showPublishOverlay', showHandler) } catch (e) {}
-  // 轮询全局标记以感知自定义 TabBar（原生环境）写入的触发
-  try {
-    const app = getApp()
-    pollTimer = setInterval(() => {
-      const shouldShow = !!(app && app.globalData && app.globalData.showPublishOverlay)
-      if (visible.value !== shouldShow) visible.value = shouldShow
-    }, 100)
-  } catch (e2) {}
-})
-onBeforeUnmount(() => {
-  try { uni.$off('showPublishOverlay', showHandler) } catch (e) {}
-  if (pollTimer) { clearInterval(pollTimer); pollTimer = null }
-})
 </script>
 
-<style scoped>
-/* 由 PublishOverlay 自身控制定位与层级 */
+<style>
+.global-overlay-host {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 100000;
+  pointer-events: none;
+}
 </style>

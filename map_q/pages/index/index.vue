@@ -20,28 +20,6 @@
       ref="mapBackground"
     />
 
-    <!-- 测试卡片 -->
-    <view 
-      v-if="isHotspotMode"
-      style="position: fixed; left: 50px; top: 100px; width: 70px; height: 90px; background: blue; z-index: 9999; pointer-events: auto;"
-    >
-      <text style="color: white; font-size: 12px; padding: 10px;">测试卡片</text>
-    </view>
-
-    <!-- 悬浮热点卡片（地图热点模式） -->
-    <HotspotCardsContainer
-      :visible="isHotspotMode"
-      :items="hotspotItems"
-      :map-center="mapCenter"
-      :map-scale="mapScale"
-      :map-width="windowWidth"
-      :map-height="mapHeight"
-      :map-bounds="mapBoundsData"
-      :highlighted-id="highlightedHotspotId"
-      @card-tap="onHotspotTap"
-      @card-long-press="onHotspotLongPress"
-    />
-
     <!-- 内容区域 -->
     <content-area
       :height="contentHeight"
@@ -63,6 +41,8 @@
       @drag-end="handleDragEnd"
       @category-change="handleCategoryChange"
       @search-input="onSearchInput"
+      @search-tap="onSearchTap"
+      @left-outline-tap="onLeftOutlineTap"
       @load-more="loadMoreItems"
       @visible-cards-change="onVisibleCardsChange"
       @card-tap="handleCardTap"
@@ -80,10 +60,9 @@
 </template>
 
 <script>
-import { onMounted, ref, computed, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import { onShow, onHide } from '@dcloudio/uni-app'
 import MapBackground from '../../components/map/MapBackground.vue'
-import HotspotCardsContainer from '../../components/map/HotspotCardsContainer.vue'
 import ContentArea from '../../components/content/ContentArea.vue'
 import GlobalOverlayHost from '../../components/common/GlobalOverlayHost.vue'
 import { useMapData } from './composables/useMapData.js'
@@ -92,12 +71,13 @@ import { LAYOUT_CONFIG } from './constants/layoutConfig.js'
 import { useCategory } from './composables/useCategory.js'
 import { useMapManager } from './composables/useMapManager.js'
 import { ROUTE_PLANNER } from '../../utils/routePlanner.js'
+import { resolveAddressByCoords, fetchPointNameByCoords } from '../../utils/geocoder.js'
+import { getQqMapKey } from '../../utils/mapKey.js'
 
 export default {
   name: 'IndexPage',
   components: {
     MapBackground,
-    HotspotCardsContainer,
     ContentArea,
     GlobalOverlayHost
   },
@@ -120,6 +100,7 @@ export default {
       mapHeight,
       searchBoxHeight,
       minContentHeight,
+      maxContentHeight,
       safeBottomOffset,
       isDragging,
       initLayout,
@@ -145,26 +126,6 @@ export default {
       loadMapState
     } = useMapManager()
 
-    const windowWidth = ref(375)
-    const mapBoundsData = ref(null)
-    const highlightedHotspotId = ref(null)
-
-    const mapCenter = computed(() => ({
-      latitude: mapConfig.latitude || 30.5728,
-      longitude: mapConfig.longitude || 104.0668
-    }))
-
-    const mapScale = computed(() => mapConfig.scale || 16)
-
-    const onMapRegionChanged = (bounds) => {
-      mapBoundsData.value = bounds
-      mapMgrRegionChanged(bounds)
-    }
-
-    const onHotspotLongPress = (item) => {
-      uni.vibrateShort && uni.vibrateShort({ type: 'light' })
-    }
-
     const errorMessage = ref('')
     const showError = ref(false)
 
@@ -177,6 +138,58 @@ export default {
 
     const handleMapError = (msg) => {
       handleError(new Error(msg), '地图加载')
+    }
+
+    const activateCardOnMap = async (cardData) => {
+      if (!cardData) return cardData
+      let updatedCard = cardData
+      if (cardData.type === 'track') {
+        console.log('重新规划真实道路路线')
+        try {
+          let start = null
+          let end = null
+          if (cardData.location &&
+              cardData.location.type === 'LineString' &&
+              cardData.location.coordinates &&
+              cardData.location.coordinates.length >= 2) {
+            const coords = cardData.location.coordinates
+            start = coords[0]
+            end = coords[coords.length - 1]
+          }
+          const routeResult = await ROUTE_PLANNER.getFixedRoute(start, end)
+          if (routeResult.success && routeResult.path.length > 0) {
+            console.log('获取到真实道路路线，点数:', routeResult.path.length)
+            updatedCard = {
+              ...cardData,
+              location: {
+                ...cardData.location,
+                coordinates: routeResult.path
+              },
+              distance: routeResult.distance,
+              duration: Math.round(routeResult.duration / 60) + '分钟'
+            }
+            if (mapBackground.value) {
+              mapBackground.value.showTrack(routeResult.path, cardData.highEnergyPoints || [])
+            }
+          } else if (cardData.location && cardData.location.coordinates && mapBackground.value) {
+            mapBackground.value.showTrack(cardData.location.coordinates, cardData.highEnergyPoints || [])
+          }
+        } catch (error) {
+          console.error('获取真实道路路线失败:', error)
+          if (cardData.location && cardData.location.coordinates && mapBackground.value) {
+            mapBackground.value.showTrack(cardData.location.coordinates, cardData.highEnergyPoints || [])
+          }
+        }
+      } else if (cardData.location && cardData.location.coordinates && mapBackground.value) {
+        const [longitude, latitude] = cardData.location.coordinates
+        try {
+          await mapBackground.value.moveToLocation(latitude, longitude, 16)
+          console.log('地图定位成功')
+        } catch (error) {
+          console.error('地图定位失败:', error)
+        }
+      }
+      return updatedCard
     }
 
     const handleCategoryChange = async (categoryId) => {
@@ -200,6 +213,17 @@ export default {
       console.log('搜索:', searchText)
     }
 
+    const onSearchTap = () => {
+      console.log('在当前地图面板内搜索')
+      if (maxContentHeight.value > 0) {
+        contentHeight.value = maxContentHeight.value
+      }
+    }
+
+    const onLeftOutlineTap = () => {
+      uni.navigateTo({ url: '/pages/anchor-layer/index' })
+    }
+
     const handleCardTap = (cardData) => {
       console.log('卡片点击:', cardData)
     }
@@ -216,56 +240,9 @@ export default {
       console.log('媒体区域点击:', data)
       let { cardData } = data
 
-      if (cardData && cardData.type === 'track') {
-        console.log('点击轨迹卡片媒体区域，重新规划真实道路路线')
-        try {
-          let start = null
-          let end = null
-          if (cardData.location &&
-              cardData.location.type === 'LineString' &&
-              cardData.location.coordinates &&
-              cardData.location.coordinates.length >= 2) {
-            const coords = cardData.location.coordinates
-            start = coords[0]
-            end = coords[coords.length - 1]
-          }
-          // 重新获取真实道路路线
-          const routeResult = await ROUTE_PLANNER.getFixedRoute(start, end)
-          if (routeResult.success && routeResult.path.length > 0) {
-            console.log('获取到真实道路路线，点数:', routeResult.path.length)
-            // 更新cardData中的路线数据
-            cardData = {
-              ...cardData,
-              location: {
-                ...cardData.location,
-                coordinates: routeResult.path
-              },
-              distance: routeResult.distance,
-              duration: Math.round(routeResult.duration / 60) + '分钟'
-            }
-            // 使用真实路线
-            if (mapBackground.value) {
-              mapBackground.value.showTrack(routeResult.path, cardData.highEnergyPoints || [])
-            }
-          } else if (cardData.location && cardData.location.coordinates && mapBackground.value) {
-            // 如果真实路线获取失败，使用原数据
-            mapBackground.value.showTrack(cardData.location.coordinates, cardData.highEnergyPoints || [])
-          }
-        } catch (error) {
-          console.error('获取真实道路路线失败:', error)
-          // 出错时使用原数据
-          if (cardData.location && cardData.location.coordinates && mapBackground.value) {
-            mapBackground.value.showTrack(cardData.location.coordinates, cardData.highEnergyPoints || [])
-          }
-        }
-      } else if (cardData && cardData.location && cardData.location.coordinates && mapBackground.value) {
-        const [longitude, latitude] = cardData.location.coordinates
-        try {
-          await mapBackground.value.moveToLocation(latitude, longitude, 16)
-          console.log('地图定位成功')
-        } catch (error) {
-          console.error('地图定位失败:', error)
-        }
+      const updatedCard = await activateCardOnMap(cardData)
+      if (updatedCard) {
+        cardData = updatedCard
       }
 
       if (cardData && cardData._id) {
@@ -287,61 +264,9 @@ export default {
       console.log('内容区域点击:', data)
       let { cardData } = data
 
-      if (cardData && cardData.type === 'track') {
-        console.log('点击轨迹卡片内容区域，重新规划真实道路路线')
-        try {
-          let start = null
-          let end = null
-          if (cardData.location &&
-              cardData.location.type === 'LineString' &&
-              cardData.location.coordinates &&
-              cardData.location.coordinates.length >= 2) {
-            const coords = cardData.location.coordinates
-            start = coords[0]
-            end = coords[coords.length - 1]
-          }
-          // 重新获取真实道路路线
-          const routeResult = await ROUTE_PLANNER.getFixedRoute(start, end)
-          if (routeResult.success && routeResult.path.length > 0) {
-            console.log('获取到真实道路路线，点数:', routeResult.path.length)
-            // 更新cardData中的路线数据
-            cardData = {
-              ...cardData,
-              location: {
-                ...cardData.location,
-                coordinates: routeResult.path
-              },
-              distance: routeResult.distance,
-              duration: Math.round(routeResult.duration / 60) + '分钟'
-            }
-            // 使用真实路线
-            if (mapBackground.value) {
-              mapBackground.value.showTrack(routeResult.path, cardData.highEnergyPoints || [])
-            }
-          } else if (cardData.location && cardData.location.coordinates && mapBackground.value) {
-            // 如果真实路线获取失败，使用原数据
-            mapBackground.value.showTrack(cardData.location.coordinates, cardData.highEnergyPoints || [])
-          }
-        } catch (error) {
-          console.error('获取真实道路路线失败:', error)
-          // 出错时使用原数据
-          if (cardData.location && cardData.location.coordinates && mapBackground.value) {
-            mapBackground.value.showTrack(cardData.location.coordinates, cardData.highEnergyPoints || [])
-          }
-        }
-        return
-      }
-
-      if (cardData && cardData.location && cardData.location.coordinates && mapBackground.value) {
-        const [longitude, latitude] = cardData.location.coordinates
-        try {
-          await mapBackground.value.moveToLocation(latitude, longitude, 16)
-          console.log('地图定位成功')
-        } catch (error) {
-          console.error('地图定位失败:', error)
-        }
-      } else {
-        console.warn('卡片数据中缺少位置信息或地图组件未加载')
+      const updatedCard = await activateCardOnMap(cardData)
+      if (updatedCard) {
+        cardData = updatedCard
       }
     }
 
@@ -355,6 +280,15 @@ export default {
       console.log('轨迹已设置到mapConfig:', mapConfig.polyline)
     }
 
+    const onMapRegionChanged = (bounds) => {
+      try {
+        mapBounds.value = bounds
+        mapMgrRegionChanged(bounds)
+      } catch (error) {
+        handleError(error, '处理地图区域变化')
+      }
+    }
+
     const onVisibleCardsChange = (indices) => {
       mapMgrVisibleCardsChange(indices)
       updateMapMarkers(mapPoints.value)
@@ -363,36 +297,6 @@ export default {
     const selectedPoint = ref(null)
 
     const highlightedCardId = ref(null)
-
-    const isHotspotMode = ref(true)
-
-    const hotspotItems = computed(() => {
-      return mapPoints.value || []
-    })
-
-    const checkHotspotMode = () => {
-      try {
-        const sys = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
-        const screenH = sys.windowHeight
-        const minRatio = LAYOUT_CONFIG && LAYOUT_CONFIG.MIN_CONTENT_RATIO ? LAYOUT_CONFIG.MIN_CONTENT_RATIO : 0.18
-        const threshold = screenH * (minRatio + 0.12)
-        isHotspotMode.value = contentHeight.value < threshold
-      } catch (e) {
-        isHotspotMode.value = false
-      }
-    }
-
-    const onHotspotTap = (item) => {
-      try {
-        if (!item) return
-        uni.setStorageSync('INDEX_LAST_ITEM', item)
-        uni.navigateTo({
-          url: `/pages/detail/index?type=${item.type || 'normal'}`
-        })
-      } catch (e) {
-        console.warn('跳转详情失败:', e)
-      }
-    }
 
     const onMarkerTap = (payload) => {
       try {
@@ -438,149 +342,78 @@ export default {
         const point = { _id: `poi_${Date.now()}`, name: (m.customData && m.customData.name) || '位置', address: '', description: '', location: { type: 'Point', coordinates: [m.longitude, m.latitude] } }
         selectedPoint.value = { point, marker: m }
         resolveAddressByCoords(m.latitude, m.longitude).then(addr => { if (addr && selectedPoint.value && selectedPoint.value.point) selectedPoint.value.point.address = addr })
-      } catch (e) {}
+      } catch (e) {
+        console.warn('处理POI点击失败:', e)
+      }
     }
 
     const closePointDetail = () => { selectedPoint.value = null }
-
-    const getQqMapKey = () => {
-      try {
-        const app = typeof getApp === 'function' ? getApp() : null
-        const envKey = (app && app.globalData && app.globalData.QQ_MAP_KEY) || uni.getStorageSync('QQ_MAP_KEY') || (typeof process !== 'undefined' && process.env && process.env.QQ_MAP_KEY) || ''
-        const fallbackKey = 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K'
-        return envKey || fallbackKey
-      } catch (e) { return 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K' }
-    }
-
-    const resolveAddressByCoords = (lat, lng) => {
-      const key = getQqMapKey()
-      if (key) {
-        return new Promise((resolve) => {
-          uni.request({
-            url: `https://apis.map.qq.com/ws/geocoder/v1/?location=${lat},${lng}&key=${key}&get_poi=0`,
-            method: 'GET',
-            success: (res) => {
-              const c = res && res.data && res.data.result && res.data.result.address_component
-              const addr = res && res.data && res.data.result && res.data.result.address
-              const txt = [c && c.province, c && c.city, c && c.district, c && c.street, c && c.street_number].filter(Boolean).join('')
-              resolve(txt || addr || '')
-            },
-            fail: () => {
-              uni.request({
-                url: `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-                method: 'GET',
-                header: { 'Accept-Language': 'zh-CN' },
-                success: (res) => {
-                  const a = res && res.data && res.data.address
-                  const txt = [a && (a.province || a.state), a && (a.city || a.town || a.village), a && (a.county || a.state_district), a && a.road, a && (a.residential || a.suburb || a.neighbourhood), a && a.house_number].filter(Boolean).join('')
-                  resolve(txt || (res && res.data && res.data.display_name) || '')
-                },
-                fail: () => resolve('')
-              })
-            }
-          })
-        })
-      }
-      return new Promise((resolve) => {
-        uni.request({
-          url: `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-          method: 'GET',
-          header: { 'Accept-Language': 'zh-CN' },
-          success: (res) => {
-            const a = res && res.data && res.data.address
-            const txt = [a && (a.province || a.state), a && (a.city || a.town || a.village), a && (a.county || a.state_district), a && a.road, a && (a.residential || a.suburb || a.neighbourhood), a && a.house_number].filter(Boolean).join('')
-            resolve(txt || (res && res.data && res.data.display_name) || '')
-          },
-          fail: () => resolve('')
-        })
-      })
-    }
 
     const navigateToPoint = () => {
       try {
         const m = selectedPoint.value && selectedPoint.value.marker
         if (!m) return
         uni.openLocation({ latitude: m.latitude, longitude: m.longitude, name: (selectedPoint.value.point && selectedPoint.value.point.name) || '位置' })
-      } catch (e) {}
+      } catch (e) {
+        console.warn('打开位置失败:', e)
+      }
     }
 
+    const getNearestPointToMapCenter = () => {
+      const centerLat = Number(mapConfig.latitude)
+      const centerLng = Number(mapConfig.longitude)
+      if (!Number.isFinite(centerLat) || !Number.isFinite(centerLng)) return null
+
+      return mapPoints.value.reduce((nearest, candidate) => {
+        const coordinates = candidate && candidate.location && candidate.location.type === 'Point'
+          ? candidate.location.coordinates
+          : null
+        if (!Array.isArray(coordinates) || coordinates.length < 2) return nearest
+
+        const lng = Number(coordinates[0])
+        const lat = Number(coordinates[1])
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return nearest
+
+        const longitudeScale = Math.cos(centerLat * Math.PI / 180)
+        const distance = Math.pow((lng - centerLng) * longitudeScale, 2) + Math.pow(lat - centerLat, 2)
+        return !nearest || distance < nearest.distance
+          ? { point: candidate, latitude: lat, longitude: lng, distance }
+          : nearest
+      }, null)
+    }
+
+    // 右侧“地点”按钮直接在当前页展开地点详情，不进入图层或锚点页面。
     const openCenterPointDetail = () => {
       try {
-        const lat = mapConfig.latitude
-        const lng = mapConfig.longitude
-        if (typeof lat !== 'number' || typeof lng !== 'number') return
-        const marker = { latitude: lat, longitude: lng }
-        const point = { _id: `center_${Date.now()}`, name: '正在定位...', address: '', description: '', location: { type: 'Point', coordinates: [lng, lat] } }
-        selectedPoint.value = { point, marker }
-        
-        resolveAddressByCoords(lat, lng).then(addr => {
-          if (addr && selectedPoint.value && selectedPoint.value.point) {
-            selectedPoint.value.point.address = addr
-          }
-        })
-        
-        fetchPointNameByCoords(lat, lng).then(name => {
-          if (name && selectedPoint.value && selectedPoint.value.point) {
-            selectedPoint.value.point.name = name
-          }
-        })
-      } catch (e) {}
-    }
+        const nearest = getNearestPointToMapCenter()
+        const lat = nearest ? nearest.latitude : Number(mapConfig.latitude)
+        const lng = nearest ? nearest.longitude : Number(mapConfig.longitude)
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
 
-    const fetchPointNameByCoords = (lat, lng) => {
-      return new Promise((resolve) => {
-        try {
-          const app = (typeof getApp === 'function') ? getApp() : null
-          const envKey = (app && app.globalData && app.globalData.QQ_MAP_KEY) || uni.getStorageSync('QQ_MAP_KEY') || ''
-          if (envKey) {
-            uni.request({
-              url: `https://apis.map.qq.com/ws/geocoder/v1/?location=${lat},${lng}&key=${envKey}&get_poi=1`,
-              method: 'GET',
-              success: (res) => {
-                const poi = res && res.data && res.data.result && res.data.result.address_reference && res.data.result.address_reference.landmark_l2
-                const name = poi && poi.title
-                if (name) {
-                  resolve(name)
-                  return
-                }
-                const formatted = res && res.data && res.data.result && res.data.result.formatted_addresses && res.data.result.formatted_addresses.recommend
-                if (formatted) {
-                  resolve(formatted.split(/市|区|县/)[0] || formatted)
-                  return
-                }
-                resolve('当前位置')
-              },
-              fail: () => {
-                uni.request({
-                  url: `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-                  method: 'GET',
-                  header: { 'Accept-Language': 'zh-CN' },
-                  success: (res) => {
-                    const a = res && res.data && res.data.address
-                    const name = a && (a.attraction || a.building || a.hamlet || a.village || a.town || a.city)
-                    resolve(name || '当前位置')
-                  },
-                  fail: () => resolve('当前位置')
-                })
-              }
-            })
-            return
-          }
-          uni.request({
-            url: `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-            method: 'GET',
-            header: { 'Accept-Language': 'zh-CN' },
-            success: (res) => {
-              const a = res && res.data && res.data.address
-              const name = a && (a.attraction || a.building || a.hamlet || a.village || a.town || a.city)
-              resolve(name || '当前位置')
-            },
-            fail: () => resolve('当前位置')
-          })
-        } catch (e) {
-          resolve('当前位置')
+        const point = nearest
+          ? nearest.point
+          : { _id: `center_${Date.now()}`, name: '当前位置', address: '', description: '', location: { type: 'Point', coordinates: [lng, lat] } }
+        const pointName = point.name || point.title || '当前位置'
+        const existingMarker = Array.isArray(mapConfig.markers)
+          ? mapConfig.markers.find(item => item && item.customData && String(item.customData.pointId) === String(point._id))
+          : null
+        const marker = existingMarker || {
+          latitude: lat,
+          longitude: lng,
+          customData: { name: pointName, pointId: point._id }
         }
-      })
+
+        selectedPoint.value = { point, marker }
+        if (!point.address) {
+          resolveAddressByCoords(lat, lng).then(addr => {
+            if (addr && selectedPoint.value && selectedPoint.value.point === point) {
+              selectedPoint.value.point.address = addr
+            }
+          })
+        }
+      } catch (e) {
+        console.warn('打开地点详情失败:', e)
+      }
     }
 
     const lastContentHeightBeforeExpand = ref(0)
@@ -591,7 +424,9 @@ export default {
         const screenH = sys.windowHeight
         const maxH = screenH * (LAYOUT_CONFIG && LAYOUT_CONFIG.MAX_CONTENT_RATIO ? LAYOUT_CONFIG.MAX_CONTENT_RATIO : 0.67)
         contentHeight.value = Math.max(minContentHeight.value, Math.min(maxH, screenH))
-      } catch (e) {}
+      } catch (e) {
+        console.warn('锁定内容高度失败:', e)
+      }
     }
 
     const restoreContentHeight = () => {
@@ -642,16 +477,8 @@ export default {
 
     onMounted(() => {
       searchBoxHeight.value = 60
-      try {
-        const sys = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
-        windowWidth.value = sys.windowWidth || 375
-      } catch (e) {}
       init()
     })
-
-    watch(contentHeight, () => {
-      checkHotspotMode()
-    }, { immediate: true })
 
     onShow(() => {
       try {
@@ -701,6 +528,8 @@ export default {
 
       loadMoreItems,
       onSearchInput,
+      onSearchTap,
+      onLeftOutlineTap,
       handleCardTap,
       handleMediaTap,
       handleContentTap,
@@ -718,19 +547,7 @@ export default {
       errorMessage,
       handleError,
       handleMapError,
-      onShowTrack,
-
-      isHotspotMode,
-      hotspotItems,
-      onHotspotTap,
-
-      windowWidth,
-      mapBoundsData,
-      highlightedHotspotId,
-      mapCenter,
-      mapScale,
-      onMapRegionChanged,
-      onHotspotLongPress
+      onShowTrack
     }
   }
 }

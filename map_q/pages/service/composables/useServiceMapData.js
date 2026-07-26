@@ -1,7 +1,8 @@
 import { ref, reactive } from 'vue'
 import { MONGO_CONFIG } from '../../../utils/db.js'
 import { CATEGORY_MAP, MARKER_CONFIG } from '../constants/layoutConfig.js'
-import { ROUTE_PLANNER } from '../../../utils/routePlanner.js'
+import { generateServiceMockData } from '../../../utils/mockServiceData.js'
+import { isMockEnabled } from '../../../utils/mockMapData.js'
 
 // 服务页专用前缀，用于隔离本地存储
 const STORAGE_PREFIX = 'SERVICE_'
@@ -82,27 +83,23 @@ export function useServiceMapData() {
         hasMoreData.value = currentPage.value < (pagination.totalPages || 1)
         if (isLoadMore) {
           console.log('无更多数据，停止加载更多')
-          // 加载更多为空时，不追加测试数据
-        } else {
+        } else if (isMockEnabled()) {
           console.log('获取数据为空，使用测试数据')
-          addTestData(activeCategory, isLoadMore)
+          await addTestData(activeCategory, isLoadMore)
         }
       }
     } catch (err) {
       console.error('请求失败:', err)
       if (isLoadMore) {
         console.log('加载更多请求失败，停止加载更多')
-        // 加载更多异常时，不追加测试数据
-      } else {
-        addTestData(activeCategory, isLoadMore)
+      } else if (isMockEnabled()) {
+        await addTestData(activeCategory, isLoadMore)
       }
     } finally {
       isLoading.value = false
     }
   }
   
-  // 根据地图边界获取数据
-  // 在 useServiceMapData.js 中的 fetchMapDataByBounds 函数
   const fetchMapDataByBounds = async (activeCategory, isLoadMore = false) => {
     if (!mapBounds.value) {
       return fetchMapData(activeCategory, isLoadMore)
@@ -150,151 +147,40 @@ export function useServiceMapData() {
         hasMoreData.value = currentPage.value < (pagination.totalPages || 1)
         if (isLoadMore) {
           console.log('边界内数据已加载完毕，停止加载更多')
-          // 加载更多为空时，不追加测试数据
-        } else if (totalInBounds === 0) {
+        } else if (totalInBounds === 0 && isMockEnabled()) {
           console.log('边界内没有数据，使用测试数据')
-          addTestData(activeCategory, isLoadMore)
+          await addTestData(activeCategory, isLoadMore)
         } else {
           console.log('当前页无数据，可能页码越界或已无更多数据')
-          // 首屏但有数据计数却返回空，通常是页码越界；不追加测试数据
         }
       }
     } catch (err) {
       console.error('请求失败:', err)
       if (isLoadMore) {
         console.log('加载更多失败，停止加载更多')
-      } else {
-        addTestData(activeCategory, isLoadMore)
+      } else if (isMockEnabled()) {
+        await addTestData(activeCategory, isLoadMore)
       }
     } finally {
       isLoading.value = false
     }
   }
   
-  // 添加测试数据
   const addTestData = async (activeCategory, isLoadMore = false) => {
     if (!isLoadMore && currentPage.value === 1) {
       mapPoints.value = []
     }
     
-    const count = 10
-    const startIndex = mapPoints.value.length
+    const newItems = await generateServiceMockData(
+      activeCategory,
+      mapConfig,
+      mapBounds.value,
+      currentPage.value,
+      mapPoints.value.length,
+      isLoadMore
+    )
     
-    let prefix = ''
-    let addressPrefix = '成都市'
-    
-    switch (activeCategory) {
-      case 'repair':
-        prefix = '维修'
-        addressPrefix = '成都市锦江区'
-        break
-      case 'clean':
-        prefix = '清洁'
-        addressPrefix = '成都市高新区'
-        break
-      case 'delivery':
-        prefix = '配送'
-        addressPrefix = '成都市武侯区'
-        break
-      default:
-        prefix = '全部'
-        addressPrefix = '成都市'
-    }
-    
-    let centerLat, centerLng, latRange, lngRange
-    
-    if (mapBounds.value) {
-      centerLat = (mapBounds.value.northeast.latitude + mapBounds.value.southwest.latitude) / 2
-      centerLng = (mapBounds.value.northeast.longitude + mapBounds.value.southwest.longitude) / 2
-      latRange = mapBounds.value.northeast.latitude - mapBounds.value.southwest.latitude
-      lngRange = mapBounds.value.northeast.longitude - mapBounds.value.southwest.longitude
-    } else {
-      centerLat = mapConfig.latitude
-      centerLng = mapConfig.longitude
-      latRange = 0.02
-      lngRange = 0.02
-    }
-    
-    for (let i = 0; i < count; i++) {
-      const index = startIndex + i
-      
-      // 每5个卡片插入一个轨迹卡片
-      if ((index + 1) % 5 === 0) {
-        // 生成轨迹数据 - 真实道路规划
-        let trackPoints = []
-        let highEnergyPoints = []
-        let distance = (Math.random() * 3 + 1).toFixed(1)
-        
-        try {
-          // 获取真实道路路线
-          const routeResult = await ROUTE_PLANNER.getFixedRoute()
-          if (routeResult.success && routeResult.path.length > 0) {
-            trackPoints = routeResult.path
-            distance = (routeResult.distance / 1000).toFixed(2)
-          }
-        } catch (error) {
-          console.warn('真实路径规划失败，使用备用路线')
-        }
-        
-        // 如果真实路径规划失败，使用备用路线
-        if (trackPoints.length === 0) {
-          const startLng = centerLng - 0.01
-          const startLat = centerLat - 0.01
-          const endLng = centerLng + 0.01
-          const endLat = centerLat + 0.01
-          
-          const totalPoints = 30
-          for (let j = 0; j < totalPoints; j++) {
-            const progress = j / (totalPoints - 1)
-            const lng = startLng + (endLng - startLng) * progress
-            const lat = startLat + (endLat - startLat) * progress
-            trackPoints.push([lng, lat])
-          }
-        }
-        
-        // 生成3-5个高能点
-        highEnergyPoints = []
-        const pointCount = Math.floor(Math.random() * 3) + 3
-        for (let k = 0; k < pointCount; k++) {
-          const pointIndex = Math.floor((k / pointCount) * trackPoints.length)
-          highEnergyPoints.push({
-            coordinate: trackPoints[pointIndex],
-            energy: Math.floor(Math.random() * 50) + 50,
-            label: ['起点', '补给站', '观景台', '最高点', '终点'][k] || `关键点${k + 1}`
-          })
-        }
-        
-        mapPoints.value.push({
-          _id: `track_${activeCategory}_${currentPage.value}_${i}_${Date.now()}`,
-          type: 'track',
-          name: `${prefix}跑步路线 ${Math.floor(index / 5) + 1}`,
-          author: `跑者${Math.floor(Math.random() * 1000)}`,
-          distance: distance,
-          location: {
-            type: 'LineString',
-            coordinates: trackPoints
-          },
-          highEnergyPoints: highEnergyPoints,
-          likes: Math.floor(Math.random() * 500)
-        })
-      } else {
-        mapPoints.value.push({
-          _id: `${activeCategory}_${currentPage.value}_${i}_${Date.now()}`,
-          name: `${prefix}服务 ${index + 1}`,
-          author: `服务商${Math.floor(Math.random() * 1000)}`,
-          address: `${addressPrefix}测试地址 ${index + 1}`,
-          description: `这是一个${prefix}服务测试描述 ${index + 1}`,
-          location: {
-            type: 'Point',
-            coordinates: [
-              centerLng + (Math.random() - 0.5) * lngRange * 0.8,
-              centerLat + (Math.random() - 0.5) * latRange * 0.8
-            ]
-          }
-        })
-      }
-    }
-    
+    mapPoints.value = [...mapPoints.value, ...newItems]
     hasMoreData.value = true
     
     uni.nextTick(() => {

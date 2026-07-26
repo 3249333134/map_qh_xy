@@ -226,10 +226,9 @@ export default {
 
 <style>
 .video-card {
-  margin-bottom: 8rpx;
+  margin-bottom: 12rpx;
   border-radius: 12rpx;
-  background-color: transparent;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+  background-color: #fff;
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
@@ -241,7 +240,7 @@ export default {
   width: 100%;
   cursor: pointer;
   overflow: hidden;
-  background: #f8f8f8;
+  background: #000;
 }
 
 .video-card .card-cover {
@@ -261,11 +260,11 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f8f8f8;
+  background: #111;
 }
 
 .cover-placeholder-text {
-  color: #ccc;
+  color: #666;
   font-size: 22rpx;
 }
 
@@ -277,16 +276,17 @@ export default {
   width: 64rpx;
   height: 64rpx;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 2rpx solid rgba(255, 255, 255, 0.5);
   transition: all 0.2s ease;
 }
 
 .play-btn:active {
   transform: translate(-50%, -50%) scale(0.9);
-  background: rgba(255, 255, 255, 0.95);
+  background: rgba(0, 0, 0, 0.7);
 }
 
 .play-icon {
@@ -300,17 +300,14 @@ export default {
 
 .video-duration {
   position: absolute;
-  right: 8rpx;
-  bottom: 8rpx;
-  padding: 0 10rpx;
-  border-radius: 12rpx;
-  background: rgba(0, 0, 0, 0.5);
+  right: 10rpx;
+  bottom: 10rpx;
+  padding: 4rpx 10rpx;
+  border-radius: 6rpx;
+  background: rgba(0, 0, 0, 0.7);
   color: #fff;
   font-size: 18rpx;
-  font-weight: 400;
-  line-height: 30rpx;
-  display: flex;
-  align-items: center;
+  font-weight: 500;
 }
 
 .video-overlay {

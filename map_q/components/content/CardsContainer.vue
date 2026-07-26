@@ -29,9 +29,9 @@
 
     <view v-else-if="totalCount === 0 && !isLoading" class="empty-state">
       <view class="empty-icon">📭</view>
-      <text class="empty-title">暂无内容</text>
-      <text class="empty-desc">去发布第一条动态吧</text>
-      <view class="empty-btn" @tap="goPublish">
+      <text class="empty-title">{{ emptyTitle }}</text>
+      <text class="empty-desc">{{ emptyDesc }}</text>
+      <view v-if="showEmptyAction" class="empty-btn" @tap="goPublish">
         <text>去发布</text>
       </view>
     </view>
@@ -103,17 +103,6 @@
               :class="{ 'card-highlight': isHighlighted(item._id) }"
               @media-tap="$emit('media-tap', $event)"
               @content-tap="$emit('content-tap', $event)"
-            />
-            <service-card-item
-              v-else-if="item.type === 'service'"
-              :index="index"
-              :card-data="item"
-              :height="getColumnItemHeight('left', index)"
-              column-type="left"
-              :class="{ 'card-highlight': isHighlighted(item._id) }"
-              @media-tap="$emit('media-tap', $event)"
-              @content-tap="$emit('content-tap', $event)"
-              @reserve="$emit('reserve', $event)"
             />
             <card-item
               v-else
@@ -195,17 +184,6 @@
               @media-tap="$emit('media-tap', $event)"
               @content-tap="$emit('content-tap', $event)"
             />
-            <service-card-item
-              v-else-if="item.type === 'service'"
-              :index="leftColumnData.length + index"
-              :card-data="item"
-              :height="getColumnItemHeight('right', index)"
-              column-type="right"
-              :class="{ 'card-highlight': isHighlighted(item._id) }"
-              @media-tap="$emit('media-tap', $event)"
-              @content-tap="$emit('content-tap', $event)"
-              @reserve="$emit('reserve', $event)"
-            />
             <card-item
               v-else
               :index="leftColumnData.length + index"
@@ -250,6 +228,10 @@ export default {
     useServiceCard: { type: Boolean, default: false },
     getColumnItemHeight: { type: Function, required: true },
     highlightedCardId: { type: [String, Number], default: null }
+    ,
+    emptyTitle: { type: String, default: '暂无内容' },
+    emptyDesc: { type: String, default: '去发布第一条动态吧' },
+    showEmptyAction: { type: Boolean, default: true }
   },
   emits: ['load-more','scroll','media-tap','content-tap','reserve'],
   computed: {
@@ -292,9 +274,9 @@ export default {
 </script>
 
 <style scoped>
-.cards-container { overflow: hidden; }
-.cards-grid { display: flex; padding: 4px 8px; width: 100%; box-sizing: border-box; }
-.cards-column { flex: 0 0 50%; padding: 0 4px; width: 50%; box-sizing: border-box; }
+.cards-container { overflow: hidden; background: linear-gradient(180deg,rgba(248,250,252,.72),#f8fafc 72px); }
+.cards-grid { display: flex; padding: 8px 8px 28px; width: 100%; box-sizing: border-box; }
+.cards-column { flex: 0 0 50%; padding: 0 5px; width: 50%; box-sizing: border-box; }
 
 .card-highlight {
   box-shadow: 0 4rpx 20rpx rgba(255, 138, 101, 0.25) !important;
@@ -317,16 +299,17 @@ export default {
 .skeleton-container {
   display: flex;
   flex-wrap: wrap;
-  padding: 10px;
+  padding: 10px 8px 28px;
 }
 
 .skeleton-card {
   width: calc(50% - 10px);
   margin: 0 5px 20px;
   background: #fff;
-  border-radius: 16rpx;
+  border-radius: 24rpx;
   overflow: hidden;
-  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.08);
+  border: 1rpx solid rgba(148,163,184,.18);
+  box-shadow: 0 8rpx 28rpx rgba(15,23,42,.07);
 }
 
 .skeleton-cover {
@@ -402,21 +385,20 @@ export default {
   padding: 100rpx 40rpx;
 }
 
-.empty-icon {
-  font-size: 100rpx;
-  margin-bottom: 30rpx;
-}
+.empty-icon { position: relative; width: 96rpx; height: 96rpx; margin-bottom: 30rpx; border: 2rpx solid #fed7aa; border-radius: 50%; background: #fff7ed; font-size: 0; }
+.empty-icon::before { content: ''; position: absolute; left: 31rpx; top: 22rpx; width: 30rpx; height: 42rpx; border: 5rpx solid #ea580c; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-sizing: border-box; }
+.empty-icon::after { content: ''; position: absolute; left: 42rpx; top: 35rpx; width: 10rpx; height: 10rpx; border-radius: 50%; background: #ea580c; }
 
 .empty-title {
   font-size: 32rpx;
   font-weight: 600;
-  color: #333;
+  color: #0f172a;
   margin-bottom: 16rpx;
 }
 
 .empty-desc {
   font-size: 26rpx;
-  color: #999;
+  color: #64748b;
   margin-bottom: 40rpx;
 }
 

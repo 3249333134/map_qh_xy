@@ -1,19 +1,32 @@
 <template>
   <scroll-view class="expanded-modules" scroll-y :style="{ height: height + 'px' }" @scroll="onScroll">
     <view class="modules-header">
-      <text class="header-title">{{ pointAddress || '正在解析地址…' }}</text>
+      <view class="header-kicker-row">
+        <text class="header-kicker">附近地点</text>
+        <view class="open-badge"><view class="status-dot"></view><text>营业中</text></view>
+      </view>
+      <view class="title-row">
+        <text class="header-title">{{ headerTitle }}</text>
+        <view class="header-nav" @tap="onNavigate({ type: 'point' })"><text>去这里</text><view class="arrow-icon"></view></view>
+      </view>
+      <text class="header-address">{{ addressText }}</text>
       <view class="stats-row">
-        <text class="stat">评分 4.8</text>
+        <text class="stat strong">4.8 分</text>
         <text class="dot">•</text>
-        <text class="stat">人气 10.8万</text>
+        <text class="stat">10.8 万人来过</text>
         <text class="dot">•</text>
-        <text class="stat">营业中</text>
+        <text class="stat">距你 1.2km</text>
       </view>
     </view>
 
     <swiper class="image-swiper" :indicator-dots="true" circular :autoplay="false">
-      <swiper-item v-for="(img, i) in galleryImages" :key="i">
-        <image :src="img" class="slide-img" mode="aspectFill" @tap="onImageTap(img)" />
+      <swiper-item v-for="(img, i) in gallerySlides" :key="i">
+        <image v-if="img" :src="img" class="slide-img" mode="aspectFill" @tap="onImageTap(img)" />
+        <view v-else class="map-placeholder">
+          <view class="route-line route-one"></view><view class="route-line route-two"></view><view class="route-line route-three"></view>
+          <view class="place-marker"><view></view></view>
+          <view class="placeholder-copy"><text class="placeholder-label">地点影像待补充</text><text class="placeholder-hint">先看看附近的人都在分享什么</text></view>
+        </view>
       </swiper-item>
     </swiper>
 
@@ -29,6 +42,7 @@
       <view class="module-title">{{ section.name }}</view>
       <view class="module-list">
         <view v-for="item in section.items" :key="item.id" class="list-item" @tap="onItemTap(item)">
+          <view class="item-cover"><view class="item-cover-line"></view><text>{{ section.name.slice(0, 1) }}</text></view>
           <view class="item-left">
             <view class="item-name">{{ item.title }}</view>
             <view class="item-desc">{{ item.desc }}</view>
@@ -101,22 +115,29 @@ export default {
     }
   },
   computed: {
-    pointName() {
+    headerTitle() {
       const p = this.selectedPoint && this.selectedPoint.point
       const name = p && (p.name || p.title || p.poiName)
       if (name && String(name).trim()) return String(name).trim()
-      return '地点详情'
-    },
-    pointAddress() {
-      const p = this.selectedPoint && this.selectedPoint.point
       const addr = p && (p.address || p.detailAddress || p.fullAddress)
       if (addr && String(addr).trim()) return String(addr).trim()
       if (this.resolvedAddress && String(this.resolvedAddress).trim()) return String(this.resolvedAddress).trim()
+      return '正在解析地址…'
+    },
+    addressText() {
+      const p = this.selectedPoint && this.selectedPoint.point
+      const name = p && (p.name || p.title || p.poiName)
+      const addr = p && (p.address || p.detailAddress || p.fullAddress)
+      if (name && addr) return String(addr).trim()
+      if (name && this.resolvedAddress) return String(this.resolvedAddress).trim()
       return ''
     },
     galleryImages() {
       const imgs = this.selectedPoint && this.selectedPoint.point && Array.isArray(this.selectedPoint.point.images) ? this.selectedPoint.point.images : []
-      return imgs.length ? imgs : this.images
+      return imgs
+    },
+    gallerySlides() {
+      return this.galleryImages.length ? this.galleryImages : [null]
     }
   },
   watch: {
@@ -208,27 +229,48 @@ export default {
 </script>
 
 <style scoped>
-.expanded-modules { width: 100%; box-sizing: border-box; background: #f8f8f8; }
-.modules-header { padding: 10px 15px; }
-.header-title { font-size: 15px; font-weight: 500; color: #333; line-height: 1.5; }
-.stats-row { margin-top: 6px; display: flex; align-items: center; color: #999; font-size: 12px; }
-.dot { margin: 0 6px; }
-.image-swiper { width: 100%; height: 180px; padding: 10px 10px 0; box-sizing: border-box; }
-.slide-img { width: 100%; height: 100%; border-radius: 12px; background: #ddd; }
-.description { padding: 8px 15px; }
-.desc-text { font-size: 13px; color: #555; line-height: 1.6; }
-.subtabs { display: flex; padding: 0 15px 10px; }
-.subtab { padding: 6px 12px; margin-right: 8px; border-radius: 14px; background: #f0f0f0; color: #666; font-size: 13px; }
-.subtab.active { background: #2196F3; color: #fff; }
-.module { padding: 0 10px 10px; }
-.module-title { padding: 0 5px 8px; color: #444; font-size: 14px; font-weight: 600; }
+.expanded-modules { width: 100%; box-sizing: border-box; background: #f8fafc; }
+.modules-header { position: relative; padding: 12px 16px 10px; background: #fff; }
+.header-kicker-row,.title-row,.stats-row,.header-nav,.open-badge { display: flex; align-items: center; }
+.header-kicker-row { min-height: 40px; padding-right: 92px; }
+.header-kicker-row,.title-row { justify-content: space-between; gap: 12px; }
+.header-kicker { font-size: 12px; color: #64748b; font-weight: 600; }
+.header-kicker-row .open-badge { display: none; }
+.open-badge { gap: 5px; padding: 4px 8px; background: #f0fdf4; border-radius: 999px; color: #15803d; }
+.open-badge text { font-size: 11px; font-weight: 600; }
+.status-dot { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; }
+.title-row { position: absolute; top: 12px; right: 16px; justify-content: flex-end; margin-top: 0; }
+.header-title { display: none; }
+.header-nav { flex: 0 0 auto; min-height: 40px; padding: 0 12px; gap: 6px; color: #c2410c; background: #fff7ed; border-radius: 20px; }
+.header-nav text { font-size: 13px; font-weight: 650; }
+.arrow-icon { width: 7px; height: 7px; border-top: 1.5px solid #c2410c; border-right: 1.5px solid #c2410c; transform: rotate(45deg); }
+.header-address { font-size: 13px; color: #64748b; margin-top: 2px; display: block; line-height: 1.5; }
+.stats-row { margin-top: 8px; color: #64748b; font-size: 12px; }
+.stat { font-size: 12px; }.stat.strong { color: #ea580c; font-weight: 700; }.dot { margin: 0 7px; color: #cbd5e1; }
+.image-swiper { width: 100%; height: 190px; padding: 10px 16px 0; box-sizing: border-box; background: #fff; }
+.slide-img,.map-placeholder { width: 100%; height: 100%; border-radius: 16px; overflow: hidden; }
+.slide-img { background: #e2e8f0; }
+.map-placeholder { position: relative; background: linear-gradient(145deg,#e0f2fe 0%,#f0fdf4 52%,#fff7ed 100%); }
+.route-line { position: absolute; height: 4px; border-radius: 4px; background: rgba(255,255,255,.9); transform-origin: left center; }
+.route-one { width: 120%; left: -10%; top: 34%; transform: rotate(14deg); }.route-two { width: 92%; left: 14%; top: 56%; transform: rotate(-19deg); }.route-three { width: 70%; left: 42%; top: 10%; transform: rotate(68deg); }
+.place-marker { position: absolute; left: 54%; top: 38%; width: 34px; height: 34px; background: #ea580c; border: 4px solid #fff; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 8px 18px rgba(234,88,12,.25); }
+.place-marker view { width: 10px; height: 10px; margin: 8px; border-radius: 50%; background: #fff; }
+.placeholder-copy { position: absolute; left: 14px; bottom: 12px; display: flex; flex-direction: column; padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,.88); }
+.placeholder-label { font-size: 13px; color: #0f172a; font-weight: 700; }.placeholder-hint { margin-top: 2px; font-size: 11px; color: #64748b; }
+.description { padding: 12px 16px; background: #fff; }
+.desc-text { font-size: 14px; color: #475569; line-height: 1.65; }
+.subtabs { display: flex; padding: 4px 16px 14px; background: #fff; }
+.subtab { min-height: 36px; padding: 0 16px; margin-right: 8px; border-radius: 18px; background: #f1f5f9; color: #64748b; font-size: 13px; display: flex; align-items: center; justify-content: center; }
+.subtab.active { background: #eff6ff; color: #1d4ed8; font-weight: 650; box-shadow: inset 0 0 0 1px #bfdbfe; }
+.module { padding: 16px 16px 0; }.module:last-child { padding-bottom: 24px; }
+.module-title { padding-bottom: 10px; color: #0f172a; font-size: 16px; font-weight: 700; }
 .module-list { display: flex; flex-direction: column; gap: 10px; }
-.list-item { display: flex; align-items: center; justify-content: space-between; background: #fff; border-radius: 10px; padding: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-.item-left { display: flex; flex-direction: column; }
-.item-name { font-size: 14px; color: #333; font-weight: 600; }
-.item-desc { font-size: 12px; color: #888; margin-top: 4px; }
-.item-actions { display: flex; gap: 8px; align-items: center; }
-.price { color: #ff6b35; font-weight: 600; }
-.btn-secondary { background: #ffffff; color: #ff6b35; border: 1px solid #ffd1c0; border-radius: 8px; padding: 6px 10px; font-size: 12px; }
-.btn-primary { background: linear-gradient(90deg,#ff8a3d,#ff6b35,#ff4757); color: #fff; border: none; border-radius: 8px; padding: 6px 10px; font-size: 12px; }
+.list-item { display: flex; align-items: center; gap: 10px; min-height: 76px; background: #fff; border: 1px solid #eef2f7; border-radius: 14px; padding: 10px; box-shadow: 0 4px 14px rgba(15,23,42,.04); }
+.item-cover { position: relative; flex: 0 0 52px; width: 52px; height: 52px; border-radius: 12px; overflow: hidden; display: flex; align-items: center; justify-content: center; background: linear-gradient(145deg,#ffedd5,#fed7aa); color: #c2410c; }
+.item-cover-line { position: absolute; width: 70px; height: 8px; background: rgba(255,255,255,.65); transform: rotate(-28deg); }.item-cover text { position: relative; z-index: 1; font-size: 16px; font-weight: 800; }
+.item-left { min-width: 0; flex: 1; display: flex; flex-direction: column; }.item-name { font-size: 14px; color: #0f172a; font-weight: 650; }.item-desc { font-size: 12px; color: #64748b; margin-top: 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.item-actions { flex: 0 0 auto; display: flex; gap: 6px; align-items: center; }.price { color: #ea580c; font-size: 14px; font-weight: 750; }
+.btn-secondary,.btn-primary { min-width: 48px; min-height: 38px; margin: 0; padding: 0 10px; border-radius: 10px; font-size: 12px; line-height: 38px; }
+.btn-secondary { background: #fff; color: #c2410c; border: 1px solid #fed7aa; }.btn-primary { background: #ea580c; color: #fff; border: none; }
+.btn-secondary::after,.btn-primary::after { border: none; }.btn-secondary:active,.btn-primary:active { opacity: .78; }
 </style>

@@ -195,10 +195,9 @@ export default {
 
 <style>
 .article-card {
-  margin-bottom: 8rpx;
+  margin-bottom: 12rpx;
   border-radius: 12rpx;
-  background-color: transparent;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+  background-color: #fff;
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
@@ -206,7 +205,7 @@ export default {
 
 .article-card .card-media {
   position: relative;
-  height: var(--card-height, 280rpx);
+  height: var(--card-height, 240rpx);
   width: 100%;
   cursor: pointer;
   overflow: hidden;
@@ -232,9 +231,7 @@ export default {
 .placeholder-icon {
   font-size: 52rpx;
   margin-bottom: 8rpx;
-  opacity: 0.3;
-  color: #ccc;
-  filter: grayscale(1);
+  opacity: 0.5;
 }
 
 .placeholder-text {
@@ -255,22 +252,21 @@ export default {
 
 .article-badge {
   position: absolute;
-  bottom: 8rpx;
-  right: 8rpx;
-  padding: 0 10rpx;
-  border-radius: 12rpx;
+  top: 10rpx;
+  left: 10rpx;
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 8rpx;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 30rpx;
 }
 
 .badge-icon {
   color: #fff;
-  font-size: 18rpx;
-  font-weight: 400;
-  line-height: 30rpx;
+  font-size: 20rpx;
+  font-weight: 600;
 }
 
 .article-card .card-content {

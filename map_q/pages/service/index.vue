@@ -26,13 +26,13 @@
       :visible-card-indices="visibleCardIndices"
       :is-dragging="isDragging"
       :selected-point="selectedPoint"
-      card-component="ServiceCardItem"
       storage-key-prefix="serviceContentArea"
       @drag-start="handleDragStart"
       @drag="handleDrag"
       @drag-end="handleDragEnd"
       @category-change="handleCategoryChange"
       @search-input="onSearchInput"
+      @search-tap="onSearchTap"
       @load-more="loadMoreItems"
       @card-tap="handleCardTap"
       @visible-cards-change="handleVisibleCardsChange"
@@ -58,6 +58,8 @@ import GlobalOverlayHost from '../../components/common/GlobalOverlayHost.vue'
 import { useServiceLayout } from './composables/useServiceLayout.js'
 import { useServiceCategory } from './composables/useServiceCategory.js'
 import { useServiceMapData } from './composables/useServiceMapData.js'
+import { resolveAddressByCoords } from '../../utils/geocoder.js'
+import { getQqMapKey } from '../../utils/mapKey.js'
 
 console.log('=== 服务页脚本加载 ===')
 
@@ -117,6 +119,12 @@ export default {
 
     // 地图组件引用（用于调用 moveToLocation）
     const mapBackground = ref(null)
+
+    const onSearchTap = () => {
+      if (maxContentHeight.value > 0) {
+        contentHeight.value = maxContentHeight.value
+      }
+    }
 
     // 新增：接收地图组件发出的定位事件，回写到 mapConfig 驱动地图移动
     const handleMoveToLocation = ({ latitude, longitude, scale }) => {
@@ -269,63 +277,6 @@ export default {
     // 关闭点详情
     const closePointDetail = () => { 
       selectedPoint.value = null 
-    }
-
-    // 获取QQ地图Key
-    const getQqMapKey = () => {
-      try {
-        const app = typeof getApp === 'function' ? getApp() : null
-        const envKey = (app && app.globalData && app.globalData.QQ_MAP_KEY) || uni.getStorageSync('QQ_MAP_KEY') || ''
-        const fallbackKey = 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K'
-        return envKey || fallbackKey
-      } catch (e) { 
-        return 'ISSBZ-BQA6T-J2SXF-VSDGE-A7NZ5-U4B3K' 
-      }
-    }
-
-    // 根据坐标解析地址
-    const resolveAddressByCoords = (lat, lng) => {
-      const key = getQqMapKey()
-      if (key) {
-        return new Promise((resolve) => {
-          uni.request({
-            url: `https://apis.map.qq.com/ws/geocoder/v1/?location=${lat},${lng}&key=${key}&get_poi=0`,
-            method: 'GET',
-            success: (res) => {
-              const c = res && res.data && res.data.result && res.data.result.address_component
-              const addr = res && res.data && res.data.result && res.data.result.address
-              const txt = [c && c.province, c && c.city, c && c.district, c && c.street, c && c.street_number].filter(Boolean).join('')
-              resolve(txt || addr || '')
-            },
-            fail: () => {
-              uni.request({
-                url: `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-                method: 'GET',
-                header: { 'Accept-Language': 'zh-CN' },
-                success: (res) => {
-                  const a = res && res.data && res.data.address
-                  const txt = [a && (a.province || a.state), a && (a.city || a.town || a.village), a && (a.county || a.state_district), a && a.road, a && (a.residential || a.suburb || a.neighbourhood), a && a.house_number].filter(Boolean).join('')
-                  resolve(txt || (res && res.data && res.data.display_name) || '')
-                },
-                fail: () => resolve('')
-              })
-            }
-          })
-        })
-      }
-      return new Promise((resolve) => {
-        uni.request({
-          url: `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-          method: 'GET',
-          header: { 'Accept-Language': 'zh-CN' },
-          success: (res) => {
-            const a = res && res.data && res.data.address
-            const txt = [a && (a.province || a.state), a && (a.city || a.town || a.village), a && (a.county || a.state_district), a && a.road, a && (a.residential || a.suburb || a.neighbourhood), a && a.house_number].filter(Boolean).join('')
-            resolve(txt || (res && res.data && res.data.display_name) || '')
-          },
-          fail: () => resolve('')
-        })
-      })
     }
 
     // 导航到点
@@ -484,6 +435,7 @@ export default {
       handleReserve,
       handleCategoryChange,
       onSearchInput,
+      onSearchTap,
       loadMoreItems,
       handleCardTap,
       handleVisibleCardsChange,

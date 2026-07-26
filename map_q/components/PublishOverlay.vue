@@ -1,22 +1,21 @@
 <template>
-  <view class="publish-overlay" :class="{ active: show }" @click="close">
+  <view class="publish-overlay" :class="{ active: isActive }" @click="close">
     <view class="menu-arc-container" @click.stop>
-      <!-- 热点推送区域 -->
-      <view class="hotspot-section" @click.stop>
+      <!-- 热门话题 -->
+      <view class="hotspot-section">
         <view class="hotspot-header">
           <text class="hotspot-title">热点推送</text>
-          <text class="hotspot-more" @click.stop="handleHotspotMore">更多</text>
+          <text class="hotspot-more" @click="handleHotspotMore">更多</text>
         </view>
-        <scroll-view class="hotspot-scroll" scroll-x show-scrollbar="false">
+        <scroll-view class="hotspot-scroll" scroll-x>
           <view
+            class="hotspot-card"
             v-for="(item, index) in hotspotList"
             :key="index"
-            class="hotspot-card"
-            @click.stop="handleHotspotClick(item, index)"
+            @click="handleHotspotClick(item, index)"
           >
-            <image v-if="item.cover" class="hotspot-cover" :src="item.cover" mode="aspectFill" />
-            <view v-else class="hotspot-cover placeholder">
-              <text class="placeholder-icon">#</text>
+            <view class="hotspot-cover">
+              <text class="hotspot-hashtag">#</text>
             </view>
             <view class="hotspot-info">
               <text class="hotspot-name">{{ item.name }}</text>
@@ -32,10 +31,12 @@
       <view class="menu-item item-2" @click="handleItemClick('publish')">
         <view class="rect-btn rect-large"><text class="btn-text">发布</text></view>
       </view>
+      <view class="menu-item item-4" @click="handleItemClick('anchor')">
+        <view class="rect-btn rect-large anchor-btn"><text class="btn-text">锚点模式</text></view>
+      </view>
       <view class="menu-item item-3" @click="handleItemClick('original-ip')">
         <view class="rect-btn rect-small"><text class="btn-text">原创IP</text></view>
       </view>
-      <!-- 移除半圆的凹口遮罩，改用圆角矩形背景 -->
     </view>
     <view class="close-button-container" @click.stop="close">
       <view class="close-button" />
@@ -53,6 +54,7 @@ export default {
   },
   data() {
     return {
+      isActive: false,
       hotspotList: [
         { name: '周末骑行', count: 12800, cover: '', type: 'topic' },
         { name: '城市露营', count: 9650, cover: '', type: 'topic' },
@@ -62,9 +64,24 @@ export default {
       ]
     }
   },
+  watch: {
+    show: {
+      immediate: true,
+      handler(val) {
+        if (val) {
+          this.isActive = true
+        } else {
+          this.isActive = false
+        }
+      }
+    }
+  },
   methods: {
     close() {
-      this.$emit('close');
+      this.isActive = false
+      this.$nextTick(() => {
+        this.$emit('close');
+      })
     },
     handleItemClick(item) {
       console.log(`Clicked on ${item}`);
@@ -80,6 +97,9 @@ export default {
         case 'original-ip':
           this.handleOriginalIP();
           break;
+        case 'anchor':
+          this.handleAnchor();
+          break;
         default:
           console.log('Unknown item:', item);
       }
@@ -94,6 +114,9 @@ export default {
     },
     handleOriginalIP() {
       uni.navigateTo({ url: '/pages/ip-publish/index' });
+    },
+    handleAnchor() {
+      uni.navigateTo({ url: '/pages/anchor-action/index' });
     },
     handleHotspotClick(item, index) {
       console.log('点击热点:', item);
@@ -122,10 +145,9 @@ export default {
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
   opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: 10050; /* Ensure it's above the custom tab bar */
+  transition: opacity 0.25s ease;
+  z-index: 100000;
   pointer-events: none;
-  /* 中间关闭按钮的水平微调（向右为正） */
   --close-x-offset: 0.5px;
 }
 
@@ -224,12 +246,15 @@ export default {
 .btn-text { color: #222; }
 
 /* 取消沿弧线的定位，改为矩形内水平分布 */
-.item-1, .item-2, .item-3 { transform: none; }
+.item-1, .item-2, .item-3, .item-4 { transform: none; }
 /* 热点推送占据最上方，发布占据中间一排居中，沙盒/原创位于底部左右 */
 .hotspot-section { grid-row: 1; grid-column: 1 / span 2; align-self: start; }
-.item-2 { grid-row: 2; grid-column: 1 / span 2; }
+.item-2 { grid-row: 2; grid-column: 1; }
+.item-4 { grid-row: 2; grid-column: 2; }
 .item-1 { grid-row: 3; grid-column: 1; }
 .item-3 { grid-row: 3; grid-column: 2; }
+.anchor-btn { background: linear-gradient(135deg,#fff7ed 0%,#ffedd5 100%); }
+.anchor-btn .btn-text { color: #9a3412; font-weight: 700; }
 
 /* 在底部两个按钮上使用 mask 真实“挖孔”，显示后方背景 */
 .item-1 .rect-btn {
@@ -247,7 +272,8 @@ export default {
 
 /* 弹出动效：矩形轻微放大回弹，文本淡入 */
 .publish-overlay.active .item-2 .rect-btn { animation: popIn 280ms both 60ms; }
-.publish-overlay.active .item-1 .rect-btn { animation: popIn 280ms both 120ms; }
+.publish-overlay.active .item-4 .rect-btn { animation: popIn 280ms both 100ms; }
+.publish-overlay.active .item-1 .rect-btn { animation: popIn 280ms both 140ms; }
 .publish-overlay.active .item-3 .rect-btn { animation: popIn 280ms both 180ms; }
 
 @keyframes popIn {

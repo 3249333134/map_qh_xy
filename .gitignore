@@ -1,8 +1,10 @@
 node_modules/
+.pnpm-store/
 .unpackage/
 unpackage/
 dist/
 build/
+.vite/
 *.log
 .DS_Store
 Thumbs.db
@@ -10,3 +12,4 @@ Thumbs.db
 .cache
 *.swp
 *.bak
+_tmp_*

@@ -61,27 +61,19 @@ Component({
 
         // 中间“发布”：仅触发弹窗，不进行页面跳转
         if (index === Number(this.data.publishIndex)) {
-            // 仅在点击“+”时触发弹窗：优先直接驱动 App.vue 响应式状态
             try {
                 const app = getApp();
-                if (app && app.$vm && typeof app.$vm.showPublishOverlay !== 'undefined') {
-                    app.$vm.showPublishOverlay = true;
-                    // 同步全局标记，供页面挂载点感知
-                    if (app.globalData) app.globalData.showPublishOverlay = true;
+                if (app && app.globalData) app.globalData.showPublishOverlay = true;
+                if (app && app.$vm && typeof app.$vm.openPublishOverlay === 'function') {
+                    app.$vm.openPublishOverlay();
                     return;
                 }
             } catch (err) {}
-            // 备选：事件总线（若上面不可用）
             try {
                 if (typeof uni !== 'undefined' && uni.$emit) {
                     uni.$emit('showPublishOverlay');
                 }
             } catch (err2) {}
-            // 最终兜底：写入全局标记，页面挂载点将轮询同步
-            try {
-                const app = getApp();
-                if (app && app.globalData) app.globalData.showPublishOverlay = true;
-            } catch (e3) {}
             return;
         }
 

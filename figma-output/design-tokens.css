@@ -1,0 +1,108 @@
+:root {
+  /* Project */
+  --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --device-width: 390px;
+  --device-height: 844px;
+  --tabbar-height: 86px;
+
+  /* Brand and state */
+  --brand-blue: #248cf5;
+  --brand-yellow: #ffd400;
+  --brand-orange: #ff7043;
+  --brand-red: #ff3b35;
+  --brand-pink: #ec3fc8;
+  --brand-purple: #7650c8;
+  --success: #24d06c;
+  --warning: #ff9a3d;
+  --rating: #f6b33b;
+  --state-selected: #248cf5;
+  --state-highlighted: #ff7043;
+  --state-locked: #8a8f98;
+  --state-verified: #24d06c;
+  --state-pending: #f6b33b;
+  --state-empty: #d5d8dd;
+  --state-loading: #eff1f4;
+
+  /* Surfaces */
+  --page-bg: #eef1f5;
+  --surface-app: #f7f7f8;
+  --surface-card: #ffffff;
+  --surface-muted: #f0f1f3;
+  --surface-panel: #f8f8f8;
+  --surface-chip: #eff1f4;
+  --surface-overlay: rgba(15, 17, 22, 0.68);
+  --map-water: #d9ecff;
+  --map-green: #d5f0d2;
+  --map-road: #ffffff;
+  --map-road-main: #ffd894;
+  --map-fog: rgba(142, 148, 158, 0.35);
+  --map-heat-low: rgba(36, 140, 245, 0.18);
+  --map-heat-high: rgba(255, 112, 67, 0.28);
+  --map-layer-chip: rgba(255, 255, 255, 0.92);
+
+  /* Text */
+  --text-primary: #222222;
+  --text-title: #30343b;
+  --text-body: #5f646d;
+  --text-secondary: #8a8f98;
+  --text-muted: #b8bdc4;
+  --text-faint: #d5d8dd;
+  --text-inverse: #ffffff;
+
+  /* Border and effects */
+  --border-light: #eeeeee;
+  --border-default: #e3e5e8;
+  --divider: #eeeeee;
+  --shadow-phone: 0 18px 44px rgba(0, 0, 0, 0.22);
+  --shadow-sheet: 0 -2px 12px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 1px 8px rgba(18, 24, 38, 0.06);
+  --shadow-float: 0 6px 18px rgba(255, 112, 67, 0.28);
+  --shadow-overlay-card: 0 18px 44px rgba(0, 0, 0, 0.22);
+  --shadow-marker: 0 6px 16px rgba(32, 44, 62, 0.18);
+  --shadow-state-ring: 0 0 0 7px rgba(255, 112, 67, 0.16);
+
+  /* Radius */
+  --radius-phone: 30px;
+  --radius-sheet: 18px 18px 0 0;
+  --radius-card: 7px;
+  --radius-card-lg: 10px;
+  --radius-pill: 999px;
+
+  /* Type */
+  --font-page-tab: 700 16px/22px var(--font-family);
+  --font-card-title: 700 15px/20px var(--font-family);
+  --font-body: 400 13px/18px var(--font-family);
+  --font-caption: 400 12px/16px var(--font-family);
+  --font-mini: 700 10px/14px var(--font-family);
+
+  /* Spacing */
+  --space-4: 4px;
+  --space-6: 6px;
+  --space-8: 8px;
+  --space-10: 10px;
+  --space-12: 12px;
+  --space-14: 14px;
+  --space-16: 16px;
+  --space-20: 20px;
+  --space-24: 24px;
+
+  /* Homepage map loop */
+  --marker-landmark: #f6b33b;
+  --marker-interest: #32c5a6;
+  --marker-activity: #9b5cff;
+  --marker-content: #248cf5;
+  --marker-location: #7f8793;
+  --anchor-ring: rgba(255, 112, 67, 0.18);
+  --layer-radar: #32c5a6;
+  --layer-event: #9b5cff;
+  --layer-service: #ff7043;
+  --layer-fog: #8a8f98;
+
+  /* Cards and navigation */
+  --card-cover-ratio: 4 / 3;
+  --card-gap: 8px;
+  --tab-active: #ff7043;
+  --tabbar-active: #ffd400;
+  --cta-primary: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  --cta-close: linear-gradient(135deg, #ff4ed0 0%, #bd43ff 100%);
+}
