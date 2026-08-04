@@ -2,6 +2,7 @@ Component({
   data: {
     selected: 0,
     publishIndex: 2,
+    publishOpen: false,
     list: [
       { pagePath: '/pages/index/index', text: '首页', iconPath: '/static/tabbar/home.png', selectedIconPath: '/static/tabbar/home-active.png' },
       { pagePath: '/pages/service/index', text: '服务', iconPath: '/static/tabbar/service.png', selectedIconPath: '/static/tabbar/service-active.png' },
@@ -61,17 +62,19 @@ Component({
 
         // 中间“发布”：仅触发弹窗，不进行页面跳转
         if (index === Number(this.data.publishIndex)) {
+            const nextOpen = !this.data.publishOpen;
+            this.setData({ publishOpen: nextOpen });
             try {
                 const app = getApp();
-                if (app && app.globalData) app.globalData.showPublishOverlay = true;
+                if (app && app.globalData) app.globalData.showPublishOverlay = nextOpen;
                 if (app && app.$vm && typeof app.$vm.openPublishOverlay === 'function') {
-                    app.$vm.openPublishOverlay();
+                    if (nextOpen) app.$vm.openPublishOverlay();
                     return;
                 }
             } catch (err) {}
             try {
                 if (typeof uni !== 'undefined' && uni.$emit) {
-                    uni.$emit('showPublishOverlay');
+                    uni.$emit(nextOpen ? 'showPublishOverlay' : 'hidePublishOverlay');
                 }
             } catch (err2) {}
             return;

@@ -22,11 +22,11 @@ uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon,
   clip-path: circle(50% at 50% 50%) !important;
   overflow: visible !important;
   box-sizing: border-box !important;
-  background: #ff8a65 !important;
+  background: #ea580c !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow: 0 4px 12px rgba(255, 138, 101, 0.35) !important;
+  box-shadow: 0 8px 24px rgba(234, 88, 12, 0.24) !important;
 }
 
 /* 隐藏原始图标，使用自定义样式 - 多重选择器 */
@@ -69,7 +69,7 @@ uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__item-text,
 .uni-tabbar .uni-tabbar__item:nth-child(3).uni-tabbar__item--selected .uni-tabbar__item-text,
 uni-tabbar .uni-tabbar__item:nth-child(3).uni-tabbar__item--selected .uni-tabbar__item-text,
 .uni-tabbar-item:nth-child(3).uni-tabbar-item--selected .uni-tabbar__item-text {
-  color: #ff4757 !important;
+  color: var(--color-danger) !important;
   display: none !important;
 }
 

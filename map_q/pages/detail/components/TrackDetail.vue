@@ -133,6 +133,8 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
+import { contentInteractionApi } from '../../../utils/api/contentInteraction.js'
+import { shareActiveContent } from '../../../utils/contentShare.js'
 import { ROUTE_PLANNER } from '../../../utils/routePlanner.js'
 
 export default {
@@ -157,6 +159,7 @@ export default {
     const markers = ref([])
     const polyline = ref([])
     const trackPoints = ref([])
+    const contentId = ref('')
 
     const formattedDuration = computed(() => {
       const mins = Math.round(trackData.value.duration || 0)
@@ -192,12 +195,12 @@ export default {
     }
 
     const toggleLike = () => {
-      isLiked.value = !isLiked.value
+      isLiked.value = contentInteractionApi.toggle(contentId.value, 'liked').liked
       trackData.value.likes = (trackData.value.likes || 0) + (isLiked.value ? 1 : -1)
     }
 
     const toggleCollect = () => {
-      isCollected.value = !isCollected.value
+      isCollected.value = contentInteractionApi.toggle(contentId.value, 'collected').collected
       uni.showToast({
         title: isCollected.value ? '已收藏' : '取消收藏',
         icon: 'none'
@@ -233,10 +236,7 @@ export default {
     }
 
     const shareContent = () => {
-      uni.showToast({
-        title: '分享功能待实现',
-        icon: 'none'
-      })
+      shareActiveContent()
     }
 
     const back = () => {
@@ -245,13 +245,17 @@ export default {
 
     const loadData = async () => {
       try {
-        const item = uni.getStorageSync('INDEX_LAST_ITEM')
+      const item = uni.getStorageSync('CONTENT_DETAIL_ACTIVE_V1') || uni.getStorageSync('INDEX_LAST_ITEM')
         if (item && item._id) {
+          contentId.value = item.id || item._id
           trackData.value.name = item.name || item.title || '路线名称'
-          trackData.value.author = item.author || '用户'
+          trackData.value.author = item.author?.name || item.author || '用户'
           trackData.value.description = item.description || ''
           trackData.value.likes = item.likes || 0
           trackData.value.highEnergyPoints = item.highEnergyPoints || []
+          const state = contentInteractionApi.getState(contentId.value)
+          isLiked.value = state.liked
+          isCollected.value = state.collected
 
           // 从location提取轨迹点
           if (item.location && item.location.type === 'LineString' && item.location.coordinates) {
@@ -380,7 +384,7 @@ export default {
 <style scoped>
 .detail-page {
   min-height: 100vh;
-  background: #f8f8f8;
+  background: var(--color-page);
 }
 
 .detail-nav {
@@ -642,7 +646,7 @@ export default {
 }
 
 .bar-action text:first-child.active {
-  color: #ff4757;
+  color: var(--color-danger);
 }
 
 .bar-action text:last-child {

@@ -8,6 +8,9 @@
       <view class="calendar-header">
         <text class="month-title">{{ formatDateDisplay(currentMonth, selectedDate) }}</text>
         <view class="header-controls">
+          <view class="year-review" @click="openYearReview">
+            <text>年度回顾</text>
+          </view>
           <view class="back-to-today" @click="backToToday">
             <text class="back-to-today-text">回到今天</text>
           </view>
@@ -445,6 +448,12 @@ export default {
     }
   },
   methods: {
+    openYearReview() {
+      uni.navigateTo({
+        url: `/pages/my-timeline/index?year=${new Date().getFullYear()}`,
+        fail: () => uni.showToast({ title: '年度回顾暂不可用', icon: 'none' })
+      })
+    },
     formatDateDisplay(date, selectedDate) {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -940,6 +949,25 @@ export default {
   transition: opacity 0.2s ease;
 }
 
+.header-controls {
+  display: flex;
+  align-items: center;
+}
+
+.year-review {
+  min-height: 32px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  font-size: 11px;
+  font-weight: 600;
+  background: #fff5ef;
+  border: 1px solid rgba(255, 107, 53, 0.18);
+  border-radius: 14px;
+}
+
 .back-to-today {
   padding: 4px 10px; /* 原6px 12px → 更薄 */
   background: #007AFF;
@@ -996,7 +1024,7 @@ export default {
 }
 
 .calendar-day.selected {
-  background: #007AFF;
+  background: #007aff;
   border-radius: 12px;
   /* 移除固定宽高与居中，改为覆盖整格，与周视图一致 */
 }
@@ -1087,7 +1115,7 @@ export default {
 }
 
 .week-date.selected {
-  background: #007AFF;
+  background: #007aff;
 }
 
 .week-date.selected .date-number {
@@ -1107,7 +1135,7 @@ export default {
 .week-date .event-indicator {
   width: 4px;
   height: 4px;
-  background: #FF3B30;
+  background: #ff3b30;
   border-radius: 2px;
   position: absolute;
   bottom: 6px;
@@ -1192,7 +1220,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #007AFF;
+  background: #007aff;
   border-radius: 16px;
   cursor: pointer;
   transition: all 0.2s;
@@ -1227,7 +1255,7 @@ export default {
 }
 
 .week-date.selected {
-  background: #007AFF;
+  background: #007aff;
   position: relative;
 }
 
@@ -1301,7 +1329,7 @@ export default {
   align-items: center;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .date-text {
@@ -1407,7 +1435,7 @@ export default {
 
 .type-reminder {
   background: #F3E5F5;
-  color: #8E24AA;
+  color: var(--color-info);
 }
 
 .type-other {
@@ -1434,4 +1462,5 @@ export default {
 .week-view {
   padding: 0 16px 12px;
 }
+
 </style>

@@ -154,11 +154,11 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
         return dateB - dateA
       })
       // 新增：为缺少坐标的非服务卡片补充随机位置
-      return sorted.map((item, index) => this.ensureRandomLocation(item, index))
+      return sorted
     }
     const list = data[this.activeCategory] || []
     // 新增：为缺少坐标的非服务卡片补充随机位置
-    return list.map((item, index) => this.ensureRandomLocation(item, index))
+    return list
   },
     // 左列数据（偶数索引）
     leftColumnItems() {
@@ -329,6 +329,7 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
 
      // 获取卡片高度（瀑布流效果，单位 rpx）- 修正签名
      getCardHeight(item, index) {
+       return 244
        const key = (item && (item._id || item.id)) ? (item._id || item.id) : `${this.activeCategory}-${index}`
        if (!this.cardHeights[key]) {
          // 生成 180~280 rpx 之间的随机高度
@@ -343,7 +344,7 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
 <style scoped>
 .favorite-module {
   height: 100%;
-  background: #f8f8f8;
+  background: var(--color-page);
   touch-action: pan-y;
   user-select: none;
 }
@@ -396,7 +397,7 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
 }
 
 .category-item.active {
-  background: #007AFF;
+  background: #007aff;
   transform: scale(1.02);
   box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
 }

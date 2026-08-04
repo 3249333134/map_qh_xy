@@ -1,3 +1,5 @@
+import { contentInteractionApi } from './api/contentInteraction.js'
+
 /**
  * 收藏和点赞状态管理
  * 管理用户对内容的收藏和点赞状态，使用本地存储持久化
@@ -36,13 +38,13 @@ export const useFavorites = () => {
   // 检查是否已收藏
   const isFavorited = (cardId) => {
     const favorites = getFavorites()
-    return !!favorites[cardId]
+    return Boolean(contentInteractionApi.getState(cardId).collected || favorites[cardId])
   }
 
   // 切换收藏状态
   const toggleFavorite = (cardId, cardData = {}) => {
     const favorites = getFavorites()
-    const isCurrentlyFavorited = !!favorites[cardId]
+    const isCurrentlyFavorited = Boolean(contentInteractionApi.getState(cardId).collected || favorites[cardId])
 
     if (isCurrentlyFavorited) {
       delete favorites[cardId]
@@ -55,6 +57,8 @@ export const useFavorites = () => {
     }
 
     saveData(FAVORITES_KEY, favorites)
+    const state = contentInteractionApi.getState(cardId)
+    if (state.collected === isCurrentlyFavorited) contentInteractionApi.toggle(cardId, 'collected')
     return !isCurrentlyFavorited
   }
 
@@ -96,13 +100,13 @@ export const useLikes = () => {
   // 检查是否已点赞
   const isLiked = (cardId) => {
     const likes = getLikes()
-    return !!likes[cardId]
+    return Boolean(contentInteractionApi.getState(cardId).liked || likes[cardId])
   }
 
   // 切换点赞状态
   const toggleLike = (cardId, cardData = {}) => {
     const likes = getLikes()
-    const isCurrentlyLiked = !!likes[cardId]
+    const isCurrentlyLiked = Boolean(contentInteractionApi.getState(cardId).liked || likes[cardId])
 
     if (isCurrentlyLiked) {
       delete likes[cardId]
@@ -115,6 +119,8 @@ export const useLikes = () => {
     }
 
     saveData(LIKES_KEY, likes)
+    const state = contentInteractionApi.getState(cardId)
+    if (state.liked === isCurrentlyLiked) contentInteractionApi.toggle(cardId, 'liked')
     return !isCurrentlyLiked
   }
 

@@ -34,6 +34,11 @@
       <view v-if="showEmptyAction" class="empty-btn" @tap="goPublish">
         <text>去发布</text>
       </view>
+      <view class="empty-recovery">
+        <view class="recovery-chip primary" @tap="$emit('empty-recovery', 'space')">扩大范围</view>
+        <view class="recovery-chip" @tap="$emit('empty-recovery', 'time')">不限时间</view>
+        <view class="recovery-chip" @tap="$emit('empty-recovery', 'category')">清除标签</view>
+      </view>
     </view>
 
     <view v-else class="cards-grid">
@@ -274,7 +279,7 @@ export default {
 </script>
 
 <style scoped>
-.cards-container { overflow: hidden; background: linear-gradient(180deg,rgba(248,250,252,.72),#f8fafc 72px); }
+.cards-container { overflow: hidden; background: linear-gradient(180deg,rgba(248,250,252,.72),var(--color-page) 72px); }
 .cards-grid { display: flex; padding: 8px 8px 28px; width: 100%; box-sizing: border-box; }
 .cards-column { flex: 0 0 50%; padding: 0 5px; width: 50%; box-sizing: border-box; }
 
@@ -386,7 +391,7 @@ export default {
 }
 
 .empty-icon { position: relative; width: 96rpx; height: 96rpx; margin-bottom: 30rpx; border: 2rpx solid #fed7aa; border-radius: 50%; background: #fff7ed; font-size: 0; }
-.empty-icon::before { content: ''; position: absolute; left: 31rpx; top: 22rpx; width: 30rpx; height: 42rpx; border: 5rpx solid #ea580c; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-sizing: border-box; }
+.empty-icon::before { content: ''; position: absolute; left: 31rpx; top: 22rpx; width: 30rpx; height: 42rpx; border: .0625rem solid #fed7aa; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-sizing: border-box; }
 .empty-icon::after { content: ''; position: absolute; left: 42rpx; top: 35rpx; width: 10rpx; height: 10rpx; border-radius: 50%; background: #ea580c; }
 
 .empty-title {
@@ -404,7 +409,7 @@ export default {
 
 .empty-btn {
   padding: 16rpx 48rpx;
-  background: linear-gradient(135deg, #ff7a45 0%, #ff6b35 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary) 100%);
   border-radius: 32rpx;
   box-shadow: 0 4rpx 16rpx rgba(255, 122, 69, 0.3);
 }
@@ -414,6 +419,9 @@ export default {
   color: #fff;
   font-weight: 600;
 }
+.empty-recovery { margin-top: 18rpx; display: flex; flex-wrap: wrap; justify-content: center; gap: 12rpx; }
+.recovery-chip { min-height: 72rpx; padding: 0 24rpx; border: .03125rem solid #e2e8f0; border-radius: 36rpx; display: flex; align-items: center; justify-content: center; background: #fff; color: #475569; font-size: 24rpx; font-weight: 700; }
+.recovery-chip.primary { border-color: #f97316; background: #fff7ed; color: #c2410c; }
 
 .loading-more {
   display: flex;
@@ -427,8 +435,8 @@ export default {
 .loading-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid #f0f0f0;
-  border-top-color: #ff7a45;
+  border: 2px solid #f1f5f9;
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }

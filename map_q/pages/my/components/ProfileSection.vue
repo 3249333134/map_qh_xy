@@ -118,4 +118,46 @@ export default {
   font-size: 12px;
   color: #666;
 }
+
+/* Clean profile surface; dimensions and interaction layout stay unchanged. */
+.profile-section {
+  background: linear-gradient(180deg,#e8e8e8,#d0d0d0);
+}
+
+.profile-content {
+  color: var(--color-text, #0f172a);
+}
+
+.avatar-container {
+  padding: 4px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+}
+
+.avatar {
+  display: block;
+  border: 0;
+}
+
+.username,
+.stat-number {
+  color: var(--color-text, #0f172a);
+}
+
+.username {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.user-desc,
+.stat-label {
+  color: var(--color-text-body, #64748b);
+}
+
+.profile-stats {
+  padding: 14px 8px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+}
 </style>

@@ -6,7 +6,7 @@
       catchtap="onTap"
     >
       <block wx:if="{{item.type === 'publish'}}">
-        <view class="plus-wrapper">
+        <view class="plus-wrapper {{publishOpen ? 'open' : ''}}">
           <text class="plus-sign">+</text>
         </view>
       </block>

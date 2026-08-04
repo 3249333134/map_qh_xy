@@ -51,8 +51,8 @@ const onContinue = () => uni.redirectTo({ url: '/pages/publish-type/index' })
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: linear-gradient(135deg, #7650c8 0%, #248cf5 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, var(--color-info) 0%, var(--color-info) 100%);
+  color: #fff;
   font-size: 88rpx;
   font-weight: 800;
   box-shadow: 0 16rpx 40rpx rgba(118, 80, 200, 0.32);
@@ -94,13 +94,13 @@ const onContinue = () => uni.redirectTo({ url: '/pages/publish-type/index' })
 
 .secondary-btn {
   color: #5f646d;
-  background: #ffffff;
+  background: #fff;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
 }
 
 .primary-btn {
-  color: #ffffff;
-  background: linear-gradient(135deg, #7650c8 0%, #248cf5 100%);
+  color: #fff;
+  background: linear-gradient(135deg, var(--color-info) 0%, var(--color-info) 100%);
   box-shadow: 0 8rpx 24rpx rgba(118, 80, 200, 0.32);
 }
 </style>

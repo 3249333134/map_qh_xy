@@ -62,6 +62,7 @@
       <view class="tag" v-for="(tag, index) in cardData.tags" :key="index">
         <text>#{{ tag }}</text>
       </view>
+      <view class="cocreate-button" @tap="openCocreate">地图共创</view>
     </view>
 
     <!-- 位置信息 -->
@@ -127,6 +128,8 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useInteraction } from '../../../utils/interaction.js'
+import { contentInteractionApi } from '../../../utils/api/contentInteraction.js'
+import { shareActiveContent } from '../../../utils/contentShare.js'
 
 export default {
   name: 'NormalDetail',
@@ -200,7 +203,11 @@ export default {
     }
 
     const shareContent = () => {
-      uni.showToast({ title: '分享功能待实现', icon: 'none' })
+      shareActiveContent()
+    }
+    const openCocreate = () => {
+      const id = cardData.value._id || cardData.value.id || ''
+      uni.navigateTo({ url: `/pages/publish-cocreate/index?sourceId=${encodeURIComponent(id)}` })
     }
 
     const navigateTo = () => {
@@ -226,7 +233,20 @@ export default {
     }
 
     const showCommentInput = () => {
-      uni.showToast({ title: '评论功能待实现', icon: 'none' })
+      const id = cardData.value._id || cardData.value.id
+      uni.showModal({
+        title: '发表评论',
+        editable: true,
+        placeholderText: '友善交流，分享真实体验',
+        success: result => {
+          if (!result.confirm || !result.content?.trim()) return
+          try {
+            const state = contentInteractionApi.addComment(id, result.content)
+            const added = state.comments[0]
+            comments.value.unshift({ id: added.id, name: added.author.name, avatar: added.author.avatar, content: added.content, time: '刚刚', isLiked: false, likeCount: 0 })
+          } catch (cause) { uni.showToast({ title: cause.message, icon: 'none' }) }
+        }
+      })
     }
 
     const back = () => {
@@ -235,7 +255,7 @@ export default {
 
     const loadData = () => {
       try {
-        const item = uni.getStorageSync('INDEX_LAST_ITEM')
+      const item = uni.getStorageSync('CONTENT_DETAIL_ACTIVE_V1') || uni.getStorageSync('INDEX_LAST_ITEM')
         if (item && item._id) {
           cardData.value = { ...cardData.value, ...item }
           const cardId = item._id || item.id
@@ -246,7 +266,9 @@ export default {
         console.warn('加载数据失败:', e)
       }
 
-      comments.value = generateMockComments()
+      const id = cardData.value._id || cardData.value.id
+      const saved = contentInteractionApi.getState(id).comments.map(item => ({ id: item.id, name: item.author?.name || '我', avatar: item.author?.avatar, content: item.content, time: '刚刚', isLiked: item.liked, likeCount: item.likeCount }))
+      comments.value = [...saved, ...generateMockComments()]
     }
 
     const generateMockComments = () => {
@@ -293,6 +315,7 @@ export default {
       toggleLike,
       toggleCollect,
       shareContent,
+      openCocreate,
       navigateTo,
       likeComment,
       showCommentInput,
@@ -305,7 +328,7 @@ export default {
 <style scoped>
 .detail-page {
   min-height: 100vh;
-  background: #f8f8f8;
+  background: var(--color-page);
 }
 
 .detail-nav {
@@ -378,7 +401,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #f8fafc 0%, #eef2f7 100%);
+  background: linear-gradient(135deg, var(--color-page) 0%, #eef2f7 100%);
 }
 
 .cover-text {
@@ -500,6 +523,7 @@ export default {
   padding: 0 16px 20px;
   background: #fff;
 }
+.cocreate-button { min-height: 42px; padding: 0 14px; border: 1px solid #fed7aa; border-radius: 13px; display: flex; align-items: center; color: #c2410c; background: #fff7ed; font-size: 12px; font-weight: 700; }
 
 .tag {
   padding: 6px 14px;
@@ -629,7 +653,7 @@ export default {
 }
 
 .comment-like .active {
-  color: #ff4757;
+  color: var(--color-danger);
 }
 
 .bottom-bar {
@@ -679,7 +703,7 @@ export default {
 }
 
 .bar-action text:first-child.active {
-  color: #ff4757;
+  color: var(--color-danger);
 }
 
 .bar-action text:last-child {

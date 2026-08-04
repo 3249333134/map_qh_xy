@@ -52,17 +52,21 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { setCreationCommand } from '../../utils/creationCommand.js'
 
 const statusBarHeight = ref(20)
-const days = ref([
-  { key: 'mon', week: '一', num: '21', active: false, label: '周一 7/21' },
-  { key: 'tue', week: '二', num: '22', active: false, label: '周二 7/22' },
-  { key: 'wed', week: '三', num: '23', active: true, label: '周三 7/23' },
-  { key: 'thu', week: '四', num: '24', active: false, label: '周四 7/24' },
-  { key: 'fri', week: '五', num: '25', active: false, label: '周五 7/25' },
-  { key: 'sat', week: '六', num: '26', active: false, label: '周六 7/26' },
-  { key: 'sun', week: '日', num: '27', active: false, label: '周日 7/27' }
-])
+const weekday = ['日','一','二','三','四','五','六']
+const days = ref(Array.from({ length: 7 }, (_, index) => {
+  const date = new Date(Date.now() + index * 86400000)
+  return {
+    key: date.toISOString().slice(0, 10),
+    week: weekday[date.getDay()],
+    num: String(date.getDate()),
+    active: index === 1,
+    label: `周${weekday[date.getDay()]} ${date.getMonth()+1}/${date.getDate()}`,
+    timestamp: date.getTime()
+  }
+}))
 const times = ['09:00', '12:30', '18:00', '21:00']
 const selectedTime = ref('12:30')
 
@@ -83,8 +87,14 @@ const onDay = (d) => {
   days.value.forEach(item => { item.active = item.key === d.key })
 }
 const onDone = () => {
-  uni.showToast({ title: '已设定定时发布', icon: 'success' })
-  setTimeout(goBack, 800)
+  const selected = days.value.find(item => item.active)
+  if (!selected) return uni.showToast({ title: '请选择发布日期', icon: 'none' })
+  const target = new Date(selected.timestamp)
+  const [hour, minute] = selectedTime.value.split(':').map(Number)
+  target.setHours(hour, minute, 0, 0)
+  if (target.getTime() <= Date.now()) return uni.showToast({ title: '发布时间必须晚于当前时间', icon: 'none' })
+  setCreationCommand({ applySchedule: target.getTime() })
+  goBack()
 }
 </script>
 
@@ -95,7 +105,7 @@ const onDone = () => {
 }
 
 .status-spacer {
-  background: #ffffff;
+  background: #fff;
 }
 
 .nav-bar {
@@ -104,8 +114,8 @@ const onDone = () => {
   justify-content: space-between;
   height: 88rpx;
   padding: 0 24rpx;
-  background: #ffffff;
-  border-bottom: 1rpx solid #f0f1f3;
+  background: #fff;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .nav-back {
@@ -141,7 +151,7 @@ const onDone = () => {
   height: 56rpx;
   border-radius: 999rpx;
   background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
-  color: #ffffff;
+  color: #fff;
   font-size: 26rpx;
   font-weight: 700;
 }
@@ -153,7 +163,7 @@ const onDone = () => {
 .card {
   padding: 28rpx 24rpx;
   border-radius: 14rpx;
-  background: #ffffff;
+  background: #fff;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
 }
 
@@ -181,7 +191,7 @@ const onDone = () => {
 }
 
 .day-cell.active {
-  background: #248cf5;
+  background: var(--color-info);
 }
 
 .day-week {
@@ -201,7 +211,7 @@ const onDone = () => {
 }
 
 .day-cell.active .day-num {
-  color: #ffffff;
+  color: #fff;
 }
 
 .time-chips {
@@ -224,8 +234,8 @@ const onDone = () => {
 }
 
 .time-chip.active {
-  background: #ff7043;
-  color: #ffffff;
+  background: var(--color-primary);
+  color: #fff;
 }
 
 .note-card {
@@ -254,7 +264,7 @@ const onDone = () => {
   margin-top: 20rpx;
   padding: 28rpx 24rpx;
   border-radius: 14rpx;
-  background: linear-gradient(135deg, #248cf5 0%, #7650c8 100%);
+  background: linear-gradient(135deg, var(--color-info) 0%, var(--color-info) 100%);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -268,6 +278,6 @@ const onDone = () => {
 .summary-value {
   font-size: 30rpx;
   font-weight: 700;
-  color: #ffffff;
+  color: #fff;
 }
 </style>

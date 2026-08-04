@@ -1,6 +1,6 @@
 <template>
   <view
-    class="card place-card"
+    class="card place-card app-card"
     :style="{ '--card-height': height + 'rpx' }">
     <view
       class="card-media"
@@ -214,7 +214,7 @@ export default {
   width: 100%;
   cursor: pointer;
   overflow: hidden;
-  background: #f8f8f8;
+  background: var(--color-page);
 }
 
 .place-map-bg {
@@ -456,11 +456,11 @@ export default {
 }
 
 .place-card .action-btn.active .action-icon {
-  color: #ff2442;
+  color: var(--color-primary);
 }
 
 .place-card .action-btn.active .action-text {
-  color: #ff2442;
+  color: var(--color-primary);
 }
 
 .place-card .action-btn.active {

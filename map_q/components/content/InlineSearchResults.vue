@@ -119,7 +119,7 @@ export default {
   width: 46px;
   height: 46px;
   border-radius: 11px;
-  background: linear-gradient(145deg,#3b82f6,#7650c8);
+  background: linear-gradient(145deg,#3b82f6,var(--color-info));
   color: #fff;
 }
 
@@ -215,11 +215,11 @@ export default {
 }
 
 .result-thumb.track {
-  background: #ff7043;
+  background: var(--color-primary);
 }
 
 .result-thumb.content {
-  background: linear-gradient(145deg,#52b7ea,#7650c8);
+  background: linear-gradient(145deg,#52b7ea,var(--color-info));
 }
 
 .result-thumb text {
@@ -257,7 +257,7 @@ export default {
   min-height: 44px;
   border-radius: 22px;
   background: #eff6ff;
-  color: #248cf5;
+  color: var(--color-info);
 }
 
 .result-action text {

@@ -5,35 +5,27 @@
     <view class="nav-bar">
       <view class="nav-back" @tap="goBack">‹</view>
       <text class="nav-title">地图分享</text>
-      <view class="nav-right" @tap="onSend">发送</view>
+      <button class="nav-right" open-type="share" @tap="onSend">发送</button>
     </view>
 
     <scroll-view class="share-content" scroll-y>
       <view class="share-card">
         <view class="map-preview">
-          <view class="map-grid"></view>
-          <view class="map-road h1"></view>
-          <view class="map-road v1"></view>
-          <view class="map-road v2"></view>
-          <view class="map-route"></view>
-          <view class="map-marker m1">
-            <view class="marker-dot gold"></view>
-          </view>
-          <view class="map-marker m2">
-            <view class="marker-dot green"></view>
-          </view>
-          <view class="map-marker m3">
-            <view class="marker-dot purple"></view>
-          </view>
-          <view class="map-marker m4">
-            <view class="marker-dot blue"></view>
-          </view>
-          <view class="map-cover-overlay"></view>
+          <map
+            class="preview-map"
+            :latitude="snapshot.center.latitude"
+            :longitude="snapshot.center.longitude"
+            :scale="snapshot.scale"
+            :markers="previewMarkers"
+            :polyline="previewPolyline"
+            :subkey="mapKey"
+            show-location
+          ></map>
         </view>
 
         <view class="card-body">
-          <text class="card-title">春熙路周末足迹</text>
-          <text class="card-desc">4 个锚点 · 8.6km · 涵盖兴趣 POI、活动与轨迹</text>
+          <text class="card-title">{{ snapshot.center.cityName }}地图探索</text>
+          <text class="card-desc">{{ timeLabel }} · {{ spaceLabel }} · {{ snapshot.layers.length }} 个图层</text>
 
           <view class="chip-row">
             <view class="chip gold">
@@ -72,13 +64,24 @@
 
       <view class="bottom-spacer"></view>
     </scroll-view>
+    <canvas canvas-id="sharePoster" class="poster-canvas"></canvas>
   </view>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { onShareAppMessage } from '@dcloudio/uni-app'
+import { encodeShareSnapshot, loadMapExploreState } from '../../utils/mapExploreState.js'
+import { APP_CONFIG } from '../../utils/config.js'
 
 const statusBarHeight = ref(20)
+const snapshot = ref(loadMapExploreState().state)
+const encodedSnapshot = ref('')
+const mapKey = APP_CONFIG.TENCENT_MAP.KEY
+const previewMarkers = ref([])
+const previewPolyline = ref([])
+const timeLabel = ref('不限时间')
+const spaceLabel = ref('当前可视区域')
 
 const options = ref([
   { key: 'friend', last: false, name: '分享给好友', desc: '微信好友 / 群聊', icon: '友', color: '#24d06c' },
@@ -91,18 +94,118 @@ onMounted(() => {
     const info = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
     statusBarHeight.value = info.statusBarHeight || 20
   } catch (e) {}
+  snapshot.value = loadMapExploreState().state
+  syncMapPreview(snapshot.value)
+  encodedSnapshot.value = encodeShareSnapshot(snapshot.value)
+  const labels = { all: '不限时间', today: '今天', week: '本周', custom: '自定义日期' }
+  timeLabel.value = labels[snapshot.value.timeRange.preset] || '不限时间'
+  spaceLabel.value = snapshot.value.spatialFilter.mode === 'bounds'
+    ? '当前可视区域'
+    : `附近 ${snapshot.value.spatialFilter.radiusKm}km`
 })
+
+function syncMapPreview(state) {
+  const center = state.center
+  const points = [
+    [0.0018, -0.0022, '/static/marker-orange.png'],
+    [0.0024, 0.0017, '/static/marker-purple.png'],
+    [-0.0014, -0.0011, '/static/marker-green.png'],
+    [-0.0022, 0.0023, '/static/marker-blue.png']
+  ]
+  previewMarkers.value = points.map((item, index) => ({
+    id: index + 1,
+    latitude: Number(center.latitude) + item[0],
+    longitude: Number(center.longitude) + item[1],
+    iconPath: item[2],
+    width: 28,
+    height: 34
+  }))
+  previewPolyline.value = [{
+    points: points.slice(0, 3).map(item => ({
+      latitude: Number(center.latitude) + item[0],
+      longitude: Number(center.longitude) + item[1]
+    })),
+    color: '#f97316',
+    width: 5,
+    dottedLine: false,
+    arrowLine: true
+  }]
+}
+
+onShareAppMessage(() => ({
+  title: `${snapshot.value.center.cityName}地图探索 · 足迹`,
+  path: `/pages/index/index?map=${encodedSnapshot.value}`
+}))
 
 function goBack() {
   uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/index/index' }) })
 }
 
 function onSend() {
-  uni.showToast({ title: '已发送给好友', icon: 'none' })
+  // 微信由 open-type="share" 打开分享面板；H5 同时提供可复制链接。
+  // #ifdef H5
+  copyLink()
+  // #endif
 }
 
 function onOptionTap(opt) {
-  uni.showToast({ title: opt.name, icon: 'none' })
+  if (opt.key === 'poster') return generatePoster()
+  copyLink()
+}
+
+function sharePath() {
+  return `/pages/index/index?map=${encodedSnapshot.value}`
+}
+
+function copyLink() {
+  const path = sharePath()
+  uni.setClipboardData({
+    data: path,
+    success: () => uni.showToast({ title: '地图链接已复制', icon: 'success' }),
+    fail: () => uni.showToast({ title: '复制失败，请重试', icon: 'none' })
+  })
+}
+
+function generatePoster() {
+  try {
+    const context = uni.createCanvasContext('sharePoster')
+    context.setFillStyle('#fff7ed')
+    context.fillRect(0, 0, 320, 500)
+    context.setFillStyle('#ea580c')
+    context.fillRect(0, 0, 320, 12)
+    context.setFillStyle('#0f172a')
+    context.setFontSize(24)
+    context.fillText(`${snapshot.value.center.cityName}地图探索`, 24, 64)
+    context.setFillStyle('#64748b')
+    context.setFontSize(14)
+    context.fillText(`${timeLabel.value} · ${spaceLabel.value}`, 24, 94)
+    context.setFillStyle('#e2e8f0')
+    context.fillRect(24, 126, 272, 260)
+    context.setFillStyle('#f97316')
+    ;[[72,190],[164,248],[240,176],[214,330]].forEach(([x,y]) => {
+      context.beginPath()
+      context.arc(x, y, 8, 0, Math.PI * 2)
+      context.fill()
+    })
+    context.setFillStyle('#334155')
+    context.setFontSize(14)
+    context.fillText('打开足迹，继续探索这张地图', 24, 430)
+    context.draw(false, () => {
+      uni.canvasToTempFilePath({
+        canvasId: 'sharePoster',
+        success: result => {
+          uni.saveImageToPhotosAlbum({
+            filePath: result.tempFilePath,
+            success: () => uni.showToast({ title: '海报已保存', icon: 'success' }),
+            fail: () => uni.showToast({ title: '保存失败，请检查相册权限', icon: 'none' })
+          })
+        },
+        fail: () => uni.showToast({ title: '海报生成失败，请重试', icon: 'none' })
+      })
+    })
+  } catch (error) {
+    uni.showToast({ title: '当前平台暂不支持生成海报', icon: 'none' })
+  }
 }
 </script>
 
@@ -114,7 +217,7 @@ function onOptionTap(opt) {
 }
 
 .status-spacer {
-  background: #ffffff;
+  background: #fff;
 }
 
 .nav-bar {
@@ -124,8 +227,8 @@ function onOptionTap(opt) {
   align-items: center;
   justify-content: center;
   position: relative;
-  background: #ffffff;
-  border-bottom: 1rpx solid #f0f1f3;
+  background: #fff;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .nav-back {
@@ -159,11 +262,14 @@ function onOptionTap(opt) {
   justify-content: center;
   border-radius: 999rpx;
   background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
-  color: #ffffff;
+  color: #fff;
   font-size: 26rpx;
   font-weight: 700;
   box-shadow: 0 6rpx 18rpx rgba(255, 91, 53, 0.28);
+  border: 0;
+  line-height: 64rpx;
 }
+.nav-right::after { border: 0; }
 
 .share-content {
   height: calc(100vh - 88rpx - env(safe-area-inset-top));
@@ -172,7 +278,7 @@ function onOptionTap(opt) {
 }
 
 .share-card {
-  background: #ffffff;
+  background: #fff;
   border-radius: 14rpx;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   overflow: hidden;
@@ -180,10 +286,14 @@ function onOptionTap(opt) {
 
 .map-preview {
   position: relative;
-  height: 360rpx;
-  background: linear-gradient(135deg, #e4e7ec 0%, #dde1e7 100%);
+  height: 30vh;
+  min-height: 440rpx;
+  max-height: 560rpx;
+  background: #e2e8f0;
   overflow: hidden;
 }
+
+.preview-map { width: 100%; height: 100%; }
 
 .map-grid {
   position: absolute;
@@ -196,7 +306,7 @@ function onOptionTap(opt) {
 
 .map-road {
   position: absolute;
-  background: #ffffff;
+  background: #fff;
   opacity: 0.7;
 }
 
@@ -228,7 +338,7 @@ function onOptionTap(opt) {
   left: 18%;
   width: 64%;
   height: 6rpx;
-  background: linear-gradient(90deg, #ff7043 0%, #248cf5 100%);
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-info) 100%);
   border-radius: 3rpx;
   transform: rotate(-12deg);
   transform-origin: left center;
@@ -276,11 +386,11 @@ function onOptionTap(opt) {
 }
 
 .marker-dot.purple {
-  background: #7650c8;
+  background: var(--color-info);
 }
 
 .marker-dot.blue {
-  background: #248cf5;
+  background: var(--color-info);
 }
 
 .map-cover-overlay {
@@ -345,7 +455,7 @@ function onOptionTap(opt) {
 }
 
 .chip.purple .chip-text {
-  color: #7650c8;
+  color: var(--color-info);
 }
 
 .chip-text {
@@ -362,7 +472,7 @@ function onOptionTap(opt) {
 }
 
 .option-list {
-  background: #ffffff;
+  background: #fff;
   border-radius: 14rpx;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   overflow: hidden;
@@ -373,7 +483,7 @@ function onOptionTap(opt) {
   align-items: center;
   gap: 20rpx;
   padding: 28rpx;
-  border-bottom: 1rpx solid #f0f1f3;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .option-row.last {
@@ -391,7 +501,7 @@ function onOptionTap(opt) {
 }
 
 .option-icon-text {
-  color: #ffffff;
+  color: #fff;
   font-size: 28rpx;
   font-weight: 800;
 }
@@ -429,5 +539,13 @@ function onOptionTap(opt) {
 
 .bottom-spacer {
   height: 60rpx;
+}
+
+.poster-canvas {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  width: 320px;
+  height: 500px;
 }
 </style>

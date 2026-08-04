@@ -55,6 +55,8 @@
 </template>
 
 <script>
+import { notificationApi } from '../../utils/api/social.js'
+
 const ICONS = {
   bell: '<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>',
   star: '<polygon points="12 2 15.1 8.3 22 9.3 17 14.1 18.2 21 12 17.8 5.8 21 7 14.1 2 9.3 8.9 8.3 12 2"/>',
@@ -182,6 +184,11 @@ export default {
     } catch (e) {
       this.topOffset = 20
     }
+    notificationApi.seed(this.notices.map((item, index) => ({
+      ...item,
+      createdAt: Date.now() - index * 3600000
+    })))
+    this.notices = notificationApi.list()
   },
   onReady() {
     try {
@@ -195,11 +202,19 @@ export default {
     },
     markAllRead() {
       this.notices.forEach(item => { item.unread = false })
+      notificationApi.markAllRead()
       uni.showToast({ title: '已全部标为已读', icon: 'none' })
     },
     openNotice(item) {
       item.unread = false
-      uni.showToast({ title: '查看详情', icon: 'none' })
+      notificationApi.patch(item.id, { unread: false })
+      if (['activity', 'service', 'post'].includes(item.targetType)) {
+        const type = item.targetType === 'post' ? 'normal' : item.targetType
+        uni.navigateTo({
+          url: `/pages/detail/index?id=${encodeURIComponent(item.targetId || item.id)}&type=${type}`,
+          fail: () => uni.showToast({ title: '详情暂不可用', icon: 'none' })
+        })
+      }
     },
     loadMore() {
       if (!this.hasMore) return
@@ -216,6 +231,7 @@ export default {
     markCurrentRead() {
       const item = this.visibleNotices[this.sheetIndex]
       if (item) item.unread = false
+      if (item) notificationApi.patch(item.id, { unread: false })
       this.closeSheet()
     },
     muteCurrent() {
@@ -226,8 +242,8 @@ export default {
     deleteCurrent() {
       const item = this.visibleNotices[this.sheetIndex]
       if (item) {
-        const index = this.notices.findIndex(n => n.id === item.id)
-        if (index >= 0) this.notices.splice(index, 1)
+        notificationApi.remove(item.id)
+        this.notices = notificationApi.list()
       }
       this.closeSheet()
     }
@@ -280,7 +296,7 @@ export default {
 .read-all {
   position: absolute;
   right: 30rpx;
-  color: #FF6B35;
+  color: var(--color-primary);
   font-size: 28rpx;
 }
 
@@ -294,7 +310,7 @@ export default {
   align-items: flex-start;
   gap: 20rpx;
   padding: 24rpx 28rpx 24rpx 36rpx;
-  border-bottom: 1rpx solid #F1F1F1;
+  border-bottom: 1rpx solid #f1f5f9;
   position: relative;
   background: #fff;
 }
@@ -310,7 +326,7 @@ export default {
   width: 14rpx;
   height: 14rpx;
   border-radius: 50%;
-  background: #3D8BFF;
+  background: #3d8bff;
 }
 
 .unread-dot.hidden {
@@ -410,16 +426,16 @@ export default {
   text-align: center;
   font-size: 30rpx;
   color: #333;
-  border-top: 1rpx solid #F1F1F1;
+  border-top: 1rpx solid #f1f5f9;
 }
 
 .sheet-item.danger {
-  color: #FF3838;
+  color: #ff3838;
 }
 
 .sheet-cancel {
   margin-top: 12rpx;
   border-top: 10rpx solid #F5F5F7;
-  color: #999;
+  color: #333;
 }
 </style>

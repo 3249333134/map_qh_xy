@@ -556,4 +556,57 @@ export default {
 .top-actions:not(.draggable-bar) .drag-indicator {
   opacity: 0.3;
 }
+
+/* Quiet segmented controls matching the clean card system. */
+.content-section {
+  box-shadow: 0 -8px 28px rgba(15, 23, 42, 0.08);
+}
+
+.top-actions {
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 1px 0 rgba(226, 232, 240, 0.9);
+}
+
+.top-actions:active {
+  transform: none;
+}
+
+.drag-indicator,
+.top-actions:active .drag-indicator {
+  background: #cbd5e1;
+  transform: none;
+}
+
+.action-btn {
+  min-height: 34px;
+  border-radius: 11px;
+  color: #64748b;
+  background: #f8f9fa;
+  box-shadow: none;
+}
+
+.action-btn.active {
+  color: #fff;
+  background: linear-gradient(135deg,#667eea,#764ba2);
+  box-shadow: inset 0 0 0 1px rgba(234, 88, 12, 0.16);
+}
+
+.btn-text,
+.settings-icon {
+  color: #64748b;
+}
+
+.action-btn.active .btn-text {
+  color: #fff;
+}
+
+.settings-btn {
+  background: #f8f9fa;
+}
+
+.frosted-glass-overlay {
+  border-color: rgba(226, 232, 240, 0.7);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: none;
+}
 </style>

@@ -1,287 +1,48 @@
 <template>
   <view class="page">
-    <view class="status-spacer" :style="{ height: statusBarHeight + 'px' }"></view>
-    <view class="nav-bar">
-      <view class="nav-back" @tap="goBack">‹</view>
-      <text class="nav-title">授权方式</text>
-      <view class="nav-right cta" @tap="onSave">保存</view>
-    </view>
-
-    <view class="content">
-      <view class="section-title">授权选项</view>
-      <view class="list-card">
-        <view
-          v-for="(r, i) in authOptions"
-          :key="r.key"
-          class="auth-row"
-          :class="{ last: i === authOptions.length - 1 }"
-          @tap="onRow(r)"
-        >
-          <view class="auth-left">
-            <text class="auth-name">{{ r.name }}</text>
-            <text class="auth-sub">{{ r.sub }}</text>
-          </view>
-          <view v-if="r.type === 'toggle'" class="toggle" :class="{ active: r.on }" @tap.stop="onToggle(r)">
-            <view class="toggle-dot"></view>
-          </view>
-          <text v-else class="auth-arrow">›</text>
+    <GlobalNavBar title="结构化授权"><template #left><view class="nav-btn" @tap="goBack">取消</view></template><template #right><view class="nav-btn done" @tap="save">保存</view></template></GlobalNavBar>
+    <scroll-view class="content" scroll-y :style="{ paddingTop: topOffset + 'px' }">
+      <view class="form-card">
+        <text class="section-title">使用权限</text>
+        <view v-for="item in switches" :key="item.key" class="switch-row" @tap="rule[item.key] = !rule[item.key]">
+          <view><text>{{ item.name }}</text><text>{{ item.desc }}</text></view>
+          <view class="toggle" :class="{ active: rule[item.key] }"><view></view></view>
         </view>
       </view>
-
-      <view class="copyright-card">
-        <view class="copyright-icon">©</view>
-        <view class="copyright-body">
-          <text class="copyright-title">版权保护标识</text>
-          <text class="copyright-desc">开启后，IP内容详情页和分享页会显示版权保护标识。</text>
-        </view>
-        <view class="toggle" :class="{ active: hasCopyright }" @tap="hasCopyright = !hasCopyright">
-          <view class="toggle-dot"></view>
-        </view>
+      <view class="form-card">
+        <text class="section-title">授权范围与期限</text>
+        <label class="field"><text>生效日期</text><picker mode="date" :value="rule.validFrom" @change="rule.validFrom = $event.detail.value"><view>{{ rule.validFrom }}</view></picker></label>
+        <label class="field"><text>结束日期</text><picker mode="date" :value="rule.validUntil" @change="rule.validUntil = $event.detail.value"><view>{{ rule.validUntil || '长期有效' }}</view></picker></label>
+        <label class="field"><text>授权地域</text><input v-model="rule.territory" placeholder="例如：中国大陆" /></label>
+        <label class="field"><text>平台范围</text><input v-model="rule.platformScope" placeholder="例如：足迹平台内" /></label>
+        <label class="field textarea"><text>补充规则</text><textarea v-model="rule.note" maxlength="200" placeholder="选填，不超过 200 字" /></label>
       </view>
-
-      <view class="note-card">
-        <text class="note-title">授权说明</text>
-        <text class="note-desc">授权设置将同步至所有系列内容。商业授权需在内容发布后单独联系平台完成签约登记。</text>
-      </view>
-    </view>
+      <view class="summary-card"><text class="section-title">授权摘要预览</text><text>{{ summary }}</text></view>
+      <view v-if="Object.keys(errors).length" class="error-card"><text v-for="(message,key) in errors" :key="key">{{ message }}</text></view>
+      <view class="safe-space"></view>
+    </scroll-view>
   </view>
 </template>
-
 <script setup>
-import { ref, onMounted } from 'vue'
-
-const statusBarHeight = ref(20)
-const hasCopyright = ref(true)
-const authOptions = ref([
-  { key: 'forbid', name: '禁止转载', sub: '仅平台内浏览', type: 'toggle', on: true },
-  { key: 'sign', name: '署名转载', sub: '允许转发但需署名', type: 'arrow' },
-  { key: 'commercial', name: '商业授权', sub: '需联系作者授权', type: 'arrow' }
-])
-
-onMounted(() => {
-  try {
-    const info = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
-    statusBarHeight.value = info.statusBarHeight || 20
-  } catch (e) {}
-})
-
-const goBack = () => uni.navigateBack()
-const onSave = () => {
-  uni.showToast({ title: '已保存授权设置', icon: 'success' })
-  setTimeout(goBack, 800)
-}
-const onRow = (r) => uni.showToast({ title: r.name, icon: 'none' })
-const onToggle = (r) => {
-  authOptions.value.forEach(item => {
-    if (item.type === 'toggle') item.on = false
-  })
-  r.on = true
-}
+import { computed, reactive } from 'vue'
+import GlobalNavBar from '../../components/common/GlobalNavBar.vue'
+import { defaultLicenseRule, ipRightsApi, validateLicenseRule } from '../../utils/api/ipRights.js'
+import { creationApi } from '../../utils/api/creation.js'
+import { getActiveCreationDraft, setCreationCommand } from '../../utils/creationCommand.js'
+const topOffset=uni.getStorageSync('TOP_NAV_METRICS')?.totalPx||64
+const draft=creationApi.getDraft(getActiveCreationDraft())
+const rule=reactive({ ...defaultLicenseRule(), ...(draft?.ip?.licenseRule||{}) })
+const errors=reactive({})
+const switches=[
+  {key:'repostAllowed',name:'允许转载',desc:'允许他人在授权范围内分发'},
+  {key:'commercialAllowed',name:'允许商用',desc:'允许用于商业推广或商品'},
+  {key:'derivativeAllowed',name:'允许二创',desc:'允许改编、混剪或衍生创作'},
+  {key:'attributionRequired',name:'必须署名',desc:'使用时必须展示 IP 与权利人'}
+]
+const summary=computed(()=>ipRightsApi.buildSummary(rule))
+function save(){Object.keys(errors).forEach(k=>delete errors[k]);Object.assign(errors,validateLicenseRule(rule));if(Object.keys(errors).length)return;setCreationCommand({applyLicense:JSON.parse(JSON.stringify(rule))});uni.navigateBack()}
+function goBack(){uni.navigateBack()}
 </script>
-
 <style scoped>
-.page {
-  min-height: 100vh;
-  background: #f7f7f8;
-}
-
-.status-spacer {
-  background: #ffffff;
-}
-
-.nav-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 88rpx;
-  padding: 0 24rpx;
-  background: #ffffff;
-  border-bottom: 1rpx solid #f0f1f3;
-}
-
-.nav-back {
-  width: 64rpx;
-  height: 64rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: #f0f1f3;
-  color: #222;
-  font-size: 44rpx;
-  line-height: 44rpx;
-}
-
-.nav-title {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: #222;
-}
-
-.nav-right {
-  width: 64rpx;
-  height: 64rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.nav-right.cta {
-  width: auto;
-  padding: 0 36rpx;
-  height: 56rpx;
-  border-radius: 999rpx;
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
-  color: #ffffff;
-  font-size: 26rpx;
-  font-weight: 700;
-}
-
-.content {
-  padding: 16rpx 24rpx 48rpx;
-}
-
-.section-title {
-  display: block;
-  margin: 16rpx 8rpx 16rpx;
-  font-size: 26rpx;
-  font-weight: 700;
-  color: #5f646d;
-}
-
-.list-card {
-  background: #ffffff;
-  border-radius: 14rpx;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
-  padding: 0 24rpx;
-}
-
-.auth-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 28rpx 0;
-  border-bottom: 1rpx solid #f0f1f3;
-}
-
-.auth-row.last {
-  border-bottom: 0;
-}
-
-.auth-left {
-  display: flex;
-  flex-direction: column;
-}
-
-.auth-name {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #222;
-}
-
-.auth-sub {
-  margin-top: 6rpx;
-  font-size: 24rpx;
-  color: #8a8f98;
-}
-
-.auth-arrow {
-  font-size: 36rpx;
-  color: #8a8f98;
-}
-
-.toggle {
-  width: 80rpx;
-  height: 44rpx;
-  border-radius: 999rpx;
-  background: #e5e7eb;
-  position: relative;
-  transition: background 0.2s;
-  flex-shrink: 0;
-}
-
-.toggle.active {
-  background: linear-gradient(135deg, #7650c8 0%, #248cf5 100%);
-}
-
-.toggle-dot {
-  position: absolute;
-  top: 4rpx;
-  right: 4rpx;
-  width: 36rpx;
-  height: 36rpx;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.15);
-  transition: transform 0.2s;
-}
-
-.toggle.active .toggle-dot {
-  transform: translateX(-36rpx);
-}
-
-.copyright-card {
-  margin-top: 24rpx;
-  display: flex;
-  align-items: center;
-  padding: 28rpx 24rpx;
-  border-radius: 14rpx;
-  background: rgba(118, 80, 200, 0.08);
-}
-
-.copyright-icon {
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 18rpx;
-  background: linear-gradient(135deg, #7650c8 0%, #248cf5 100%);
-  color: #ffffff;
-  font-size: 36rpx;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.copyright-body {
-  flex: 1;
-  margin-left: 20rpx;
-}
-
-.copyright-title {
-  display: block;
-  font-size: 28rpx;
-  font-weight: 700;
-  color: #222;
-}
-
-.copyright-desc {
-  display: block;
-  margin-top: 8rpx;
-  font-size: 24rpx;
-  color: #5f646d;
-  line-height: 1.6;
-}
-
-.note-card {
-  margin-top: 24rpx;
-  padding: 28rpx 24rpx;
-  border-radius: 14rpx;
-  background: #f0f1f3;
-}
-
-.note-title {
-  display: block;
-  font-size: 26rpx;
-  font-weight: 700;
-  color: #5f646d;
-}
-
-.note-desc {
-  display: block;
-  margin-top: 10rpx;
-  font-size: 24rpx;
-  color: #8a8f98;
-  line-height: 1.6;
-}
+.page{min-height:100vh;color: #0f172a;background: var(--color-page)}.nav-btn{min-width:56px;height:44px;padding:0 10px;display:flex;align-items:center;justify-content:center;border-radius:14px;color: #475569;background: #f1f5f9;font-size:12px;font-weight:700}.nav-btn.done{color: #fff;background: #ea580c}.content{height:100vh;padding:14px;box-sizing:border-box}.form-card,.summary-card,.error-card{margin-bottom:12px;padding:16px;border: 1px solid #eef2f7;border-radius:20px;background: #fff;box-shadow:0 8px 24px rgba(15,23,42,.05)}.section-title{display:block;margin-bottom:8px;font-size:16px;font-weight:800}.switch-row{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom: 1px solid #f1f5f9}.switch-row:last-child{border-bottom: 0}.switch-row text{display:block}.switch-row text:first-child{font-size:14px;font-weight:700}.switch-row text:last-child{margin-top:4px;color: #64748b;font-size:10px}.toggle{position:relative;flex:0 0 48px;width:48px;height:28px;border-radius:14px;background: #cbd5e1}.toggle view{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background: #cbd5e1;transition:transform 180ms ease}.toggle.active{background: #ea580c}.toggle.active view{transform:translateX(20px)}.field{display:block;padding:12px 0;border-bottom: 1px solid #f1f5f9}.field>text{display:block;color: #334155;font-size:12px;font-weight:700}.field input,.field picker,.field textarea,.field picker view{width:100%;min-height:44px;margin-top:5px;display:flex;align-items:center;font-size:14px}.field textarea{min-height:80px}.summary-card>text:last-child{display:block;color: #475569;font-size:12px;line-height:1.65}.error-card{border-color: #fecaca;background: #fff}.error-card text{display:block;margin:4px 0;color: #991b1b;font-size:12px}.safe-space{height:calc(24px + env(safe-area-inset-bottom))}@media(prefers-reduced-motion:reduce){.toggle view{transition:none}}
 </style>

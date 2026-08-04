@@ -1,615 +1,118 @@
 <template>
-  <view class="sandbox-page">
-    <!-- Top Navigation Bar -->
-    <view class="nav-container" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <view class="nav-bar" :style="{ paddingRight: rightPadding + 'rpx' }">
-        <button class="nav-btn cancel" @click="goBack">取消</button>
-        <view class="nav-center">
-          <text class="nav-title">沙盒创作</text>
-          <text class="nav-icon">⬡</text>
-        </view>
-        <button class="nav-btn save" @click="handleSave">保存</button>
+  <view class="page">
+    <GlobalNavBar title="沙盒创作">
+      <template #left><view class="nav-btn" @tap="leaveEditor">关闭</view></template>
+      <template #right><view class="nav-btn save" @tap="saveDraft">保存草稿</view></template>
+    </GlobalNavBar>
+    <scroll-view class="content" scroll-y :style="{ paddingTop: topOffset + 'px' }">
+      <view class="private-banner"><view class="private-mark">沙</view><view><text>非公开创作空间</text><text>沙盒内容不会直接进入公共地图和内容流</text></view></view>
+      <view class="editor-card">
+        <text class="section-title">创作内容</text>
+        <textarea v-model="draft.text" maxlength="500" placeholder="记录想法、实验内容或尚未完成的创作…" />
+        <text class="counter">{{ draft.text.length }}/500</text>
       </view>
-    </view>
-
-    <!-- Scrollable Content -->
-    <scroll-view class="content" scroll-y :style="{ paddingTop: totalNavHeight + 'px' }">
-      <!-- Text Input Area -->
-      <view class="input-section">
-        <textarea
-          class="textarea"
-          v-model="content"
-          placeholder="记录你的灵感草稿，仅自己可见"
-          maxlength="500"
-          :rows="5"
-        />
-        <text class="word-count">{{ content.length }}/500</text>
-      </view>
-
-      <!-- Image/Video Picker -->
-      <view class="media-section">
-        <view class="media-grid">
-          <view v-for="(item, index) in mediaList" :key="index" class="media-item">
-            <image v-if="item" class="media-image" :src="item" mode="aspectFill" />
-            <button class="delete-btn" @click="removeMedia(index)">
-              <text class="delete-icon">×</text>
-            </button>
-          </view>
-          <button v-if="mediaList.length < 9" class="media-add" @click="addMedia">
-            <text class="add-icon">+</text>
-          </button>
+      <CreationMediaGrid v-model="draft.media" />
+      <view class="form-card">
+        <text class="section-title">沙盒分类</text>
+        <view class="category-list">
+          <view v-for="category in categories" :key="category" :class="{ active: draft.sandbox.category === category }" @tap="draft.sandbox.category = category">{{ category }}</view>
+          <view class="add-category" @tap="addCategory">新增分类</view>
         </view>
       </view>
-
-      <!-- Sandbox Exclusive Feature Section -->
-      <view class="sandbox-section">
-        <view class="sandbox-header">
-          <text class="sandbox-icon">⬡</text>
-          <text class="sandbox-title">沙盒功能</text>
+      <view class="settings-card">
+        <view class="setting-row" @tap="openSchedule">
+          <view><text>定时发布</text><text>到期后在应用前台重新执行审核</text></view>
+          <view class="value">{{ scheduleText }}<text>›</text></view>
         </view>
-
-        <view class="sandbox-divider" />
-
-        <!-- 沙盒分类 -->
-        <view class="category-block">
-          <text class="block-label">沙盒分类</text>
-          <view class="category-list">
-            <button
-              v-for="(cat, index) in categories"
-              :key="index"
-              class="category-tag"
-              :class="{ active: selectedCategory === cat }"
-              @click="selectCategory(cat)"
-            >
-              {{ cat }}
-            </button>
-            <button class="category-tag custom" @click="addCustomCategory">
-              <text class="plus">+</text>
-              <text>自定义</text>
-            </button>
-          </view>
-        </view>
-
-        <view class="sandbox-divider" />
-
-        <!-- 定时发布 -->
-        <view class="row" @click="toggleSchedule">
-          <view class="row-left">
-            <text class="row-icon">⏰</text>
-            <text class="row-text">定时发布</text>
-          </view>
-          <view class="toggle" :class="{ active: isScheduled }">
-            <view class="toggle-dot" />
-          </view>
-        </view>
-
-        <view v-if="isScheduled" class="schedule-picker" @click="pickScheduleTime">
-          <text class="picker-label">{{ scheduleTime || '选择发布时间' }}</text>
-          <text class="picker-arrow">›</text>
-        </view>
-
-        <view class="sandbox-divider" />
-
-        <!-- 预览效果 -->
-        <view class="row" @click="handlePreview">
-          <view class="row-left">
-            <text class="row-icon">👁</text>
-            <text class="row-text">预览发布效果</text>
-          </view>
-          <text class="row-arrow">›</text>
-        </view>
-
-        <view class="sandbox-divider" />
-
-        <!-- 测试分享 -->
-        <view class="row" @click="handleTestShare">
-          <view class="row-left column">
-            <view class="row-title-wrap">
-              <text class="row-icon">↗</text>
-              <text class="row-text">分享给指定好友测试</text>
-            </view>
-            <text class="row-sub">仅受邀好友可见，不影响公开记录</text>
-          </view>
-          <text class="row-arrow">›</text>
+        <view class="setting-row" @tap="openTestShare">
+          <view><text>分享给指定好友测试</text><text>接收方会持续看到“非公开测试”标识</text></view>
+          <view class="value">{{ recipientText }}<text>›</text></view>
         </view>
       </view>
-
-      <view class="safe-bottom" />
+      <view v-if="scheduled.length" class="form-card">
+        <text class="section-title">已设置的定时发布</text>
+        <view v-for="item in scheduled" :key="item.id" class="schedule-record">
+          <view><text>{{ item.draftSnapshot.text.slice(0,24) || '沙盒内容' }}</text><text>{{ formatTime(item.moderation.nextReviewAt) }}</text></view>
+          <view class="cancel-schedule" @tap="cancelSchedule(item)">取消</view>
+        </view>
+      </view>
+      <text v-if="firstError" class="error">{{ firstError }}</text>
+      <view class="safe-space"></view>
     </scroll-view>
-
-    <!-- Bottom Action Bar -->
-    <view class="bottom-bar">
-      <button class="bottom-btn draft" @click="handleDraft">存入草稿箱</button>
-      <button class="bottom-btn publish" @click="handlePublish">发布到公开</button>
+    <view class="footer">
+      <view class="footer-copy"><text>每 500ms 自动保存</text><text>草稿安全</text></view>
+      <view class="preview-btn" @tap="openPreview">预览并正式发布</view>
     </view>
   </view>
 </template>
-
-<script>
-export default {
-  data() {
-    return {
-      content: '',
-      mediaList: [],
-      categories: ['灵感', '待完善', '测试'],
-      selectedCategory: '灵感',
-      isScheduled: false,
-      scheduleTime: '',
-      statusBarHeight: 0,
-      rightPadding: 40,
-      totalNavHeight: 0
-    }
-  },
-  created() {
-    try {
-      const windowInfo = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
-      const windowWidth = windowInfo.windowWidth || 375
-      const pxToRpx = 750 / windowWidth
-
-      const metrics = uni.getStorageSync('TOP_NAV_METRICS') || null
-      if (metrics) {
-        this.statusBarHeight = metrics.statusPx || 0
-      } else {
-        this.statusBarHeight = (windowInfo && windowInfo.statusBarHeight) || 0
-      }
-
-      const navBarHeightPx = 88 / pxToRpx
-      this.totalNavHeight = this.statusBarHeight + navBarHeightPx
-
-      const menuBtnInfo = uni.getMenuButtonBoundingClientRect ? uni.getMenuButtonBoundingClientRect() : null
-      if (menuBtnInfo) {
-        const menuRight = windowWidth - menuBtnInfo.left
-        this.rightPadding = Math.round(Math.max(menuRight + 32, 90) * pxToRpx)
-      } else {
-        this.rightPadding = 180
-      }
-    } catch (e) {
-      this.statusBarHeight = 0
-      this.rightPadding = 40
-      this.totalNavHeight = 44
-    }
-  },
-  methods: {
-    goBack() {
-      uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/index/index' }) })
-    },
-    handleSave() {
-      uni.showToast({ title: '已保存', icon: 'success' })
-    },
-    handlePublish() {
-      if (!this.content.trim() && this.mediaList.length === 0) {
-        uni.showToast({ title: '请输入内容', icon: 'none' })
-        return
-      }
-      uni.showToast({ title: '发布成功', icon: 'success' })
-      setTimeout(() => this.goBack(), 1200)
-    },
-    handleDraft() {
-      uni.showToast({ title: '已存入草稿箱', icon: 'success' })
-      setTimeout(() => this.goBack(), 1200)
-    },
-    addMedia() {
-      uni.chooseImage({
-        count: 9 - this.mediaList.length,
-        success: (res) => {
-          this.mediaList = [...this.mediaList, ...res.tempFilePaths]
-        }
-      })
-    },
-    removeMedia(index) {
-      this.mediaList.splice(index, 1)
-    },
-    selectCategory(cat) {
-      this.selectedCategory = cat
-    },
-    addCustomCategory() {
-      uni.showModal({
-        title: '自定义分类',
-        editable: true,
-        placeholderText: '输入分类名称',
-        success: (res) => {
-          if (res.confirm && res.content) {
-            this.categories.push(res.content)
-            this.selectedCategory = res.content
-          }
-        }
-      })
-    },
-    toggleSchedule() {
-      this.isScheduled = !this.isScheduled
-    },
-    pickScheduleTime() {
-      const now = new Date()
-      const pad = (n) => (n < 10 ? '0' + n : n)
-      this.scheduleTime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`
-      uni.showToast({ title: this.scheduleTime, icon: 'none' })
-    },
-    handlePreview() {
-      uni.showToast({ title: '预览效果', icon: 'none' })
-    },
-    handleTestShare() {
-      uni.showToast({ title: '选择测试好友', icon: 'none' })
-    }
+<script setup>
+import { computed, reactive, ref, watch } from 'vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import GlobalNavBar from '../../components/common/GlobalNavBar.vue'
+import CreationMediaGrid from '../../components/creation/CreationMediaGrid.vue'
+import { creationApi, createCreationDraft, sandboxApi, validateCreationDraft } from '../../utils/api/creation.js'
+import { mediaUploadApi } from '../../utils/api/mediaUpload.js'
+import { consumeCreationCommand, setActiveCreationDraft } from '../../utils/creationCommand.js'
+const topOffset = uni.getStorageSync('TOP_NAV_METRICS')?.totalPx || 64
+const draft = reactive(createCreationDraft('sandbox', { visibility: 'private' }))
+const categories = ref(['灵感', '待完善', '实验内容'])
+const errors = reactive({})
+const scheduled = ref([])
+const scheduleText = computed(() => draft.sandbox.scheduleAt ? formatTime(draft.sandbox.scheduleAt) : '未设置')
+const recipientText = computed(() => draft.sandbox.testRecipients.length ? `${draft.sandbox.testRecipients.length} 位` : '未选择')
+const firstError = computed(() => Object.values(errors)[0] || '')
+let timer = null
+watch(draft, value => {
+  clearTimeout(timer)
+  timer = setTimeout(() => sandboxApi.saveDraft(JSON.parse(JSON.stringify(value))), 500)
+}, { deep: true })
+function refreshScheduled() { scheduled.value = sandboxApi.listScheduled() }
+function applyCommand(command) {
+  if (!command) return
+  if (command.applySchedule) draft.sandbox.scheduleAt = command.applySchedule
+  if (command.applyTestRecipients) {
+    draft.sandbox.testRecipients = command.applyTestRecipients
+    const share = sandboxApi.shareForTest(draft, command.applyTestRecipients)
+    uni.showToast({ title: `已创建非公开测试分享（${share.recipients.length} 人）`, icon: 'none' })
   }
 }
+function addCategory() {
+  uni.showModal({ title: '新增沙盒分类', editable: true, placeholderText: '输入分类名称', success: result => {
+    const value = String(result.content || '').trim()
+    if (result.confirm && value) { if (!categories.value.includes(value)) categories.value.push(value); draft.sandbox.category = value }
+  } })
+}
+function openSchedule() { saveDraft(false); setActiveCreationDraft(draft.id); uni.navigateTo({ url: '/pages/sandbox-schedule/index' }) }
+function openTestShare() { saveDraft(false); setActiveCreationDraft(draft.id); uni.navigateTo({ url: '/pages/sandbox-test-share/index' }) }
+function saveDraft(showToast = true) { sandboxApi.saveDraft(draft); if (showToast) uni.showToast({ title: '草稿已保存', icon: 'none' }) }
+function openPreview() {
+  Object.keys(errors).forEach(key => delete errors[key])
+  Object.assign(errors, validateCreationDraft(draft, { forSubmit: false }))
+  if (Object.keys(errors).length) return
+  draft.visibility = 'public'
+  saveDraft(false); setActiveCreationDraft(draft.id)
+  uni.navigateTo({ url: `/pages/publish-preview/index?draftId=${encodeURIComponent(draft.id)}` })
+}
+function cancelSchedule(item) {
+  uni.showModal({ title: '取消定时发布', content: '取消后不会进入审核，是否继续？', confirmColor: '#dc2626', success: result => {
+    if (!result.confirm) return
+    try { sandboxApi.cancelSchedule(item.id); refreshScheduled() } catch (cause) { uni.showToast({ title: cause.message, icon: 'none' }) }
+  } })
+}
+function leaveEditor() {
+  uni.showModal({ title: '保留沙盒草稿？', content: '沙盒会自动保存，放弃将删除当前草稿。', cancelText: '放弃', confirmText: '保留', success: result => {
+    if (result.confirm) saveDraft(false); else creationApi.removeDraft(draft.id)
+    uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/index/index' }) })
+  } })
+}
+function formatTime(value) { const d = new Date(value); return `${d.getMonth()+1}月${d.getDate()}日 ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` }
+onLoad(options => {
+  const saved = creationApi.getDraft(options?.draftId) || creationApi.getLatestDraft('sandbox')
+  if (saved) Object.assign(draft, saved, { media: mediaUploadApi.restore(saved.media || []) })
+  setActiveCreationDraft(draft.id); refreshScheduled()
+})
+onShow(() => { applyCommand(consumeCreationCommand()); refreshScheduled() })
 </script>
-
 <style scoped>
-.sandbox-page {
-  min-height: 100vh;
-  background: #ffffff;
-  padding-bottom: 140rpx;
-}
-
-.nav-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  background: #ffffff;
-  border-bottom: 1rpx solid #eeeeee;
-}
-
-.nav-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 88rpx;
-  padding: 0 40rpx;
-}
-
-.nav-btn {
-  font-size: 28rpx;
-  background: transparent;
-  border: none;
-  padding: 0;
-  margin: 0;
-  line-height: 1;
-}
-
-.nav-btn::after {
-  border: none;
-}
-
-.nav-btn.cancel {
-  color: #666666;
-}
-
-.nav-btn.save {
-  color: #ffffff;
-  background: #C44DFF;
-  padding: 10rpx 26rpx;
-  border-radius: 9999rpx;
-  font-weight: 500;
-}
-
-.nav-center {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-}
-
-.nav-title {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: #1A1A1A;
-}
-
-.nav-icon {
-  font-size: 28rpx;
-  color: #C44DFF;
-}
-
-.content {
-  padding-bottom: 140rpx;
-  height: 100vh;
-  box-sizing: border-box;
-}
-
-.input-section {
-  position: relative;
-  margin: 32rpx 40rpx 0;
-}
-
-.textarea {
-  width: 100%;
-  min-height: 200rpx;
-  font-size: 28rpx;
-  line-height: 1.6;
-  color: #1A1A1A;
-  background: transparent;
-  border: none;
-  resize: none;
-  outline: none;
-}
-
-.word-count {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  font-size: 24rpx;
-  color: #999999;
-}
-
-.media-section {
-  margin: 32rpx 40rpx;
-}
-
-.media-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-}
-
-.media-item,
-.media-add {
-  width: calc((100% - 32rpx) / 3);
-  aspect-ratio: 1;
-  border-radius: 16rpx;
-  overflow: hidden;
-  position: relative;
-}
-
-.media-image {
-  width: 100%;
-  height: 100%;
-}
-
-.delete-btn {
-  position: absolute;
-  top: 8rpx;
-  right: 8rpx;
-  width: 40rpx;
-  height: 40rpx;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  margin: 0;
-}
-
-.delete-btn::after {
-  border: none;
-}
-
-.delete-icon {
-  color: #ffffff;
-  font-size: 28rpx;
-  line-height: 1;
-}
-
-.media-add {
-  background: transparent;
-  border: 2rpx dashed #EEEEEE;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.add-icon {
-  font-size: 48rpx;
-  color: #999999;
-  line-height: 1;
-}
-
-.sandbox-section {
-  margin: 0 40rpx;
-  border-radius: 24rpx;
-  overflow: hidden;
-  background: rgba(196, 77, 255, 0.1);
-}
-
-.sandbox-header {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  padding: 32rpx 32rpx 20rpx;
-}
-
-.sandbox-icon {
-  font-size: 28rpx;
-  color: #C44DFF;
-}
-
-.sandbox-title {
-  font-size: 28rpx;
-  font-weight: 700;
-  color: #C44DFF;
-}
-
-.sandbox-divider {
-  height: 1rpx;
-  margin: 0 32rpx;
-  background: rgba(196, 77, 255, 0.15);
-}
-
-.category-block {
-  padding: 24rpx 32rpx;
-}
-
-.block-label {
-  display: block;
-  font-size: 24rpx;
-  color: #666666;
-  margin-bottom: 16rpx;
-}
-
-.category-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-}
-
-.category-tag {
-  font-size: 24rpx;
-  padding: 8rpx 24rpx;
-  border-radius: 9999rpx;
-  background: #F5F5F7;
-  color: #666666;
-  line-height: 1;
-}
-
-.category-tag::after {
-  border: none;
-}
-
-.category-tag.active {
-  background: #C44DFF;
-  color: #ffffff;
-}
-
-.category-tag.custom {
-  background: transparent;
-  border: 1rpx dashed rgba(196, 77, 255, 0.4);
-  color: #C44DFF;
-  display: flex;
-  align-items: center;
-  gap: 4rpx;
-}
-
-.plus {
-  font-size: 24rpx;
-  font-weight: 700;
-}
-
-.row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24rpx 32rpx;
-}
-
-.row-left {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-}
-
-.row-left.column {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8rpx;
-}
-
-.row-title-wrap {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-}
-
-.row-icon {
-  font-size: 28rpx;
-  color: #C44DFF;
-  width: 36rpx;
-  text-align: center;
-}
-
-.row-text {
-  font-size: 28rpx;
-  color: #1A1A1A;
-}
-
-.row-sub {
-  font-size: 22rpx;
-  color: #999999;
-  padding-left: 52rpx;
-}
-
-.row-arrow {
-  font-size: 32rpx;
-  color: #999999;
-}
-
-.toggle {
-  width: 88rpx;
-  height: 48rpx;
-  border-radius: 9999rpx;
-  background: #e5e5e5;
-  position: relative;
-  transition: background 0.2s;
-}
-
-.toggle.active {
-  background: #C44DFF;
-}
-
-.toggle-dot {
-  position: absolute;
-  top: 4rpx;
-  right: 4rpx;
-  width: 40rpx;
-  height: 40rpx;
-  border-radius: 50%;
-  background: #ffffff;
-  transition: transform 0.2s;
-  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
-}
-
-.toggle.active .toggle-dot {
-  transform: translateX(-40rpx);
-}
-
-.schedule-picker {
-  margin: 0 32rpx 20rpx;
-  padding: 20rpx 24rpx;
-  border-radius: 16rpx;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.picker-label {
-  font-size: 24rpx;
-  color: #999999;
-}
-
-.picker-arrow {
-  font-size: 28rpx;
-  color: #999999;
-}
-
-.bottom-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 101;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24rpx 40rpx calc(24rpx + env(safe-area-inset-bottom));
-  background: #ffffff;
-  border-top: 1rpx solid #eeeeee;
-}
-
-.bottom-btn {
-  font-size: 28rpx;
-  border-radius: 9999rpx;
-  padding: 0 32rpx;
-  height: 80rpx;
-  line-height: 80rpx;
-}
-
-.bottom-btn::after {
-  border: none;
-}
-
-.bottom-btn.draft {
-  color: #666666;
-  background: transparent;
-}
-
-.bottom-btn.publish {
-  color: #ffffff;
-  background: linear-gradient(135deg, #FF6B9D, #C44DFF);
-  font-weight: 600;
-}
-
-.safe-bottom {
-  height: 120rpx;
-}
+.page{min-height:100vh;color: #0f172a;background: var(--color-page)}.nav-btn{min-width:64px;height:44px;padding:0 10px;display:flex;align-items:center;justify-content:center;border-radius:14px;color: #475569;background: #f1f5f9;font-size:12px;font-weight:700}.nav-btn.save{color: #1d4ed8;background: #eff6ff}.content{height:100vh;padding:14px 14px 110px;box-sizing:border-box}.private-banner{min-height:66px;margin-bottom:12px;padding:10px 12px;display:flex;align-items:center;gap:11px;border-radius:18px;color: #5b21b6;background: #f5f3ff}.private-mark{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;color: #fff;background: var(--color-info);font-weight:800}.private-banner text{display:block}.private-banner text:first-child{font-size:14px;font-weight:750}.private-banner text:last-child{margin-top:3px;color: #6d28d9;font-size:10px}.editor-card,.form-card,.settings-card{margin-bottom:12px;padding:16px;border: 1px solid #eef2f7;border-radius:20px;background: #fff;box-shadow:0 8px 24px rgba(15,23,42,.05)}.section-title{display:block;font-size:16px;font-weight:800}.editor-card textarea{width:100%;min-height:140px;margin-top:9px;font-size:16px;line-height:1.65}.counter{display:block;color: #94a3b8;font-size:11px;text-align:right}.category-list{margin-top:13px;display:flex;flex-wrap:wrap;gap:8px}.category-list view{min-height:44px;padding:0 14px;display:flex;align-items:center;border-radius:13px;color: #475569;background: #f1f5f9;font-size:12px}.category-list view.active{color: #5b21b6;background: #ede9fe;font-weight:700}.category-list .add-category{color: #2563eb;background: #eff6ff}.settings-card{padding-top:2px;padding-bottom:2px}.setting-row{min-height:76px;display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom: 1px solid #f1f5f9}.setting-row:last-child{border-bottom: 0}.setting-row text{display:block}.setting-row>view:first-child text:first-child{font-size:14px;font-weight:700}.setting-row>view:first-child text:last-child{margin-top:4px;color: #64748b;font-size:10px}.value{max-width:42%;display:flex;align-items:center;color: #475569;font-size:11px;text-align:right}.value text{margin-left:6px;font-size:20px}.schedule-record{min-height:62px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom: 1px solid #f1f5f9}.schedule-record text{display:block}.schedule-record text:first-child{font-size:12px;font-weight:700}.schedule-record text:last-child{margin-top:3px;color: #64748b;font-size:10px}.cancel-schedule{min-width:60px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:13px;color: #b91c1c;background: #fef2f2;font-size:11px;font-weight:700}.error{display:block;margin:8px 4px;color: #b91c1c;font-size:12px}.footer{position:fixed;z-index:100;left:0;right:0;bottom:0;min-height:78px;padding:10px 14px calc(10px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:12px;background: rgba(255,255,255,.97);border-top: 1px solid #e2e8f0;box-sizing:content-box}.footer-copy{flex:1}.footer-copy text{display:block}.footer-copy text:first-child{color: #64748b;font-size:10px}.footer-copy text:last-child{margin-top:3px;font-size:12px;font-weight:700}.preview-btn{min-width:154px;height:50px;display:flex;align-items:center;justify-content:center;border-radius:15px;color: #fff;background: #ea580c;font-size:13px;font-weight:750}.safe-space{height:20px}
 </style>

@@ -1,6 +1,6 @@
 <template>
   <view
-    class="card video-card"
+    class="card video-card app-card"
     :style="{ '--card-height': height + 'rpx' }">
     <view
       class="card-media"
@@ -348,7 +348,7 @@ export default {
   content: '';
   width: 5rpx;
   height: 100%;
-  background: #ffffff;
+  background: #fff;
   border-radius: 2rpx;
 }
 
@@ -450,11 +450,11 @@ export default {
 }
 
 .video-card .action-btn.active .action-icon {
-  color: #ff2442;
+  color: var(--color-primary);
 }
 
 .video-card .action-btn.active .action-text {
-  color: #ff2442;
+  color: var(--color-primary);
 }
 
 .video-card .action-btn.active {

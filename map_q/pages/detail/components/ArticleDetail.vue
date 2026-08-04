@@ -33,9 +33,15 @@
 
     <!-- 文章正文 -->
     <view class="article-content">
+      <scroll-view v-if="articleData.toc.length" class="toc-scroll" scroll-x>
+        <view class="toc-list">
+          <view v-for="(item,index) in articleData.toc" :key="item.id" class="toc-chip" @tap="activeSection = index">{{ item.title }}</view>
+        </view>
+      </scroll-view>
       <view class="content-text">
-        <text>{{ articleData.content }}</text>
+        <text v-for="(paragraph,index) in visibleParagraphs" :key="index" :id="`article-section-${index}`" class="paragraph">{{ paragraph }}</text>
       </view>
+      <view v-if="articleData.paragraphs.length > 2" class="expand-reading" @tap="expanded = !expanded">{{ expanded ? '收起正文' : '展开阅读全文' }}</view>
 
       <!-- 摘要/导语 -->
       <view class="article-summary" v-if="articleData.summary">
@@ -132,6 +138,8 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
+import { contentInteractionApi } from '../../../utils/api/contentInteraction.js'
+import { shareActiveContent } from '../../../utils/contentShare.js'
 
 export default {
   name: 'ArticleDetail',
@@ -147,6 +155,8 @@ export default {
       reads: 0,
       likes: 0,
       tags: []
+      ,paragraphs: []
+      ,toc: []
     })
 
     const isLiked = ref(false)
@@ -156,6 +166,10 @@ export default {
     const commentCount = ref(0)
     const bottomHeight = ref(80)
     const statusBarHeight = ref(20)
+    const contentId = ref('')
+    const expanded = ref(false)
+    const activeSection = ref(0)
+    const visibleParagraphs = computed(() => expanded.value ? articleData.value.paragraphs : articleData.value.paragraphs.slice(0, 2))
 
     const formattedReads = computed(() => {
       const reads = articleData.value.reads
@@ -166,12 +180,12 @@ export default {
     })
 
     const toggleLike = () => {
-      isLiked.value = !isLiked.value
+      isLiked.value = contentInteractionApi.toggle(contentId.value, 'liked').liked
       articleData.value.likes += isLiked.value ? 1 : -1
     }
 
     const toggleCollect = () => {
-      isCollected.value = !isCollected.value
+      isCollected.value = contentInteractionApi.toggle(contentId.value, 'collected').collected
       uni.showToast({
         title: isCollected.value ? '已收藏' : '取消收藏',
         icon: 'none'
@@ -179,7 +193,7 @@ export default {
     }
 
     const toggleFollow = () => {
-      isFollowing.value = !isFollowing.value
+      isFollowing.value = contentInteractionApi.toggle(contentId.value, 'followed').followed
       uni.showToast({
         title: isFollowing.value ? '已关注' : '取消关注',
         icon: 'none'
@@ -187,10 +201,7 @@ export default {
     }
 
     const shareContent = () => {
-      uni.showToast({
-        title: '分享功能待实现',
-        icon: 'none'
-      })
+      shareActiveContent()
     }
 
     const likeComment = (commentId) => {
@@ -206,9 +217,19 @@ export default {
     }
 
     const showCommentInput = (atName = '') => {
-      uni.showToast({
-        title: '评论功能待实现',
-        icon: 'none'
+      uni.showModal({
+        title: atName ? `回复 ${atName}` : '发表评论',
+        editable: true,
+        placeholderText: '友善交流，分享你的看法',
+        success: result => {
+          if (!result.confirm || !result.content?.trim()) return
+          try {
+            const state = contentInteractionApi.addComment(contentId.value, result.content)
+            const added = state.comments[0]
+            comments.value.unshift({ id: added.id, name: added.author.name, avatar: added.author.avatar, content: added.content, time: '刚刚', isLiked: false, likeCount: 0 })
+            commentCount.value = comments.value.length
+          } catch (cause) { uni.showToast({ title: cause.message, icon: 'none' }) }
+        }
       })
     }
 
@@ -218,23 +239,31 @@ export default {
 
     const loadData = () => {
       try {
-        const item = uni.getStorageSync('INDEX_LAST_ITEM')
+      const item = uni.getStorageSync('CONTENT_DETAIL_ACTIVE_V1') || uni.getStorageSync('INDEX_LAST_ITEM')
         if (item && item._id) {
+          contentId.value = item.id || item._id
           articleData.value.title = item.name || item.title || '文章标题'
-          articleData.value.author = item.author || '作者'
+          articleData.value.author = item.author?.name || item.author || '作者'
           articleData.value.likes = item.likes || 0
           articleData.value.reads = item.reads || 0
           articleData.value.summary = item.summary || ''
           articleData.value.cover = item.cover || ''
           articleData.value.content = item.description || item.summary || '暂无正文内容'
+          articleData.value.paragraphs = item.article?.paragraphs || String(item.content || item.description || item.summary || '暂无正文内容').split(/\n{2,}/).filter(Boolean)
+          articleData.value.toc = item.article?.toc || articleData.value.paragraphs.map((text,index) => ({ id: `section_${index}`, title: index === 0 ? '概览' : `第 ${index + 1} 节` }))
           articleData.value.tags = item.tags || []
+          const state = contentInteractionApi.getState(contentId.value)
+          isLiked.value = state.liked
+          isCollected.value = state.collected
+          isFollowing.value = state.followed
           articleData.value.publishTime = item.publishTime || new Date().toLocaleDateString()
         }
       } catch (e) {
         console.warn('加载文章数据失败:', e)
       }
 
-      comments.value = generateMockComments()
+      const saved = contentInteractionApi.getState(contentId.value).comments.map(item => ({ id: item.id, name: item.author?.name || '我', avatar: item.author?.avatar, content: item.content, time: '刚刚', isLiked: item.liked, likeCount: item.likeCount }))
+      comments.value = [...saved, ...generateMockComments()]
       commentCount.value = comments.value.length
     }
 
@@ -281,6 +310,9 @@ export default {
       commentCount,
       bottomHeight,
       statusBarHeight,
+      expanded,
+      activeSection,
+      visibleParagraphs,
       formattedReads,
       toggleLike,
       toggleCollect,
@@ -410,6 +442,7 @@ export default {
 .article-content {
   padding: 20px;
 }
+.toc-scroll { width: 100%; margin-bottom: 18px; white-space: nowrap; }.toc-list { display: inline-flex; gap: 8px; }.toc-chip { min-height: 40px; padding: 0 14px; border-radius: 13px; display: inline-flex; align-items: center; color: #1d4ed8; background: #eff6ff; font-size: 12px; font-weight: 650; }.paragraph { display: block; margin-bottom: 16px; }.expand-reading { min-height: 46px; margin-top: 8px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #c2410c; background: #fff7ed; font-size: 13px; font-weight: 700; }
 
 .content-text {
   margin-bottom: 16px;
@@ -457,8 +490,8 @@ export default {
   justify-content: center;
   gap: 40px;
   padding: 20px;
-  border-top: 1px solid #f0f0f0;
-  border-bottom: 1px solid #f0f0f0;
+  border-top: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .stat-item {
@@ -516,7 +549,7 @@ export default {
 .follow-btn {
   padding: 6px 18px;
   border-radius: 18px;
-  background: #ff4757;
+  background: var(--color-danger);
 }
 
 .follow-btn text {
@@ -534,7 +567,7 @@ export default {
 
 .section-divider {
   height: 8px;
-  background: #f8f8f8;
+  background: var(--color-page);
 }
 
 .comments-section {
@@ -614,7 +647,7 @@ export default {
 }
 
 .comment-action .active {
-  color: #ff4757;
+  color: var(--color-danger);
 }
 
 .bottom-bar {
@@ -664,7 +697,7 @@ export default {
 }
 
 .action-btn text:first-child.active {
-  color: #ff4757;
+  color: var(--color-danger);
 }
 
 .action-btn text:last-child {

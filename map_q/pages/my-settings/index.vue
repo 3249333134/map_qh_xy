@@ -31,6 +31,13 @@
           <text class="row-label">隐私设置</text>
           <text class="row-arrow">›</text>
         </view>
+        <view class="list-row" @tap="onChannels">
+          <view class="row-left">
+            <text class="row-label">我的频道</text>
+            <text class="row-sub">已加入、管理中、星标与归档</text>
+          </view>
+          <text class="row-arrow">›</text>
+        </view>
         <view class="list-row last" @tap="onClearCache">
           <text class="row-label">清理缓存</text>
           <text class="row-value">{{ cacheSize }} MB</text>
@@ -62,6 +69,7 @@ const cacheSize = ref('12.8')
 const goProfileEdit = () => uni.navigateTo({ url: '/pages/my-profile-edit/index', fail: () => uni.showToast({ title: '编辑资料', icon: 'none' }) })
 const onAccount = () => uni.showToast({ title: '账号与安全', icon: 'none' })
 const onPrivacy = () => uni.navigateTo({ url: '/pages/my-privacy/index', fail: () => uni.showToast({ title: '隐私设置', icon: 'none' }) })
+const onChannels = () => uni.navigateTo({ url: '/pages/my-channels/index', fail: () => uni.showToast({ title: '我的频道', icon: 'none' }) })
 const onClearCache = () => {
   cacheSize.value = '0.0'
   uni.showToast({ title: '缓存已清理', icon: 'none' })
@@ -79,15 +87,15 @@ const onLogout = () => {
 
 <style scoped>
 .page {
-  --brand-blue: #248cf5;
-  --brand-orange: #ff7043;
-  --brand-purple: #7650c8;
+  --brand-blue: var(--color-info);
+  --brand-orange: var(--color-primary);
+  --brand-purple: var(--color-info);
   --success: #24d06c;
   --text-primary: #222;
   --text-body: #5f646d;
   --text-secondary: #8a8f98;
   --surface-app: #f7f7f8;
-  --surface-card: #ffffff;
+  --surface-card: #fff;
   --surface-muted: #f0f1f3;
   --card-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   min-height: 100vh;
@@ -105,7 +113,7 @@ const onLogout = () => {
   justify-content: center;
   position: relative;
   background: var(--surface-card);
-  border-bottom: 1rpx solid #f0f1f3;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .nav-back {

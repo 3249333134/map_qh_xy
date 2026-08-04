@@ -14,6 +14,11 @@ export function useServiceMapData() {
   const hasMoreData = ref(true)
   const currentPage = ref(1)
   const pageSize = ref(10)
+  const exploreFilters = reactive({
+    timeRange: { preset: 'all', start: '', end: '' },
+    spatialFilter: { mode: 'bounds', radiusKm: 5 },
+    layers: ['content', 'place', 'service', 'event', 'route', 'replica']
+  })
   
   // 地图相关
   const mapBounds = ref(null)
@@ -49,7 +54,12 @@ export function useServiceMapData() {
       pageSize: pageSize.value,
       lat: mapConfig.latitude,
       lng: mapConfig.longitude,
-      radius: 5000,
+      radius: exploreFilters.spatialFilter.mode === 'radius'
+        ? Number(exploreFilters.spatialFilter.radiusKm || 5) * 1000
+        : 5000,
+      timeStart: exploreFilters.timeRange.start || '',
+      timeEnd: exploreFilters.timeRange.end || '',
+      layers: exploreFilters.layers.join(','),
       type: 'service'
     }
     if (activeCategory !== 'all') {
@@ -112,6 +122,12 @@ export function useServiceMapData() {
         northeast: mapBounds.value.northeast,
         southwest: mapBounds.value.southwest
       }),
+      timeStart: exploreFilters.timeRange.start || '',
+      timeEnd: exploreFilters.timeRange.end || '',
+      radius: exploreFilters.spatialFilter.mode === 'radius'
+        ? Number(exploreFilters.spatialFilter.radiusKm || 5) * 1000
+        : 5000,
+      layers: exploreFilters.layers.join(','),
       type: 'service'
     }
     if (activeCategory !== 'all') {
@@ -190,6 +206,10 @@ export function useServiceMapData() {
   
   // 更新地图标记点
   const updateMapMarkers = () => {
+    if (!exploreFilters.layers.includes('service')) {
+      mapConfig.markers = []
+      return
+    }
     if (!mapPoints.value || mapPoints.value.length === 0) {
       mapConfig.markers = []
       return
@@ -321,7 +341,7 @@ export function useServiceMapData() {
       mapConfig.longitude = lng
       mapConfig.scale = 16
     }
-    openServiceDetail(item)
+    return item
   }
 
   // 新增：统一打开服务详情（支持传索引或完整对象）
@@ -364,8 +384,15 @@ export function useServiceMapData() {
   
   // 搜索输入处理
   const onSearchInput = (e) => {
-    const searchText = e.detail.value
+    const searchText = typeof e === 'string' ? e : (e?.detail?.value || '')
     console.log('搜索:', searchText)
+  }
+
+  const setExploreFilters = filters => {
+    if (filters?.timeRange) exploreFilters.timeRange = { ...filters.timeRange }
+    if (filters?.spatialFilter) exploreFilters.spatialFilter = { ...filters.spatialFilter }
+    if (Array.isArray(filters?.layers)) exploreFilters.layers = [...filters.layers]
+    updateMapMarkers()
   }
   
   return {
@@ -384,6 +411,7 @@ export function useServiceMapData() {
     fetchMapDataByBounds,
     addTestData,
     updateMapMarkers,
+    setExploreFilters,
     getUserLocation,
     loadMoreItems,
     handleCardTap,

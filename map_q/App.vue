@@ -5,6 +5,8 @@
 
 <script>
 import { APP_CONFIG } from './utils/config.js'
+import { bookingApi } from './utils/api/booking.js'
+import { moderationApi } from './utils/api/creation.js'
 
 export default {
   data() {
@@ -30,7 +32,6 @@ export default {
         return
       }
     })
-    this.initLocation()
     // 统一计算并缓存 TabBar 高度，供各页面直接绑定，确保与首页一致
     this.computeTabBarMetrics()
     // 统一计算并缓存顶部导航高度（状态栏 + 自定义导航栏）
@@ -38,31 +39,37 @@ export default {
   },
   onShow: function() {
     console.log('App Show')
+    try {
+      const changed = moderationApi.processDue(Date.now())
+      if (changed.length) {
+        const published = changed.filter(item => item.status === 'published').length
+        uni.showToast({
+          title: published ? `${published} 条内容已通过审核` : '定时内容已进入审核',
+          icon: 'none',
+          duration: 2600
+        })
+      }
+    } catch (error) {
+      console.warn('检查创作审核状态失败', error)
+    }
+    try {
+      const due = bookingApi.collectDueReminders()
+      if (due.length) {
+        uni.showModal({
+          title: '服务即将开始',
+          content: `${due[0].title}将在一小时内开始，请检查地点与联系方式。`,
+          confirmText: '知道了',
+          showCancel: false
+        })
+      }
+    } catch (error) {
+      console.warn('检查预约提醒失败:', error)
+    }
   },
   onHide: function() {
     console.log('App Hide')
   },
   methods: {
-    async initLocation() {
-      try {
-        const setting = await uni.getSetting()
-        const hasAuth = setting?.authSetting?.['scope.userLocation'] === true
-        if (!hasAuth) {
-          try {
-            await uni.authorize({ scope: 'scope.userLocation' })
-          } catch (e) {
-            console.warn('未授权地理位置，使用默认坐标', e)
-            uni.setStorageSync('USER_LOCATION', { latitude: 30.572269, longitude: 104.066541 })
-            return
-          }
-        }
-        const res = await uni.getLocation({ type: 'wgs84', isHighAccuracy: true })
-        uni.setStorageSync('USER_LOCATION', { latitude: res.latitude, longitude: res.longitude })
-      } catch (err) {
-        console.error('启动时定位失败，使用默认坐标', err)
-        uni.setStorageSync('USER_LOCATION', { latitude: 30.572269, longitude: 104.066541 })
-      }
-    },
     // 计算并缓存系统 TabBar 高度（rpx）与安全区（rpx），用于全局绑定
     computeTabBarMetrics() {
       try {
@@ -70,9 +77,10 @@ export default {
           ? uni.getWindowInfo()
           : uni.getSystemInfoSync()
         const toRpx = (px) => Math.round((px * 750) / (info.screenWidth || info.windowWidth))
-        // 自定义 TabBar 的可点击主体为 64px，安全区单独叠加
-        const tabHeightPx = 64
-        const safeBottomPx = info.safeArea ? (info.screenHeight - info.safeArea.bottom) : 0
+        // 紧凑底栏：48px 触控主体 + 最多 10px 手势缓冲，总高与页面 116rpx 避让一致。
+        const tabHeightPx = 48
+        const rawSafeBottomPx = info.safeArea ? (info.screenHeight - info.safeArea.bottom) : 0
+        const safeBottomPx = rawSafeBottomPx > 0 ? Math.min(rawSafeBottomPx, 10) : 0
         const tabHeightRpx = toRpx(tabHeightPx)
         const safeBottomRpx = Math.max(0, toRpx(safeBottomPx))
         const placeholderHeightPx = tabHeightPx + safeBottomPx
@@ -82,7 +90,7 @@ export default {
         return metrics
       } catch (e) {
         console.warn('计算 TabBar 高度失败，使用默认值', e)
-        const metrics = { tabHeightPx: 64, safeBottomPx: 0, placeholderHeightPx: 64, tabHeightRpx: 128, safeBottomRpx: 0, placeholderHeightRpx: 128 }
+        const metrics = { tabHeightPx: 48, safeBottomPx: 0, placeholderHeightPx: 48, tabHeightRpx: 96, safeBottomRpx: 0, placeholderHeightRpx: 96 }
         uni.setStorageSync('TABBAR_METRICS', metrics)
         return metrics
       }
@@ -120,63 +128,60 @@ export default {
 </script>
 
 <style>
-@import url("/static/tabbar-plus-style.css");
+@import url("/static/app-theme.css");
 
 page {
-  background-color: #f8f8f8;
+  background-color: var(--color-page);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   font-size: 28rpx;
-  color: #1f2937;
+  color: var(--color-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 :root {
-  --primary-color: #ea580c;
+  --primary-color: var(--color-primary);
   --primary-gradient: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
-  --primary-light: #fff7ed;
-  --primary-dark: #c2410c;
-  --accent-color: #2563eb;
-  --accent-light: #eff6ff;
+  --primary-light: var(--color-primary-soft);
+  --primary-dark: var(--color-primary-strong);
+  --accent-color: var(--color-info);
+  --accent-light: var(--color-info-soft);
   
-  --secondary-blue: #5c6bc0;
-  --secondary-green: #66bb6a;
-  --secondary-purple: #8e24aa;
-  --secondary-orange: #ff8a65;
+  --secondary-blue: var(--color-info);
+  --secondary-green: var(--color-success);
+  --secondary-purple: var(--color-info);
+  --secondary-orange: var(--color-primary);
   
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
-  --text-tertiary: #94a3b8;
+  --text-primary: var(--color-text);
+  --text-secondary: var(--color-text-body);
+  --text-tertiary: var(--color-text-muted);
   --text-white: #ffffff;
   
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f1f5f9;
-  --bg-card: rgba(255, 255, 255, 0.95);
+  --bg-primary: var(--color-surface);
+  --bg-secondary: var(--color-page);
+  --bg-tertiary: var(--color-surface-soft);
+  --bg-card: var(--color-surface);
   
-  --border-color: #e2e8f0;
+  --border-color: var(--color-border);
   
   --radius-sm: 12rpx;
-  --radius-md: 20rpx;
+  --radius-md: var(--radius-card);
   --radius-lg: 28rpx;
   --radius-xl: 40rpx;
   
   --shadow-sm: 0 1rpx 4rpx rgba(0, 0, 0, 0.03);
   --shadow-md: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
-  --shadow-lg: 0 12rpx 32rpx rgba(15, 23, 42, 0.08);
+  --shadow-lg: var(--shadow-card);
   --shadow-xl: 0 24rpx 64rpx rgba(15, 23, 42, 0.12);
   --space-1: 8rpx;
   --space-2: 16rpx;
   --space-3: 24rpx;
   --space-4: 32rpx;
   --space-6: 48rpx;
-  --tap-size: 88rpx;
   --surface-raised: rgba(255, 255, 255, 0.96);
   --surface-soft: #fffaf7;
   --border-soft: rgba(148, 163, 184, 0.22);
   --shadow-panel: 0 -16rpx 56rpx rgba(15, 23, 42, 0.12);
-  --shadow-card: 0 8rpx 28rpx rgba(15, 23, 42, 0.075);
-  --ease-standard: cubic-bezier(.2, .8, .2, 1);
 }
 
 .card {
@@ -256,7 +261,7 @@ page {
 }
 
 .uni-tabbar__item.uni-tabbar__item--selected {
-  color: #ff7a45;
+  color: var(--color-primary);
   font-weight: bold;
 }
 

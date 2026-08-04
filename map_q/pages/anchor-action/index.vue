@@ -279,7 +279,7 @@ function onActionTap(action) {
 
 .map-road {
   position: absolute;
-  background: #ffffff;
+  background: #fff;
   opacity: 0.7;
 }
 
@@ -354,11 +354,11 @@ function onActionTap(action) {
 }
 
 .marker-dot.purple {
-  background: #7650c8;
+  background: var(--color-info);
 }
 
 .marker-dot.blue {
-  background: #248cf5;
+  background: var(--color-info);
 }
 
 .map-focal {
@@ -402,7 +402,7 @@ function onActionTap(action) {
   right: 0;
   bottom: 0;
   padding-bottom: env(safe-area-inset-bottom);
-  background: #ffffff;
+  background: #fff;
   border-radius: 32rpx 32rpx 0 0;
   box-shadow: 0 -8rpx 30rpx rgba(0, 0, 0, 0.08);
   display: flex;
@@ -531,17 +531,17 @@ function onActionTap(action) {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  color: #fff;
   font-size: 20rpx;
   font-weight: 800;
 }
 
 .meta-icon.hot {
-  background: #ff7043;
+  background: var(--color-primary);
 }
 
 .meta-icon.friend {
-  background: #248cf5;
+  background: var(--color-info);
 }
 
 .meta-text {
@@ -583,7 +583,7 @@ function onActionTap(action) {
 }
 
 .action-icon-text {
-  color: #ffffff;
+  color: #fff;
   font-size: 30rpx;
   font-weight: 800;
 }

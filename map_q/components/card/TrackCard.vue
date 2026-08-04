@@ -1,6 +1,6 @@
 <template>
   <view
-    class="card track-card"
+    class="card track-card app-card"
     :style="{ '--card-height': height + 'rpx' }">
     <!-- 卡片上半部分：地图轨迹预览 -->
     <view
@@ -387,9 +387,7 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background:
-    radial-gradient(circle at 75% 24%, rgba(34, 197, 94, 0.22), transparent 30%),
-    linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 56%, #f8fafc 100%);
+  background: radial-gradient(circle at 75% 24%,rgba(34,197,94,.22),transparent 30%),linear-gradient(135deg,#e0f2fe,#f0fdf4 56%,#f8fafc);
   background-image:
     linear-gradient(90deg, rgba(100, 116, 139, 0.14) 1rpx, transparent 1rpx),
     linear-gradient(rgba(100, 116, 139, 0.12) 1rpx, transparent 1rpx),

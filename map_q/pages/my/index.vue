@@ -22,9 +22,11 @@
     >
       <!-- 位置模块 - 保持原有拖拽功能 -->
       <LocationModule 
+        ref="locationModule"
         v-show="activeModule === 'location'"
         :userLocations="userLocations"
         :isFullyExpanded="isFullyExpanded"
+        :selectedPointId="selectedFootprintId"
         @marker-tap="handleMarkerTap"
       />
       
@@ -47,9 +49,28 @@
     
     <!-- 地图信息覆盖层 - 独立于ContentSection，不受transform影响 -->
     <view class="map-info-overlay" :class="{ expanded: isOverlayExpanded, dragging: isDragging }" v-if="isPageReady && activeModule === 'location'" :style="mapOverlayStyle">
-    <view class="overlay-header" @tap="handleOverlayTap" @click="handleOverlayTap">
-    <text class="map-title">我的足迹地图</text>
-    <text class="map-desc">我的内容轨迹 ({{ userLocations.length }}个地点)</text>
+    <view class="overlay-header">
+      <view class="overlay-title-copy" @tap="handleOverlayTap" @click="handleOverlayTap">
+        <view class="overlay-title-row">
+          <text class="map-title">我的足迹地图</text>
+          <text class="result-count">{{ overlayFilteredCards.length }} 条</text>
+        </view>
+        <text class="map-desc">{{ currentAreaLabel }} · {{ currentCategoryLabel }}</text>
+      </view>
+      <view class="overlay-header-actions">
+        <view class="overlay-share" @tap.stop="handleFootprintShare" @click.stop="handleFootprintShare">分享</view>
+        <view class="overlay-toggle" :class="{ expanded: isOverlayExpanded }" @tap.stop="handleOverlayTap" @click.stop="handleOverlayTap">
+          <view class="toggle-chevron"></view>
+        </view>
+      </view>
+    </view>
+    <view v-if="selectedFootprintCard && !isOverlayExpanded" class="selected-footprint-preview">
+      <view class="preview-mark" :class="selectedFootprintCard.layer">{{ footprintTypeMark(selectedFootprintCard) }}</view>
+      <view class="preview-copy">
+        <text class="preview-title">{{ selectedFootprintCard.title }}</text>
+        <text class="preview-desc">{{ selectedFootprintCard.address || selectedFootprintCard.author || '足迹内容' }}</text>
+      </view>
+      <view class="preview-detail" @tap.stop="openFootprintDetail(selectedFootprintCard)" @click.stop="openFootprintDetail(selectedFootprintCard)">详情</view>
     </view>
       <!-- 展开后显示分类 + 两列瀑布流收藏卡片 -->
       <view v-if="isOverlayExpanded" class="overlay-expanded-content">
@@ -70,15 +91,39 @@
           </view>
         </view>
         <!-- 右侧分段内容列表 -->
-        <scroll-view class="overlay-right-sections" scroll-y show-scrollbar="false" :scroll-into-view="overlayScrollIntoView" :style="{ height: overlayExpandedHeight + 'px' }" @touchstart.stop="onOverlayTouchStart" @touchmove.stop="onOverlayTouchMove" @touchend.stop="onOverlayTouchEnd">
+        <scroll-view class="overlay-right-sections" scroll-y show-scrollbar="false" :scroll-into-view="overlayScrollIntoView" :style="{ height: overlayExpandedHeight + 'px' }" @scroll="onOverlayScroll" @touchstart.stop="onOverlayTouchStart" @touchmove.stop="onOverlayTouchMove" @touchend.stop="onOverlayTouchEnd">
           <view v-for="sec in groupedOverlaySections" :key="'sec-' + sec.key" :id="'section-' + sec.key" class="overlay-section">
-            <text class="section-title">{{ sec.label }} · {{ currentCategoryLabel }}</text>
-            <view class="overlay-cards-grid">
-              <template v-for="(item, idx) in sec.items" :key="(item._id || item.id || '') + '-' + idx">
-                <service-card-item v-if="item.type === 'service'" :index="idx" :card-data="item" :height="getOverlayCardHeight('right', idx)" />
-                <card-item v-else :index="idx" :card-data="item" :height="getOverlayCardHeight('right', idx)" />
-              </template>
+            <view class="section-heading">
+              <text class="section-title">{{ sec.label }}</text>
+              <text class="section-count">{{ sec.items.length }} 条</text>
             </view>
+            <view v-if="sec.items.length" class="overlay-cards-grid">
+              <view
+                v-for="(item, idx) in sec.items"
+                :key="item._id || item.id || idx"
+                class="grid-cell"
+                :class="{ selected: selectedFootprintId === item.id || selectedFootprintId === item._id }"
+              >
+                <service-card-item
+                  v-if="item.type === 'service' || item.detailType === 'service' || item.layer === 'service'"
+                  :index="idx"
+                  :card-data="item"
+                  :height="getOverlayCardHeight('grid', idx)"
+                  @media-tap="openFootprintDetail"
+                  @content-tap="focusFootprintOnMap"
+                  @reserve="openFootprintDetail"
+                />
+                <card-item
+                  v-else
+                  :index="idx"
+                  :card-data="item"
+                  :height="getOverlayCardHeight('grid', idx)"
+                  @media-tap="openFootprintDetail"
+                  @content-tap="focusFootprintOnMap"
+                />
+              </view>
+            </view>
+            <view v-else class="section-empty">当前筛选下暂无足迹</view>
           </view>
         </scroll-view>
       </view>
@@ -122,6 +167,7 @@ import ServiceCardItem from '../../components/card/ServiceCardItem.vue'
 import { useMyData } from './composables/useMyData.js'
 import { useMyLayout } from './composables/useMyLayout.js'
 import { useMyOverlay } from './composables/useMyOverlay.js'
+import { footprintApi, socialViewStateApi } from '../../utils/api/social.js'
 
 export default {
   name: 'MyPage',
@@ -129,6 +175,9 @@ export default {
   setup() {
     // 页面就绪状态
     const isPageReady = ref(false)
+    const locationModule = ref(null)
+    const savedFootprintView = socialViewStateApi.getFootprint()
+    const selectedFootprintId = ref(savedFootprintView.selectedPointId || '')
 
     // 数据相关
     const {
@@ -137,10 +186,9 @@ export default {
       scheduleData,
       favoriteData,
       userLocations,
-      ensureRandomLocationForIndex,
-      getRandomCoordinateInChengdu,
-      getRandomAddress,
-      buildUserLocationsFromFavorites
+      footprintCards,
+      buildUserLocationsFromFootprints,
+      hydrateRepositories
     } = useMyData()
 
     // 覆盖层展开状态（共享给布局/覆盖层逻辑）
@@ -206,11 +254,12 @@ const {
   onOverlayTouchStart,
   onOverlayTouchMove,
   onOverlayTouchEnd,
+  onOverlayScroll,
   // 新增：从 useMyOverlay 解构类别相关
   activeCategory,
   categoryFilterGroups,
   selectCategoryGroup
-} = useMyOverlay({ favoriteData, contentTranslateY, screenHeight, safeTopOffset, activeModule, isOverlayExpanded })
+} = useMyOverlay({ footprintCards, contentTranslateY, screenHeight, safeTopOffset, activeModule, isOverlayExpanded })
 
     // 当前选中类别的中文标签（用于右侧分段标题展示组合筛选：地区 · 类别）
     const currentCategoryLabel = computed(() => {
@@ -218,6 +267,17 @@ const {
       const arr = Array.isArray(list?.value) ? list.value : list
       const found = arr.find(g => g.key === activeCategory.value)
       return found ? found.label : '全部'
+    })
+    const currentAreaLabel = computed(() => {
+      const list = Array.isArray(locationFilterGroups?.value) ? locationFilterGroups.value : []
+      const found = list.find(group => group.key === activeOverlayAreaGroup.value)
+      return found ? found.label : '全部区域'
+    })
+    const selectedFootprintCard = computed(() => {
+      return footprintCards.value.find(item => (
+        String(item.id) === String(selectedFootprintId.value) ||
+        String(item.sourceId) === String(selectedFootprintId.value)
+      )) || null
     })
 
     // 包装：拖拽结束，按模块语义处理
@@ -238,11 +298,68 @@ const {
       uni.showModal({ title: event.title, content: `时间: ${event.time}\n地点: ${event.location || '无'}\n内容: ${event.content || '无'}`, showCancel: false })
     }
     const handleFavoriteItemClick = (item) => {
-      uni.showModal({ title: item.title, content: item.desc, showCancel: false })
+      openFootprintDetail(item)
     }
-    const handleSettingsClick = () => { uni.showToast({ title: '设置功能', icon: 'none' }) }
+    const handleSettingsClick = () => {
+      uni.navigateTo({
+        url: '/pages/my-settings/index',
+        fail: () => uni.showToast({ title: '设置页面暂不可用', icon: 'none' })
+      })
+    }
     const handleMarkerTap = ({ location }) => {
-      uni.showModal({ title: location.title, content: `查看在${location.title}发布的内容`, confirmText: '查看', cancelText: '取消', success: (res) => { if (res.confirm) { console.log('查看内容:', location) } } })
+      if (!location) return
+      selectedFootprintId.value = String(location.footprintId || location.id || '')
+      socialViewStateApi.patchFootprint({ selectedPointId: selectedFootprintId.value })
+    }
+
+    const footprintTypeMark = (item) => {
+      const marks = { content: '文', place: '地', service: '服', event: '活', route: '线', track: '线', favorite: '藏' }
+      return marks[item?.category] || marks[item?.layer] || '文'
+    }
+    const openFootprintDetail = (payload) => {
+      const item = payload && payload.cardData ? payload.cardData : payload
+      if (!item) return
+      const detailType = item.detailType || (item.type === 'service' ? 'service' : 'normal')
+      const targetId = item.sourceId || item.id
+      selectedFootprintId.value = String(item._id || item.id || targetId)
+      socialViewStateApi.patchFootprint({
+        selectedPointId: selectedFootprintId.value,
+        area: activeOverlayAreaGroup.value,
+        category: activeCategory.value,
+        expanded: overlayExpanded.value
+      })
+      uni.navigateTo({
+        url: `/pages/detail/index?id=${encodeURIComponent(targetId)}&type=${encodeURIComponent(detailType)}&source=my-footprint&returnStateKey=footprint`
+      })
+    }
+    const focusFootprintOnMap = (payload) => {
+      const item = payload && payload.cardData ? payload.cardData : payload
+      if (!item?.hasLocation) {
+        uni.showToast({ title: '该内容未保存地图位置', icon: 'none' })
+        return
+      }
+      selectedFootprintId.value = String(item._id || item.id)
+      overlayExpanded.value = false
+      socialViewStateApi.patchFootprint({
+        selectedPointId: selectedFootprintId.value,
+        expanded: false
+      })
+      const target = userLocations.value.find(location => (
+        String(location.footprintId) === String(item._id || item.id) ||
+        String(location.id) === String(item.sourceId || item.id)
+      ))
+      if (target && locationModule.value?.focusLocation) locationModule.value.focusLocation(target)
+    }
+    const handleFootprintShare = () => {
+      const snapshot = footprintApi.shareSnapshot({
+        layer: activeCategory.value === 'all' ? undefined : activeCategory.value
+      })
+      if (!snapshot.length) {
+        uni.showToast({ title: '当前筛选没有可安全分享的公开足迹', icon: 'none' })
+        return
+      }
+      try { uni.setStorageSync('MY_FOOTPRINT_SHARE_SNAPSHOT', snapshot) } catch (e) {}
+      uni.navigateTo({ url: '/pages/map-share/index?source=my-footprint' })
     }
 
     // 覆盖层根容器点击：展开/收起（点击时若已展开则收起，若已收起则展开）
@@ -253,7 +370,7 @@ const {
         overlayDisplayMode.value = 'sections'
         computeOverlayColumns()
       }
-      try { uni.showToast({ title: next ? '展开我的足迹地图卡片' : '收起我的足迹地图卡片', icon: 'none', duration: 500 }) } catch (err) {}
+      socialViewStateApi.patchFootprint({ expanded: next })
     }
 
     // 滚动状态变更
@@ -264,7 +381,7 @@ const {
     onMounted(() => {
       initPage()
       isPageReady.value = true
-      buildUserLocationsFromFavorites()
+      buildUserLocationsFromFootprints()
     })
 
     try {
@@ -278,6 +395,7 @@ const {
 
     // 页面展示时同步底部 TabBar 高亮为“我的”
     onShow(() => {
+      hydrateRepositories()
       try {
         const pages = getCurrentPages()
         const page = pages[pages.length - 1]
@@ -358,18 +476,28 @@ const {
       onOverlayTouchStart,
       onOverlayTouchMove,
       onOverlayTouchEnd,
+      onOverlayScroll,
       // 新增：类别筛选（左侧竖列）
       activeCategory,
       categoryFilterGroups,
       selectCategoryGroup,
       // 右侧分段标题用：地区 · 类别
       currentCategoryLabel,
+      currentAreaLabel,
       // 事件
       handleEventClick,
       handleFavoriteItemClick,
       handleSettingsClick,
       handleMarkerTap,
-      handleOverlayTap
+      handleOverlayTap,
+      handleFootprintShare,
+      openFootprintDetail,
+      focusFootprintOnMap,
+      footprintTypeMark,
+      footprintCards,
+      locationModule,
+      selectedFootprintId,
+      selectedFootprintCard
     }
   }
 }
@@ -532,5 +660,307 @@ const {
 .overlay-cards-grid .card-item, .overlay-cards-grid .service-card-item {
   /* 统一卡片规格：图片+名称+作者，固定高度（按缩放系数等比例缩小视觉高度） */
   height: calc(220px * var(--overlay-card-scale));
+}
+
+/* 渐进式足迹内容层：保留地图语境，同时避免地图文字穿透内容。 */
+.map-info-overlay {
+  left: 12rpx;
+  right: 12rpx;
+  bottom: calc(116rpx + env(safe-area-inset-bottom));
+  padding: 20rpx;
+  border: 1rpx solid rgba(148, 163, 184, 0.22);
+  border-radius: 28rpx;
+  background: #f8fafc;
+  box-shadow: 0 14rpx 40rpx rgba(15, 23, 42, 0.16);
+}
+
+.map-info-overlay.expanded {
+  border-radius: 28rpx 28rpx 20rpx 20rpx;
+  background: #f8fafc;
+}
+
+.overlay-header,
+.overlay-title-row,
+.overlay-header-actions,
+.selected-footprint-preview {
+  display: flex;
+  align-items: center;
+}
+
+.overlay-header {
+  min-height: 88rpx;
+  justify-content: space-between;
+  gap: 16rpx;
+}
+
+.overlay-title-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.overlay-title-row {
+  gap: 12rpx;
+}
+
+.map-title {
+  margin: 0;
+  color: #172033;
+  font-size: 34rpx;
+  font-weight: 700;
+}
+
+.result-count {
+  padding: 4rpx 12rpx;
+  border-radius: 999rpx;
+  color: #3d8bff;
+  background: #eaf3ff;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+.map-desc {
+  margin-top: 6rpx;
+  color: #64748b;
+  font-size: 24rpx;
+}
+
+.overlay-header-actions {
+  gap: 10rpx;
+}
+
+.overlay-share,
+.overlay-toggle {
+  min-width: 88rpx;
+  height: 72rpx;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.overlay-share {
+  color: #3d8bff;
+  background: #eaf3ff;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.overlay-toggle {
+  min-width: 72rpx;
+  background: #ffffff;
+  border: 1rpx solid #e2e8f0;
+}
+
+.toggle-chevron {
+  width: 18rpx;
+  height: 18rpx;
+  border-left: 4rpx solid #64748b;
+  border-top: 4rpx solid #64748b;
+  transform: rotate(45deg) translateY(5rpx);
+  transition: transform 180ms ease;
+}
+
+.overlay-toggle.expanded .toggle-chevron {
+  transform: rotate(225deg) translateY(5rpx);
+}
+
+.selected-footprint-preview {
+  min-height: 92rpx;
+  margin-top: 12rpx;
+  padding: 12rpx 16rpx;
+  gap: 14rpx;
+  border-radius: 20rpx;
+  background: #ffffff;
+  border: 1rpx solid #e2e8f0;
+}
+
+.preview-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: #3d8bff;
+  font-weight: 700;
+}
+
+.preview-mark {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 16rpx;
+}
+
+.preview-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-title {
+  color: #172033;
+  font-size: 26rpx;
+  font-weight: 650;
+}
+
+.preview-desc {
+  margin-top: 4rpx;
+  color: #94a3b8;
+  font-size: 22rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-detail {
+  min-width: 88rpx;
+  height: 64rpx;
+  border-radius: 18rpx;
+  color: #ff6b35;
+  background: #fff1eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  font-weight: 600;
+}
+
+.overlay-area-filter-inner {
+  gap: 12rpx;
+  padding: 8rpx 2rpx 14rpx;
+}
+
+.filter-chip {
+  min-height: 72rpx;
+  box-sizing: border-box;
+  padding: 12rpx 22rpx;
+  border-radius: 20rpx;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1rpx solid #e2e8f0;
+  color: #475569;
+  font-size: 24rpx;
+}
+
+.filter-chip.active {
+  color: #ffffff;
+  background: #3d8bff;
+  border-color: #3d8bff;
+}
+
+.overlay-left-right {
+  gap: 12rpx;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.overlay-left-nav {
+  width: 108rpx;
+  padding: 6rpx;
+  box-sizing: border-box;
+  border-radius: 20rpx;
+  background: #f1f5f9;
+}
+
+.left-nav-item {
+  min-height: 78rpx;
+  box-sizing: border-box;
+  padding: 14rpx 10rpx;
+  border-left: 0;
+  border-radius: 16rpx;
+  color: #64748b;
+  font-size: 23rpx;
+}
+
+.left-nav-item.active {
+  color: #ff6b35;
+  background: #ffffff;
+  border-left: 0;
+  box-shadow: 0 6rpx 18rpx rgba(15, 23, 42, 0.08);
+}
+
+.overlay-right-sections {
+  padding: 0 8rpx 24rpx 0;
+  background: #f8fafc;
+}
+
+.overlay-section {
+  margin-bottom: 24rpx;
+  padding: 0 0 12rpx;
+  border-bottom: 0;
+  background: #f8fafc;
+}
+
+.section-header {
+  min-height: 64rpx;
+}
+
+.section-title {
+  color: #172033;
+  font-size: 27rpx;
+  font-weight: 700;
+}
+
+.section-more {
+  min-width: 88rpx;
+  min-height: 64rpx;
+  color: #3d8bff;
+  font-size: 23rpx;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.section-grid,
+.overlay-cards-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20rpx 16rpx;
+  align-items: start;
+}
+
+/* 统一卡片规格：与收藏页 (CardItem / ServiceCardItem) 保持一致 */
+.grid-cell {
+  min-width: 0;
+  border-radius: 24rpx;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1rpx solid #e2e8f0;
+  box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.06);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.grid-cell.selected {
+  border: 1rpx solid rgba(61, 139, 255, 0.7);
+  box-shadow: 0 8rpx 24rpx rgba(61, 139, 255, 0.14);
+}
+
+.grid-cell > .card-item,
+.grid-cell > .service-card-item {
+  width: 100%;
+  height: auto;
+  box-sizing: border-box;
+  transform: none;
+  transform-origin: center top;
+}
+
+.section-empty {
+  min-height: 180rpx;
+  border-radius: 20rpx;
+  color: #94a3b8;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+}
+
+.preview-mark.place {
+  background: #22c55e;
+}
+
+.preview-mark.service {
+  background: #0f9f95;
+}
+
+.preview-mark.route {
+  background: #ff6b35;
 }
 </style>

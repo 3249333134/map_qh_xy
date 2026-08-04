@@ -10,6 +10,10 @@ export function useLayout() {
   const isDragging = ref(false)
   const dragStartY = ref(0)
   const dragStartHeight = ref(0)
+  const dragStartTime = ref(0)
+  const lastDragY = ref(0)
+  const dragDistance = ref(0)
+  const interactionLockedUntil = ref(0)
   
   const mapHeight = computed(() => screenHeight.value)
   
@@ -66,7 +70,10 @@ export function useLayout() {
   const handleDragStart = (e) => {
     isDragging.value = true
     dragStartY.value = getClientY(e)
+    lastDragY.value = dragStartY.value
     dragStartHeight.value = contentHeight.value
+    dragStartTime.value = Date.now()
+    dragDistance.value = 0
   }
   
   const handleDrag = (e) => {
@@ -74,6 +81,8 @@ export function useLayout() {
     
     const currentY = getClientY(e)
     const deltaY = dragStartY.value - currentY
+    dragDistance.value = Math.max(dragDistance.value, Math.abs(currentY - dragStartY.value))
+    lastDragY.value = currentY
     
     let newHeight = dragStartHeight.value + deltaY
     newHeight = Math.max(
@@ -85,8 +94,35 @@ export function useLayout() {
   }
   
   const handleDragEnd = () => {
+    const duration = Math.max(1, Date.now() - dragStartTime.value)
+    const velocity = (dragStartY.value - lastDragY.value) / duration
+    const targets = [
+      { mode: 'min', value: minContentHeight.value },
+      { mode: 'mid', value: midContentHeight.value },
+      { mode: 'max', value: maxContentHeight.value }
+    ]
+    let target
+    if (Math.abs(velocity) >= LAYOUT_CONFIG.FLING_VELOCITY) {
+      const ordered = velocity > 0 ? targets : [...targets].reverse()
+      target = ordered.find(item => velocity > 0
+        ? item.value > contentHeight.value + 1
+        : item.value < contentHeight.value - 1)
+    }
+    if (!target) {
+      target = targets.reduce((closest, item) =>
+        Math.abs(item.value - contentHeight.value) < Math.abs(closest.value - contentHeight.value)
+          ? item
+          : closest
+      )
+    }
+    contentHeight.value = target.value
     isDragging.value = false
+    if (dragDistance.value >= LAYOUT_CONFIG.DRAG_THRESHOLD) {
+      interactionLockedUntil.value = Date.now() + LAYOUT_CONFIG.SCROLL_LOCK_DURATION
+    }
   }
+
+  const canActivateContent = () => !isDragging.value && Date.now() >= interactionLockedUntil.value
   
   const toggleContentMode = () => {
     const targetMode = currentMode.value === 'min' ? 'max' : 'min'
@@ -117,11 +153,13 @@ export function useLayout() {
     midContentHeight,
     maxContentHeight,
     currentMode,
+    interactionLockedUntil,
     
     initLayout,
     handleDragStart,
     handleDrag,
     handleDragEnd,
+    canActivateContent,
     toggleContentMode,
     setContentMode
   }

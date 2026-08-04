@@ -1,7 +1,7 @@
 <template>
   <view 
     class="content-area" 
-    :class="{ collapsed: isCollapsed, 'has-overlay': !!selectedPoint, 'is-dragging': isDragging }"
+    :class="{ collapsed: isCollapsed, 'has-overlay': !!selectedPoint, 'is-dragging': isDragging, 'has-filter-sheet': filterSheetOpen }"
     :style="{ height: contentAreaHeight + 'px', bottom: (bottomOffset || 0) + 'px' }"
   >
     <!-- 白色背景容器 -->
@@ -15,6 +15,7 @@
         :collapsed-gap="collapsedGap"
         :selected-point="selectedPoint"
         :value="searchText"
+        :has-filter-button="showExploreControls && !categoryActionExpanded && !exploreToolMode"
         @drag-start="onDragStart"
         @drag="onDrag"
         @drag-end="onDragEnd"
@@ -23,10 +24,36 @@
         @search-tap="onSearchTap"
         @right-action-tap="onRightActionTap"
       />
+
+      <view
+        v-if="showExploreControls && !categoryActionExpanded"
+        v-show="!exploreToolMode"
+        class="explore-controls-slot"
+        :class="{ 'is-collapsed': isCollapsed }"
+      >
+        <explore-controls
+          inline
+          compact
+          :city-name="cityName"
+          :location-state="locationState"
+          :time-range="timeRange"
+          :spatial-filter="spatialFilter"
+          :is-refreshing="isRefreshing"
+          :error="dataError"
+          @city-select="$emit('city-select', $event)"
+          @time-change="$emit('time-change', $event)"
+          @space-change="$emit('space-change', $event)"
+          @layer-tap="$emit('layer-tap')"
+          @share-tap="$emit('share-tap')"
+          @request-location="$emit('request-location')"
+          @retry="$emit('retry')"
+          @sheet-state="filterSheetOpen = $event"
+        />
+      </view>
       
       <!-- 分类选项卡（右侧按钮固定，可展开覆盖除“全部”外的区域） -->
       <category-tabs-bar
-        v-if="(!isCollapsed || categoryActionExpanded) && !isSearchMode"
+        v-if="(!isCollapsed || categoryActionExpanded) && !isSearchMode && !exploreToolMode"
         :categories="categories"
         :active-category="activeCategory"
         :category-action-expanded="categoryActionExpanded"
@@ -42,7 +69,7 @@
       />
 
       <inline-search-results
-        v-if="!isCollapsed && isSearchMode"
+        v-if="!isCollapsed && isSearchMode && !exploreToolMode"
         :height="cardsContainerHeight"
         :keyword="searchText"
         @exit="clearSearch"
@@ -51,7 +78,7 @@
 
       <!-- 卡片内容区 -->
       <cards-container
-      v-if="!isCollapsed && !categoryActionExpanded && !isSearchMode"
+      v-if="!isCollapsed && !categoryActionExpanded && !isSearchMode && !exploreToolMode"
       :scroll-top="scrollTop"
       :scroll-with-animation="scrollWithAnimation"
       :cards-container-height="cardsContainerHeight"
@@ -71,10 +98,20 @@
       @content-tap="onContentTap"
       @reserve="onReserve"
       @scroll-to-card="onScrollToCard"
+      @empty-recovery="$emit('empty-recovery', $event)"
       ref="cardsContainerRef"
     />
+    <map-explore-tool-panel
+      v-if="!isCollapsed && exploreToolMode"
+      :mode="exploreToolMode"
+      :height="cardsContainerHeight"
+      :layers="layers"
+      :snapshot="exploreSnapshot"
+      @close="$emit('close-explore-tool')"
+      @layers-change="$emit('layers-change', $event)"
+    />
     <expanded-modules 
-      v-if="categoryActionExpanded"
+      v-if="categoryActionExpanded && !exploreToolMode"
       :height="cardsContainerHeight"
       :selected-point="selectedPoint"
       @navigate="onPointNavigate"
@@ -91,6 +128,8 @@ import CategoryTabsBar from './CategoryTabsBar.vue'
 import CardsContainer from './CardsContainer.vue'
 import ExpandedModules from './ExpandedModules.vue'
 import InlineSearchResults from './InlineSearchResults.vue'
+import ExploreControls from '../map/ExploreControls.vue'
+import MapExploreToolPanel from './MapExploreToolPanel.vue'
 
 export default {
   components: {
@@ -98,7 +137,9 @@ export default {
     CategoryTabsBar,
     CardsContainer,
     ExpandedModules,
-    InlineSearchResults
+    InlineSearchResults,
+    ExploreControls,
+    MapExploreToolPanel
   },
   props: {
     height: {
@@ -156,7 +197,18 @@ export default {
     highlightedCardId: {
       type: [String, Number],
       default: null
-    }
+    },
+    cityName: { type: String, default: '成都' },
+    locationState: { type: String, default: 'idle' },
+    timeRange: { type: Object, default: () => ({ preset: 'all', start: '', end: '' }) },
+    spatialFilter: { type: Object, default: () => ({ mode: 'bounds', radiusKm: 5 }) },
+    isRefreshing: { type: Boolean, default: false },
+    dataError: { type: Object, default: null }
+    ,
+    showExploreControls: { type: Boolean, default: false },
+    exploreToolMode: { type: String, default: '' },
+    layers: { type: Array, default: () => [] },
+    exploreSnapshot: { type: Object, default: () => ({}) }
   },
   // 在 data 中初始化为 false
   data() {
@@ -173,7 +225,7 @@ export default {
       expandedLeft: 0,
       collapsedSearchWidth: 76,
       collapsedGap: 8,
-      collapsedButtonWidth: 64,
+      collapsedButtonWidth: 48,
       userToggledAction: false,
       resetExpandOnExitCollapse: false,
       tabsHeightApprox: 50,
@@ -184,7 +236,8 @@ export default {
       cardsContainerRef: null,
       highlightTimer: null,
       searchText: '',
-      searchFocused: false
+      searchFocused: false,
+      filterSheetOpen: false
     }
   },
   mounted() {
@@ -258,7 +311,7 @@ export default {
         try {
           const info = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
           const wh = Number((info && info.windowHeight) || 0)
-          const maxH = wh > 0 ? wh * 0.67 : Number(this.height || 0)
+          const maxH = wh > 0 ? wh * 0.70 : Number(this.height || 0)
           this.lockedContentHeight = Math.max(Number(this.minContentHeight || 0), Math.floor(maxH))
         } catch (e) {
           this.lockedContentHeight = Number(this.height || 0)
@@ -298,20 +351,38 @@ export default {
         }, 50); // 稍微缩短延迟，看是否改善体验
       });
     },
-    // 联动：选中点时自动展开橙红按钮；取消选中时收起
     selectedPoint(newVal) {
       console.log('ContentArea selectedPoint 变化:', newVal, 'useServiceCard:', this.useServiceCard)
       if (newVal) {
         this.categoryActionExpanded = true
-        this.$nextTick(() => { this.updateExpandedLeft() })
+        this.$nextTick(() => {
+          this.updateExpandedLeft()
+          this.updateTopAreaHeight()
+        })
       } else {
         this.categoryActionExpanded = false
       }
     },
     highlightedCardId(newVal) {
       if (newVal && this.highlightTimer) clearTimeout(this.highlightTimer)
+      if (newVal) {
+        this.$nextTick(() => {
+          const cards = this.$refs.cardsContainerRef
+          if (cards && typeof cards.scrollToCard === 'function') cards.scrollToCard(newVal)
+        })
+      }
     },
     isSearchMode() {
+      this.$nextTick(() => {
+        this.updateTabsHeightApprox()
+        this.updateTopAreaHeight()
+      })
+    },
+    exploreToolMode(value) {
+      if (value) {
+        this.searchFocused = false
+        this.categoryActionExpanded = false
+      }
       this.$nextTick(() => {
         this.updateTabsHeightApprox()
         this.updateTopAreaHeight()
@@ -369,7 +440,7 @@ export default {
     },
     // 测量分类栏实际高度（含内边距、边框），用于更精确计算内容滚动区的高度
     updateTabsHeightApprox() {
-      if (this.isSearchMode) {
+      if (this.isSearchMode || this.exploreToolMode) {
         this.tabsHeightApprox = 0
         return
       }
@@ -392,7 +463,7 @@ export default {
       try {
         const q = uni.createSelectorQuery().in(this)
         q.select('.drag-area').boundingClientRect()
-        const hasSecondaryBar = !this.isSearchMode && (!this.isCollapsed || this.categoryActionExpanded)
+        const hasSecondaryBar = !this.isSearchMode && !this.exploreToolMode && (!this.isCollapsed || this.categoryActionExpanded)
         if (hasSecondaryBar) {
           q.select('.category-tabs-wrap').boundingClientRect()
         }
@@ -501,6 +572,7 @@ export default {
       this.searchText = ''
       this.searchFocused = false
       this.$emit('search-input', '')
+      this.$emit('search-exit')
     },
     onInlineSearchResultTap(item) {
       const source = Array.isArray(this.mapData) ? this.mapData : []
@@ -652,6 +724,15 @@ export default {
       // scrollTop 的变化应该由 watch.activeCategory 控制，以避免冲突
     },
     onScrollToCard(payload) {
+      const target = Number(payload && payload.scrollTop)
+      if (!Number.isFinite(target)) return
+      this.scrollWithAnimation = true
+      if (Math.abs(Number(this.scrollTop || 0) - target) < 1) {
+        this.scrollTop = target + 1
+        this.$nextTick(() => { this.scrollTop = target })
+      } else {
+        this.scrollTop = target
+      }
       this.$emit('scroll-to-card', payload)
     },
     
@@ -746,7 +827,7 @@ export default {
     cardsContainerHeight() {
       const H = Number(this.contentAreaHeight || 0)
       const searchH = Number(this.searchBoxHeight || 0)
-      const tabsApprox = this.isSearchMode ? 0 : Number(this.tabsHeightApprox || 50)
+      const tabsApprox = (this.isSearchMode || this.exploreToolMode) ? 0 : Number(this.tabsHeightApprox || 50)
       const measuredTop = Number(this.topAreaHeight || 0)
       const topUsed = measuredTop > 0 ? measuredTop : (searchH + tabsApprox)
       const val = H - topUsed + Number(this.fillCompensation || 0)
@@ -790,6 +871,7 @@ export default {
 }
 
 .content-inner {
+  position: relative;
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -799,6 +881,30 @@ export default {
   background: rgba(255,255,255,.97);
   box-shadow: 0 -12px 40px rgba(15,23,42,.12);
   backdrop-filter: blur(18px) saturate(135%);
+}
+
+.explore-controls-slot {
+  position: absolute;
+  /* 8px 顶部留白 + border-box 下 16px 拖拽把手，与 48px 搜索框严格齐平。 */
+  top: 24px;
+  right: 16px;
+  z-index: 8;
+  width: 48px;
+  height: 48px;
+}
+
+.explore-controls-slot.is-collapsed {
+  top: 8px;
+}
+
+.content-area.has-filter-sheet {
+  /* 现有自定义底栏使用 9999；筛选抽屉需要覆盖它，形成完整连续的浮层。 */
+  z-index: 10020;
+  overflow: visible;
+}
+
+.content-area.has-filter-sheet .content-inner {
+  overflow: visible;
 }
 
 .content-area::before {

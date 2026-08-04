@@ -94,7 +94,7 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
 }
 
 .status-spacer {
-  background: #ffffff;
+  background: #fff;
 }
 
 .nav-bar {
@@ -103,8 +103,8 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
   justify-content: space-between;
   height: 88rpx;
   padding: 0 24rpx;
-  background: #ffffff;
-  border-bottom: 1rpx solid #f0f1f3;
+  background: #fff;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .nav-back {
@@ -140,7 +140,7 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
   height: 56rpx;
   border-radius: 999rpx;
   background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
-  color: #ffffff;
+  color: #fff;
   font-size: 26rpx;
   font-weight: 700;
 }
@@ -152,7 +152,7 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
 .route-card {
   padding: 28rpx 24rpx;
   border-radius: 14rpx;
-  background: #ffffff;
+  background: #fff;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
 }
 
@@ -182,17 +182,17 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
 }
 
 .route-dot.mid {
-  background: #248cf5;
+  background: var(--color-info);
 }
 
 .route-dot.end {
-  background: #ff7043;
+  background: var(--color-primary);
 }
 
 .route-line {
   flex: 1;
   height: 6rpx;
-  background: linear-gradient(90deg, #24d06c 0%, #248cf5 50%, #ff7043 100%);
+  background: linear-gradient(90deg,#24d06c 0%,var(--color-info) 50%,var(--color-primary) 100%);
   border-radius: 999rpx;
 }
 
@@ -275,11 +275,11 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
 }
 
 .timeline-dot.mid {
-  background: #248cf5;
+  background: var(--color-info);
 }
 
 .timeline-dot.end {
-  background: #ff7043;
+  background: var(--color-primary);
 }
 
 .timeline-line {
@@ -293,7 +293,7 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
   flex: 1;
   margin-left: 16rpx;
   padding-bottom: 32rpx;
-  background: #ffffff;
+  background: #fff;
   border-radius: 14rpx;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   padding: 24rpx;
@@ -308,7 +308,7 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
   padding: 4rpx 14rpx;
   border-radius: 999rpx;
   background: rgba(36, 140, 245, 0.12);
-  color: #248cf5;
+  color: var(--color-info);
   font-size: 22rpx;
   font-weight: 600;
 }
@@ -332,13 +332,13 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
   margin-top: 16rpx;
   padding: 16rpx 20rpx;
   border-radius: 12rpx;
-  border: 2rpx dashed #f0f1f3;
+  border: 2rpx dashed #f1f5f9;
   background: #f7f7f8;
 }
 
 .media-action {
   font-size: 24rpx;
-  color: #248cf5;
+  color: var(--color-info);
   font-weight: 600;
 }
 
@@ -351,7 +351,7 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
   gap: 16rpx;
   padding: 16rpx 24rpx calc(env(safe-area-inset-bottom) + 16rpx);
   background: rgba(255, 255, 255, 0.98);
-  border-top: 1rpx solid #f0f1f3;
+  border-top: 1rpx solid #f1f5f9;
 }
 
 .footer-btn {
@@ -369,6 +369,6 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
 
 .footer-btn.primary {
   background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
-  color: #ffffff;
+  color: #fff;
 }
 </style>

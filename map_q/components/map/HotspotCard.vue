@@ -1,6 +1,6 @@
 <template>
   <view 
-    class="hotspot-card"
+    class="hotspot-card app-card"
     :class="{ 'hotspot-card-highlight': isHighlighted, 'hotspot-card-hidden': isHidden }"
     :style="cardStyle"
     @tap="onCardTap"
@@ -175,7 +175,7 @@ export default {
 <style scoped>
 .hotspot-card {
   position: absolute;
-  background: #ffffff;
+  background: var(--color-surface);
   border-radius: 12rpx;
   box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -185,7 +185,7 @@ export default {
 
 .hotspot-card-highlight {
   box-shadow: 0 6rpx 20rpx rgba(255, 138, 101, 0.3);
-  border: 2rpx solid #ff8a65;
+  border: 2rpx solid var(--color-primary);
 }
 
 .hotspot-card-hidden {
@@ -227,12 +227,11 @@ export default {
 }
 
 .cover-article {
-  background: linear-gradient(135deg, #f8f8f8 0%, #e8e8e8 100%);
+  background: linear-gradient(135deg, var(--color-page) 0%, #e8e8e8 100%);
 }
 
 .cover-place, .cover-service {
-  background: 
-    linear-gradient(90deg, rgba(150, 150, 150, 0.08) 1rpx, transparent 1rpx),
+  background: linear-gradient(90deg, rgba(150, 150, 150, 0.08) 1rpx, transparent 1rpx),
     linear-gradient(rgba(150, 150, 150, 0.06) 1rpx, transparent 1rpx);
   background-size: 20rpx 20rpx;
   background-color: #f0f9f4;
@@ -256,7 +255,7 @@ export default {
   right: 8rpx;
   width: 28rpx;
   height: 28rpx;
-  background: #ff2442;
+  background: var(--color-danger);
   border-radius: 50%;
   color: #fff;
   font-size: 16rpx;
@@ -293,7 +292,7 @@ export default {
 .hotspot-author {
   display: block;
   font-size: 12rpx;
-  color: #999;
+  color: var(--color-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

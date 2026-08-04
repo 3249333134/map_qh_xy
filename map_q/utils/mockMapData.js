@@ -1,12 +1,12 @@
 import { ROUTE_PLANNER } from './routePlanner.js'
 
-const CARD_TYPE_PATTERN = ['normal', 'video', 'article', 'place', 'event', 'normal', 'video', 'article', 'track', 'place', 'event', 'normal']
+const CARD_TYPE_PATTERN = ['normal', 'video', 'article', 'place', 'event', 'service', 'video', 'replica', 'track', 'place', 'event', 'normal']
 
 const TITLE_PREFIXES = {
-  'hot': { normal: '热门打卡', video: '热门视频', article: '热门攻略', place: '热门地点', event: '热门活动', track: '热门路线' },
-  'exhibition': { normal: '展会推荐', video: '展会视频', article: '展会资讯', place: '展馆地址', event: '展会活动', track: '逛展路线' },
-  'personal': { normal: '个人分享', video: '生活视频', article: '心得笔记', place: '私密地点', event: '私人活动', track: '个人轨迹' },
-  'all': { normal: '推荐打卡', video: '精彩视频', article: '精选文章', place: '推荐地点', event: '推荐活动', track: '推荐路线' }
+  'hot': { normal: '热门打卡', video: '热门视频', article: '热门攻略', place: '热门地点', event: '热门活动', service: '热门服务', replica: '热门副本', track: '热门路线' },
+  'exhibition': { normal: '展会推荐', video: '展会视频', article: '展会资讯', place: '展馆地址', event: '展会活动', service: '展会服务', replica: '展会副本', track: '逛展路线' },
+  'personal': { normal: '个人分享', video: '生活视频', article: '心得笔记', place: '私密地点', event: '私人活动', service: '个人服务', replica: '个人副本', track: '个人轨迹' },
+  'all': { normal: '推荐打卡', video: '精彩视频', article: '精选文章', place: '推荐地点', event: '推荐活动', service: '附近服务', replica: '探索副本', track: '推荐路线' }
 }
 
 const PREFIX_MAP = {
@@ -122,6 +122,18 @@ const buildNormalCard = (index, type, titles, addressPrefix, activeCategory, cur
       baseData.participants = Math.floor(Math.random() * 500) + 10
       baseData.maxParticipants = Math.floor(Math.random() * 200) + 200
       baseData.status = startOffset > 0 ? 'upcoming' : 'ongoing'
+      baseData.cover = ''
+      break
+    case 'service':
+      baseData.rating = (Math.random() * 1 + 4).toFixed(1)
+      baseData.price = Math.floor(Math.random() * 180) + 20
+      baseData.available = true
+      baseData.cover = ''
+      break
+    case 'replica':
+      baseData.anchorKind = 'replica'
+      baseData.replicaType = activeCategory === 'exhibition' ? 'exhibition' : 'district'
+      baseData.description = '进入区域副本，查看导览、任务与限定内容。'
       baseData.cover = ''
       break
     default:

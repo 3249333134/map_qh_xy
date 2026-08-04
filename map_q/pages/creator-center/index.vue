@@ -23,6 +23,16 @@
         </view>
       </view>
 
+      <view class="section-title">商家运营</view>
+      <view class="business-card" @tap="openMerchantEvents">
+        <view class="business-icon"><view class="calendar-shape"><view></view><view></view></view></view>
+        <view class="business-copy">
+          <text class="business-title">商家活动管理</text>
+          <text class="business-desc">认证、发布、容量、报名名单、取消通知与归档</text>
+        </view>
+        <view class="business-arrow"></view>
+      </view>
+
       <view class="section-title">激励任务</view>
       <view class="task-card">
         <view v-for="(task, i) in tasks" :key="task.key" class="task-row" :class="{ last: i === tasks.length - 1 }">
@@ -74,6 +84,7 @@ onMounted(() => {
 const goBack = () => uni.navigateBack()
 const onMore = () => uni.showToast({ title: '更多', icon: 'none' })
 const onTask = (task) => uni.showToast({ title: task.name, icon: 'none' })
+const openMerchantEvents = () => uni.navigateTo({ url: '/pages/merchant-events/index' })
 </script>
 
 <style scoped>
@@ -83,7 +94,7 @@ const onTask = (task) => uni.showToast({ title: task.name, icon: 'none' })
 }
 
 .status-spacer {
-  background: #ffffff;
+  background: #fff;
 }
 
 .nav-bar {
@@ -92,8 +103,8 @@ const onTask = (task) => uni.showToast({ title: task.name, icon: 'none' })
   justify-content: space-between;
   height: 88rpx;
   padding: 0 24rpx;
-  background: #ffffff;
-  border-bottom: 1rpx solid #f0f1f3;
+  background: #fff;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .nav-back,
@@ -130,7 +141,7 @@ const onTask = (task) => uni.showToast({ title: task.name, icon: 'none' })
   align-items: center;
   padding: 28rpx 24rpx;
   border-radius: 14rpx;
-  background: linear-gradient(135deg, #248cf5 0%, #7650c8 100%);
+  background: linear-gradient(135deg, var(--color-info) 0%, var(--color-info) 100%);
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
 }
 
@@ -139,7 +150,7 @@ const onTask = (task) => uni.showToast({ title: task.name, icon: 'none' })
   height: 96rpx;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.25);
-  color: #ffffff;
+  color: #fff;
   font-size: 36rpx;
   font-weight: 700;
   display: flex;
@@ -155,7 +166,7 @@ const onTask = (task) => uni.showToast({ title: task.name, icon: 'none' })
   display: block;
   font-size: 32rpx;
   font-weight: 700;
-  color: #ffffff;
+  color: #fff;
 }
 
 .profile-sub {
@@ -169,7 +180,7 @@ const onTask = (task) => uni.showToast({ title: task.name, icon: 'none' })
   margin-top: 20rpx;
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  background: #ffffff;
+  background: #fff;
   border-radius: 14rpx;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   overflow: hidden;
@@ -180,7 +191,7 @@ const onTask = (task) => uni.showToast({ title: task.name, icon: 'none' })
   display: flex;
   flex-direction: column;
   align-items: center;
-  border-right: 1rpx solid #f0f1f3;
+  border-right: 1rpx solid #f1f5f9;
 }
 
 .metric-item:last-child {
@@ -206,9 +217,10 @@ const onTask = (task) => uni.showToast({ title: task.name, icon: 'none' })
   font-weight: 700;
   color: #222;
 }
+.business-card { min-height: 92rpx; padding: 22rpx; display: flex; align-items: center; gap: 18rpx; border: .03125rem solid #eef2f7; border-radius: 20rpx; background: #fff; box-shadow: 0 8rpx 28rpx rgba(15,23,42,.05); }.business-icon { flex: 0 0 76rpx; width: 76rpx; height: 76rpx; border-radius: 22rpx; display: flex; align-items: center; justify-content: center; background: #fff7ed; }.calendar-shape { position: relative; width: 34rpx; height: 30rpx; border: .125rem solid #ea580c; border-radius: 8rpx; }.calendar-shape::before { content: ''; position: absolute; left: -4rpx; right: -4rpx; top: 8rpx; height: 4rpx; background: #ea580c; }.calendar-shape view { position: absolute; top: -9rpx; width: 4rpx; height: 10rpx; border-radius: 4rpx; background: #ea580c; }.calendar-shape view:first-child { left: 6rpx; }.calendar-shape view:last-child { right: 6rpx; }.business-copy { flex: 1; min-width: 0; }.business-title,.business-desc { display: block; }.business-title { color: #0f172a; font-size: 28rpx; font-weight: 750; }.business-desc { margin-top: 6rpx; color: #64748b; font-size: 22rpx; line-height: 1.5; }.business-arrow { width: 14rpx; height: 14rpx; margin-right: 8rpx; border-top: 4rpx solid #94a3b8; border-right: 4rpx solid #94a3b8; transform: rotate(45deg); }
 
 .task-card {
-  background: #ffffff;
+  background: #fff;
   border-radius: 14rpx;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   padding: 0 24rpx;
@@ -219,7 +231,7 @@ const onTask = (task) => uni.showToast({ title: task.name, icon: 'none' })
   align-items: center;
   justify-content: space-between;
   padding: 28rpx 0;
-  border-bottom: 1rpx solid #f0f1f3;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .task-row.last {
@@ -240,7 +252,7 @@ const onTask = (task) => uni.showToast({ title: task.name, icon: 'none' })
 .task-sub {
   margin-top: 6rpx;
   font-size: 24rpx;
-  color: #ff7043;
+  color: var(--color-primary);
 }
 
 .task-action {
@@ -251,7 +263,7 @@ const onTask = (task) => uni.showToast({ title: task.name, icon: 'none' })
 }
 
 .task-action.todo {
-  color: #ffffff;
+  color: #fff;
   background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
 }
 
@@ -265,7 +277,7 @@ const onTask = (task) => uni.showToast({ title: task.name, icon: 'none' })
   align-items: center;
   padding: 28rpx 24rpx;
   border-radius: 14rpx;
-  background: #ffffff;
+  background: #fff;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
 }
 

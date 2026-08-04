@@ -16,7 +16,22 @@
 
     <!-- 视频播放区域（顶到状态栏） -->
     <view class="video-container" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <view class="video-placeholder" @tap="togglePlay">
+      <video
+        v-if="videoData.url"
+        id="detail-video"
+        class="native-video"
+        :src="videoData.url"
+        :poster="videoData.cover"
+        :initial-time="currentTime"
+        controls
+        show-fullscreen-btn
+        show-mute-btn
+        @play="isPlaying = true"
+        @pause="isPlaying = false"
+        @timeupdate="onTimeUpdate"
+        @ended="onEnded"
+      />
+      <view v-else class="video-placeholder" @tap="togglePlay">
         <view class="play-btn" v-if="!isPlaying">
           <text class="play-icon">▶</text>
         </view>
@@ -117,7 +132,9 @@
 </template>
 
 <script>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { contentInteractionApi } from '../../../utils/api/contentInteraction.js'
+import { shareActiveContent } from '../../../utils/contentShare.js'
 
 export default {
   name: 'VideoDetail',
@@ -131,6 +148,8 @@ export default {
       plays: 0,
       likes: 0,
       tags: []
+      ,url: ''
+      ,cover: ''
     })
 
     const isPlaying = ref(false)
@@ -141,6 +160,8 @@ export default {
     const commentCount = ref(0)
     const bottomHeight = ref(100)
     const statusBarHeight = ref(20)
+    const contentId = ref('')
+    const currentTime = ref(0)
 
     const formattedDuration = computed(() => {
       const mins = Math.floor(videoData.value.duration / 60)
@@ -157,16 +178,29 @@ export default {
     })
 
     const togglePlay = () => {
-      isPlaying.value = !isPlaying.value
+      if (!videoData.value.url) {
+        uni.showToast({ title: '视频源暂不可用', icon: 'none' })
+        return
+      }
+      const context = uni.createVideoContext('detail-video')
+      isPlaying.value ? context.pause() : context.play()
     }
+    const saveProgress = () => {
+      if (!contentId.value) return
+      const all = uni.getStorageSync('VIDEO_PROGRESS_V1') || {}
+      all[contentId.value] = { currentTime: currentTime.value, updatedAt: Date.now() }
+      uni.setStorageSync('VIDEO_PROGRESS_V1', all)
+    }
+    const onTimeUpdate = event => { currentTime.value = Number(event.detail?.currentTime || 0); if (Math.round(currentTime.value) % 5 === 0) saveProgress() }
+    const onEnded = () => { currentTime.value = 0; isPlaying.value = false; saveProgress() }
 
     const toggleLike = () => {
-      isLiked.value = !isLiked.value
+      isLiked.value = contentInteractionApi.toggle(contentId.value, 'liked').liked
       videoData.value.likes += isLiked.value ? 1 : -1
     }
 
     const toggleCollect = () => {
-      isCollected.value = !isCollected.value
+      isCollected.value = contentInteractionApi.toggle(contentId.value, 'collected').collected
       uni.showToast({
         title: isCollected.value ? '已收藏' : '取消收藏',
         icon: 'none'
@@ -174,7 +208,7 @@ export default {
     }
 
     const toggleFollow = () => {
-      isFollowing.value = !isFollowing.value
+      isFollowing.value = contentInteractionApi.toggle(contentId.value, 'followed').followed
       uni.showToast({
         title: isFollowing.value ? '已关注' : '取消关注',
         icon: 'none'
@@ -182,10 +216,7 @@ export default {
     }
 
     const shareContent = () => {
-      uni.showToast({
-        title: '分享功能待实现',
-        icon: 'none'
-      })
+      shareActiveContent()
     }
 
     const likeComment = (commentId) => {
@@ -201,9 +232,19 @@ export default {
     }
 
     const showCommentInput = (atName = '') => {
-      uni.showToast({
-        title: '评论功能待实现',
-        icon: 'none'
+      uni.showModal({
+        title: atName ? `回复 ${atName}` : '发表评论',
+        editable: true,
+        placeholderText: '友善交流，分享你的看法',
+        success: result => {
+          if (!result.confirm || !result.content?.trim()) return
+          try {
+            const state = contentInteractionApi.addComment(contentId.value, result.content)
+            const added = state.comments[0]
+            comments.value.unshift({ id: added.id, name: added.author.name, avatar: added.author.avatar, content: added.content, time: '刚刚', isLiked: false, likeCount: 0, replies: [] })
+            commentCount.value = comments.value.length
+          } catch (cause) { uni.showToast({ title: cause.message, icon: 'none' }) }
+        }
       })
     }
 
@@ -213,22 +254,31 @@ export default {
 
     const loadData = () => {
       try {
-        const item = uni.getStorageSync('INDEX_LAST_ITEM')
+      const item = uni.getStorageSync('CONTENT_DETAIL_ACTIVE_V1') || uni.getStorageSync('INDEX_LAST_ITEM')
         if (item && item._id) {
+          contentId.value = item.id || item._id
           videoData.value.title = item.name || item.title || '视频标题'
-          videoData.value.author = item.author || '用户'
+          videoData.value.author = item.author?.name || item.author || '用户'
           videoData.value.likes = item.likes || 0
           videoData.value.duration = item.duration || 0
           videoData.value.plays = item.plays || 0
           videoData.value.tags = item.tags || []
           videoData.value.publishTime = item.publishTime || new Date().toLocaleDateString()
+          videoData.value.url = item.videoUrl || item.video?.url || ''
+          videoData.value.cover = item.cover || item.video?.poster || ''
+          currentTime.value = Number((uni.getStorageSync('VIDEO_PROGRESS_V1') || {})[contentId.value]?.currentTime || 0)
+          const state = contentInteractionApi.getState(contentId.value)
+          isLiked.value = state.liked
+          isCollected.value = state.collected
+          isFollowing.value = state.followed
         }
       } catch (e) {
         console.warn('加载视频数据失败:', e)
       }
 
       // 加载评论
-      comments.value = generateMockComments()
+      const saved = contentInteractionApi.getState(contentId.value).comments.map(item => ({ id: item.id, name: item.author?.name || '我', avatar: item.author?.avatar, content: item.content, time: '刚刚', isLiked: item.liked, likeCount: item.likeCount, replies: [] }))
+      comments.value = [...saved, ...generateMockComments()]
       commentCount.value = comments.value.length
     }
 
@@ -258,6 +308,7 @@ export default {
         statusBarHeight.value = info.statusBarHeight || 20
       } catch (e) {}
     })
+    onBeforeUnmount(saveProgress)
 
     return {
       videoData,
@@ -269,9 +320,12 @@ export default {
       commentCount,
       bottomHeight,
       statusBarHeight,
+      currentTime,
       formattedDuration,
       formattedPlays,
       togglePlay,
+      onTimeUpdate,
+      onEnded,
       toggleLike,
       toggleCollect,
       toggleFollow,
@@ -350,6 +404,7 @@ export default {
   background: #000;
   position: relative;
 }
+.native-video { width: 100%; height: 100%; background: #000; }
 
 .video-placeholder {
   width: 100%;
@@ -430,7 +485,7 @@ export default {
 .follow-btn {
   padding: 6px 16px;
   border-radius: 16px;
-  background: #ff4757;
+  background: var(--color-danger);
   color: #fff;
   font-size: 13px;
 }
@@ -561,7 +616,7 @@ export default {
 }
 
 .action-item .liked {
-  color: #ff4757;
+  color: var(--color-danger);
 }
 
 .replies-list {
@@ -638,7 +693,7 @@ export default {
 }
 
 .icon-item text:first-child.active {
-  color: #ff4757;
+  color: var(--color-danger);
 }
 
 .icon-count {

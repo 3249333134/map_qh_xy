@@ -15,10 +15,12 @@
       @error="onMapError"
       @markertap="onMarkerTap"
       @poitap="onPoiTap"
+      @longpress="onMapLongPress"
+      @longtap="onMapLongPress"
     ></map>
     <!-- 添加位置刷新按钮 -->
     <view class="location-btn" role="button" aria-label="Center on my location" @tap="refreshLocation">
-      <text class="location-icon">📍</text>
+      <view class="location-icon" aria-hidden="true"><view class="location-core"></view></view>
     </view>
   </view>
 </template>
@@ -55,7 +57,7 @@ export default {
   created() {
     this.debouncedGetBounds = debounce(() => {
       this.getMapBounds()
-    }, 500)
+    }, 350)
   },
   beforeDestroy() {
     if (this.debouncedGetBounds) {
@@ -68,8 +70,8 @@ export default {
     },
     mapCenter() {
       return {
-        latitude: (this.config && this.config.latitude) || 39.9042,
-        longitude: (this.config && this.config.longitude) || 116.4074
+        latitude: (this.config && this.config.latitude) || 30.572269,
+        longitude: (this.config && this.config.longitude) || 104.066541
       }
     }
   },
@@ -319,6 +321,13 @@ export default {
       const name = detail.name || '位置'
       const marker = (latitude && longitude) ? { latitude, longitude, customData: { name } } : null
       this.$emit('poi-tap', { detail, marker })
+    },
+    onMapLongPress(e) {
+      const detail = e && e.detail ? e.detail : {}
+      const latitude = Number(detail.latitude ?? detail.lat ?? (detail.location && detail.location.lat))
+      const longitude = Number(detail.longitude ?? detail.lng ?? (detail.location && detail.location.lng))
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return
+      this.$emit('map-longpress', { latitude, longitude, source: 'map_longpress' })
     },
     
     onRegionChange(e) {

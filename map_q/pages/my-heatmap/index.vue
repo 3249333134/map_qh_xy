@@ -89,15 +89,15 @@ const onExport = () => uni.showToast({ title: '导出足迹数据', icon: 'none'
 
 <style scoped>
 .page {
-  --brand-blue: #248cf5;
-  --brand-orange: #ff7043;
-  --brand-purple: #7650c8;
+  --brand-blue: var(--color-info);
+  --brand-orange: var(--color-primary);
+  --brand-purple: var(--color-info);
   --success: #24d06c;
   --text-primary: #222;
   --text-body: #5f646d;
   --text-secondary: #8a8f98;
   --surface-app: #f7f7f8;
-  --surface-card: #ffffff;
+  --surface-card: #fff;
   --surface-muted: #f0f1f3;
   --card-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   min-height: 100vh;
@@ -115,7 +115,7 @@ const onExport = () => uni.showToast({ title: '导出足迹数据', icon: 'none'
   justify-content: center;
   position: relative;
   background: var(--surface-card);
-  border-bottom: 1rpx solid #f0f1f3;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .nav-back {
@@ -166,7 +166,7 @@ const onExport = () => uni.showToast({ title: '导出足迹数据', icon: 'none'
   height: 420rpx;
   position: relative;
   border-radius: 50%;
-  background: radial-gradient(circle, #eaf6ff 0%, #f7fbff 70%, #ffffff 100%);
+  background: radial-gradient(circle,#eaf6ff,#f7fbff 70%,#fff);
   overflow: hidden;
 }
 

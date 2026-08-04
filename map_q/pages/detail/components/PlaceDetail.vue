@@ -141,6 +141,8 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
+import { contentInteractionApi } from '../../../utils/api/contentInteraction.js'
+import { shareActiveContent } from '../../../utils/contentShare.js'
 
 export default {
   name: 'PlaceDetail',
@@ -163,18 +165,19 @@ export default {
     const reviewCount = ref(0)
     const bottomHeight = ref(80)
     const statusBarHeight = ref(20)
+    const contentId = ref('')
 
     const rating = computed(() => {
       return Math.round(placeData.value.rating)
     })
 
     const toggleLike = () => {
-      isLiked.value = !isLiked.value
+      isLiked.value = contentInteractionApi.toggle(contentId.value, 'liked').liked
       placeData.value.likes = (placeData.value.likes || 0) + (isLiked.value ? 1 : -1)
     }
 
     const saveFavorite = () => {
-      isFavorited.value = !isFavorited.value
+      isFavorited.value = contentInteractionApi.toggle(contentId.value, 'collected').collected
       uni.showToast({
         title: isFavorited.value ? '已收藏' : '取消收藏',
         icon: 'none'
@@ -215,10 +218,7 @@ export default {
     }
 
     const shareContent = () => {
-      uni.showToast({
-        title: '分享功能待实现',
-        icon: 'none'
-      })
+      shareActiveContent()
     }
 
     const back = () => {
@@ -227,14 +227,18 @@ export default {
 
     const loadData = () => {
       try {
-        const item = uni.getStorageSync('INDEX_LAST_ITEM')
+      const item = uni.getStorageSync('CONTENT_DETAIL_ACTIVE_V1') || uni.getStorageSync('INDEX_LAST_ITEM')
         if (item && item._id) {
+          contentId.value = item.id || item._id
           placeData.value.name = item.name || item.title || '地点名称'
           placeData.value.address = item.address || '地址信息'
           placeData.value.rating = item.rating || 4.5
           placeData.value.likes = item.likes || 0
           placeData.value.tags = item.tags || []
           placeData.value.description = item.description || ''
+          const state = contentInteractionApi.getState(contentId.value)
+          isLiked.value = state.liked
+          isFavorited.value = state.collected
 
           if (item.location && item.location.coordinates) {
             placeData.value.latitude = item.location.coordinates[1]
@@ -304,7 +308,7 @@ export default {
 <style scoped>
 .detail-page {
   min-height: 100vh;
-  background: #f8f8f8;
+  background: var(--color-page);
 }
 
 .detail-nav {
@@ -537,7 +541,7 @@ export default {
   align-items: center;
   gap: 4px;
   padding: 12px;
-  background: #f8f8f8;
+  background: var(--color-page);
   border-radius: 12px;
 }
 
@@ -725,7 +729,7 @@ export default {
 }
 
 .bar-action text:first-child.active {
-  color: #ff4757;
+  color: var(--color-danger);
 }
 
 .bar-action text:last-child {

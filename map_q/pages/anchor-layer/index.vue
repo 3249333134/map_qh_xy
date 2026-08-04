@@ -9,21 +9,20 @@
     </view>
 
     <scroll-view class="layer-content" scroll-y>
-      <view class="radar-zone">
-        <view class="radar">
-          <view class="radar-ring r1"></view>
-          <view class="radar-ring r2"></view>
-          <view class="radar-ring r3"></view>
-          <view class="radar-cross h"></view>
-          <view class="radar-cross v"></view>
-          <view class="radar-sweep"></view>
-          <view class="radar-center"></view>
-          <view class="radar-dot d1"></view>
-          <view class="radar-dot d2"></view>
-          <view class="radar-dot d3"></view>
-          <view class="radar-dot d4"></view>
-        </view>
-        <text class="radar-hint">兴趣雷达 · 实时扫描周边锚点</text>
+      <view class="map-context">
+        <map
+          class="context-map"
+          :latitude="mapCenter.latitude"
+          :longitude="mapCenter.longitude"
+          :scale="mapScale"
+          :markers="previewMarkers"
+          :subkey="mapKey"
+          show-location
+        ></map>
+        <cover-view class="map-context-caption">
+          <cover-view class="caption-pulse"></cover-view>
+          <cover-view class="caption-text">{{ mapCenter.cityName }} · {{ enabledLayerCount }} 个图层正在显示</cover-view>
+        </cover-view>
       </view>
 
       <text class="section-title">智能图层</text>
@@ -76,14 +75,23 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { loadMapExploreState, saveMapExploreState, setMapExploreCommand } from '../../utils/mapExploreState.js'
+import { APP_CONFIG } from '../../utils/config.js'
 
 const statusBarHeight = ref(20)
+const mapKey = APP_CONFIG.TENCENT_MAP.KEY
+const mapCenter = ref({ cityName: '成都', latitude: 30.572269, longitude: 104.066541 })
+const mapScale = ref(14)
+const previewMarkers = ref([])
+const enabledLayerCount = ref(6)
 
 const layers = ref([
-  { key: 'radar', last: false, name: '兴趣雷达', desc: '周边兴趣 POI 高亮推荐', icon: '雷', color: '#24d06c', active: true },
-  { key: 'countdown', last: false, name: '活动倒计时', desc: '即将开始的活动锚点提醒', icon: '时', color: '#7650c8', active: true },
-  { key: 'exposure', last: false, name: '服务曝光', desc: '可预约服务就近曝光', icon: '服', color: '#248cf5', active: false },
-  { key: 'fog', last: true, name: '未探索迷雾', desc: '标记未探索区域并提示解锁', icon: '雾', color: '#8a8f98', active: false }
+  { key: 'content', name: '内容', desc: '图片、视频与文章锚点', icon: '文', color: '#248cf5', active: true },
+  { key: 'place', name: '地点', desc: '地点百科与兴趣 POI', icon: '地', color: '#24d06c', active: true },
+  { key: 'service', name: '服务', desc: '可预约服务与商家', icon: '服', color: '#0d9488', active: true },
+  { key: 'event', name: '活动', desc: '正在进行与即将开始', icon: '活', color: '#7650c8', active: true },
+  { key: 'route', name: '路线', desc: '步行、骑行和主题轨迹', icon: '线', color: '#ff7043', active: true },
+  { key: 'replica', last: true, name: '地图副本', desc: '景区、展会与沉浸空间', icon: '副', color: '#f6b33b', active: true }
 ])
 
 const anchorTypes = ref([
@@ -98,18 +106,56 @@ onMounted(() => {
     const info = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
     statusBarHeight.value = info.statusBarHeight || 20
   } catch (e) {}
+  const { state } = loadMapExploreState()
+  mapCenter.value = { ...state.center }
+  mapScale.value = state.scale
+  const enabled = new Set(state.layers)
+  layers.value.forEach(layer => { layer.active = enabled.has(layer.key) })
+  enabledLayerCount.value = enabled.size
+  previewMarkers.value = buildPreviewMarkers(state.center)
 })
+
+function buildPreviewMarkers(center, enabledKeys = layers.value.filter(layer => layer.active).map(layer => layer.key)) {
+  const enabled = new Set(enabledKeys)
+  const points = [
+    ['place', 0, 0, '/static/marker-green.png'],
+    ['content', 0.0022, 0.0015, '/static/marker-blue.png'],
+    ['event', -0.0019, 0.0024, '/static/marker-orange.png'],
+    ['route', 0.0013, -0.0021, '/static/marker-purple.png'],
+    ['service', -0.0025, -0.0014, '/static/marker-green.png']
+  ]
+  return points.filter(item => enabled.has(item[0])).map((item, index) => ({
+    id: index + 1,
+    latitude: Number(center.latitude) + item[1],
+    longitude: Number(center.longitude) + item[2],
+    iconPath: item[3],
+    width: 28,
+    height: 34
+  }))
+}
 
 function goBack() {
   uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/index/index' }) })
 }
 
 function toggleLayerPanel() {
-  uni.showToast({ title: '已展开图层管理', icon: 'none' })
+  const next = layers.value.some(layer => !layer.active)
+  layers.value.forEach(layer => { layer.active = next })
+  persistLayers()
 }
 
 function toggleLayer(layer) {
   layer.active = !layer.active
+  persistLayers()
+}
+
+function persistLayers() {
+  const { state } = loadMapExploreState()
+  const enabledLayers = layers.value.filter(layer => layer.active).map(layer => layer.key)
+  const nextState = saveMapExploreState({ ...state, layers: enabledLayers })
+  enabledLayerCount.value = enabledLayers.length
+  previewMarkers.value = buildPreviewMarkers(mapCenter.value, enabledLayers)
+  setMapExploreCommand({ applyFilters: { layers: nextState.layers } })
 }
 
 function onAnchorTap(anchor) {
@@ -125,7 +171,7 @@ function onAnchorTap(anchor) {
 }
 
 .status-spacer {
-  background: #ffffff;
+  background: #fff;
 }
 
 .nav-bar {
@@ -135,8 +181,8 @@ function onAnchorTap(anchor) {
   align-items: center;
   justify-content: center;
   position: relative;
-  background: #ffffff;
-  border-bottom: 1rpx solid #f0f1f3;
+  background: #fff;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .nav-back {
@@ -170,7 +216,7 @@ function onAnchorTap(anchor) {
   justify-content: center;
   border-radius: 999rpx;
   background: rgba(36, 140, 245, 0.1);
-  color: #248cf5;
+  color: var(--color-info);
   font-size: 26rpx;
   font-weight: 700;
 }
@@ -180,6 +226,44 @@ function onAnchorTap(anchor) {
   padding: 28rpx;
   box-sizing: border-box;
 }
+
+.map-context {
+  position: relative;
+  width: 100%;
+  height: 30vh;
+  min-height: 440rpx;
+  max-height: 560rpx;
+  margin-bottom: 28rpx;
+  overflow: hidden;
+  border-radius: 28rpx;
+  background: #e2e8f0;
+  box-shadow: 0 12rpx 34rpx rgba(15,23,42,.12);
+}
+
+.context-map {
+  width: 100%;
+  height: 100%;
+}
+
+.map-context-caption {
+  position: absolute;
+  left: 20rpx;
+  bottom: 18rpx;
+  min-height: 56rpx;
+  padding: 0 22rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  border: 1rpx solid rgba(255,255,255,.88);
+  border-radius: 28rpx;
+  background: rgba(255,255,255,.94);
+  color: #334155;
+  box-shadow: 0 8rpx 24rpx rgba(15,23,42,.14);
+  backdrop-filter: blur(14px);
+}
+
+.caption-text { font-size: 23rpx; font-weight: 700; }
+.caption-pulse { width: 14rpx; height: 14rpx; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 7rpx rgba(34,197,94,.16); }
 
 .radar-zone {
   padding: 40rpx 0 36rpx;
@@ -288,7 +372,7 @@ function onAnchorTap(anchor) {
 .radar-dot.d2 {
   top: 64%;
   left: 36%;
-  background: #7650c8;
+  background: var(--color-info);
   box-shadow: 0 0 0 6rpx rgba(118, 80, 200, 0.25);
 }
 
@@ -302,7 +386,7 @@ function onAnchorTap(anchor) {
 .radar-dot.d4 {
   top: 70%;
   left: 60%;
-  background: #248cf5;
+  background: var(--color-info);
   box-shadow: 0 0 0 6rpx rgba(36, 140, 245, 0.25);
 }
 
@@ -321,7 +405,7 @@ function onAnchorTap(anchor) {
 }
 
 .layer-card {
-  background: #ffffff;
+  background: #fff;
   border-radius: 14rpx;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   overflow: hidden;
@@ -332,7 +416,7 @@ function onAnchorTap(anchor) {
   align-items: center;
   gap: 20rpx;
   padding: 28rpx;
-  border-bottom: 1rpx solid #f0f1f3;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .layer-row.last {
@@ -350,7 +434,7 @@ function onAnchorTap(anchor) {
 }
 
 .layer-icon-text {
-  color: #ffffff;
+  color: #fff;
   font-size: 26rpx;
   font-weight: 800;
 }
@@ -395,7 +479,7 @@ function onAnchorTap(anchor) {
   width: 44rpx;
   height: 44rpx;
   border-radius: 50%;
-  background: #ffffff;
+  background: #fff;
   box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.15);
   transition: left 0.2s;
 }
@@ -412,7 +496,7 @@ function onAnchorTap(anchor) {
 
 .anchor-card {
   padding: 28rpx 24rpx;
-  background: #ffffff;
+  background: #fff;
   border-radius: 14rpx;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   display: flex;
@@ -430,7 +514,7 @@ function onAnchorTap(anchor) {
 }
 
 .anchor-icon-text {
-  color: #ffffff;
+  color: #fff;
   font-size: 28rpx;
   font-weight: 800;
 }

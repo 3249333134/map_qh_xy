@@ -50,6 +50,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { setCreationCommand } from '../../utils/creationCommand.js'
 
 const statusBarHeight = ref(20)
 const keyword = ref('')
@@ -68,8 +69,14 @@ onMounted(() => {
 
 const goBack = () => uni.navigateBack()
 const onSend = () => {
-  uni.showToast({ title: '已发送测试分享', icon: 'success' })
-  setTimeout(goBack, 800)
+  const selected = friends.value.filter(item => item.on).map(item => ({
+    id: item.key,
+    name: item.name,
+    kind: item.type === 'arrow' ? 'group' : 'user'
+  }))
+  if (!selected.length) return uni.showToast({ title: '请选择至少一位测试对象', icon: 'none' })
+  setCreationCommand({ applyTestRecipients: selected })
+  goBack()
 }
 const onRow = (r) => uni.showToast({ title: r.name, icon: 'none' })
 const onToggle = (r) => { r.on = !r.on }
@@ -82,7 +89,7 @@ const onToggle = (r) => { r.on = !r.on }
 }
 
 .status-spacer {
-  background: #ffffff;
+  background: #fff;
 }
 
 .nav-bar {
@@ -91,8 +98,8 @@ const onToggle = (r) => { r.on = !r.on }
   justify-content: space-between;
   height: 88rpx;
   padding: 0 24rpx;
-  background: #ffffff;
-  border-bottom: 1rpx solid #f0f1f3;
+  background: #fff;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .nav-back {
@@ -128,14 +135,14 @@ const onToggle = (r) => { r.on = !r.on }
   height: 56rpx;
   border-radius: 999rpx;
   background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
-  color: #ffffff;
+  color: #fff;
   font-size: 26rpx;
   font-weight: 700;
 }
 
 .search-bar {
   padding: 16rpx 24rpx;
-  background: #ffffff;
+  background: #fff;
 }
 
 .search-input {
@@ -171,7 +178,7 @@ const onToggle = (r) => { r.on = !r.on }
 }
 
 .list-card {
-  background: #ffffff;
+  background: #fff;
   border-radius: 14rpx;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   padding: 0 24rpx;
@@ -181,7 +188,7 @@ const onToggle = (r) => { r.on = !r.on }
   display: flex;
   align-items: center;
   padding: 24rpx 0;
-  border-bottom: 1rpx solid #f0f1f3;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .friend-row.last {
@@ -192,7 +199,7 @@ const onToggle = (r) => { r.on = !r.on }
   width: 80rpx;
   height: 80rpx;
   border-radius: 50%;
-  color: #ffffff;
+  color: #fff;
   font-size: 28rpx;
   font-weight: 700;
   display: flex;
@@ -246,7 +253,7 @@ const onToggle = (r) => { r.on = !r.on }
   width: 36rpx;
   height: 36rpx;
   border-radius: 50%;
-  background: #ffffff;
+  background: #fff;
   box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.15);
   transition: transform 0.2s;
 }

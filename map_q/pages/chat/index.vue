@@ -24,6 +24,14 @@
       </view>
     </view>
 
+    <view v-if="chatType === 'order'" class="order-strip">
+      <view>
+        <text class="order-strip-title">订单服务会话</text>
+        <text class="order-strip-desc">服务已确认 · 下一步：按预约时间到店</text>
+      </view>
+      <view class="order-strip-action" @click="showToast('查看订单详情')">查看订单</view>
+    </view>
+
     <view v-if="showMoreMenu" class="more-mask" @click="showMoreMenu = false">
       <view class="more-menu" :style="{ top: (topOffset + 54) + 'px' }" @click.stop>
         <view v-for="item in moreActions" :key="item.key" class="more-item" @click="onMenuAction(item.key)">
@@ -80,7 +88,7 @@
             <text>[图片]</text>
           </view>
 
-          <view v-else-if="msg.type === 'location'" class="location-card" :class="{ mine: msg.fromMe }" @click="showToast('查看位置')">
+          <view v-else-if="msg.type === 'location'" class="location-card" :class="{ mine: msg.fromMe }" @click="openMapMessage(msg)">
             <view class="location-copy">
               <text class="location-title">{{ msg.title }}</text>
               <text class="location-desc">{{ msg.desc }}</text>
@@ -104,6 +112,35 @@
               </view>
               <view class="card-action" @click="showToast(msg.card.action)">{{ msg.card.action }}</view>
             </view>
+          </view>
+
+          <view
+            v-else-if="['service', 'route', 'order', 'video'].includes(msg.type)"
+            class="linked-card"
+            @click="openLinkedMessage(msg)"
+          >
+            <view class="linked-mark" :class="msg.type">{{ linkedTypeLabel(msg.type) }}</view>
+            <view class="linked-copy">
+              <text class="linked-title">{{ msg.data?.title || '关联内容' }}</text>
+              <text class="linked-desc">{{ msg.data?.subtitle || msg.data?.status || '点击查看详情' }}</text>
+            </view>
+            <view class="linked-chevron" />
+          </view>
+
+          <view v-else-if="msg.type === 'poll'" class="poll-card">
+            <text class="poll-title">{{ msg.data?.title || '频道投票' }}</text>
+            <view
+              v-for="option in msg.data?.options || []"
+              :key="option.id"
+              class="poll-option"
+              :class="{ selected: msg.data?.selectedId === option.id }"
+              @click="votePoll(msg, option.id)"
+            >
+              <view class="poll-radio" />
+              <text>{{ option.label }}</text>
+              <text>{{ option.votes || 0 }}</text>
+            </view>
+            <text class="poll-hint">{{ msg.data?.selectedId ? '已投票，可再次选择修改' : '选择一个选项' }}</text>
           </view>
 
           <view class="status-line" :class="{ mine: msg.fromMe }">
@@ -163,6 +200,9 @@
 </template>
 
 <script>
+import { conversationApi, messageApi } from '../../utils/api/social.js'
+import { setMapExploreCommand } from '../../utils/mapExploreState.js'
+
 const ICONS = {
   search: '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
   mute: '<path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19 5a10 10 0 010 14"/>',
@@ -183,6 +223,7 @@ export default {
       safeBottom: 0,
       chatHeight: 520,
       chatName: '聊天',
+      conversationId: '',
       chatType: 'direct',
       avatarColor: '#5AC8FA',
       avatarText: '王',
@@ -219,12 +260,17 @@ export default {
     }
   },
   onLoad(options) {
+    this.conversationId = decodeURIComponent(options.id || options.name || 'chat')
     this.chatName = decodeURIComponent(options.name || '聊天')
     this.avatarColor = decodeURIComponent(options.avatar || '#5AC8FA')
     this.avatarText = decodeURIComponent(options.text || this.chatName.slice(0, 1) || '聊')
     this.chatType = decodeURIComponent(options.type || 'direct')
     this.initMetrics()
     this.loadMessages()
+    this.restoreStoredMessages()
+  },
+  onUnload() {
+    conversationApi.setDraft(this.conversationId, this.inputText)
   },
   onReady() {
     this.calcChatHeight()
@@ -259,6 +305,47 @@ export default {
           { type: 'text', content: '我开车吧，你家顺路', fromMe: false, time: '10:58' },
           { type: 'text', content: '好的，明天见！', fromMe: true, time: '11:02', status: '已读' }
         ]
+      } else if (this.chatType === 'channel') {
+        this.messages = [
+          { type: 'text', content: '这里汇总当前地图区域的公开内容和活动。', fromMe: false, time: '09:18' },
+          {
+            type: 'service',
+            fromMe: false,
+            time: '09:20',
+            data: {
+              id: 'service-photo-1',
+              title: '春熙路街拍服务',
+              subtitle: '可预约 · 距离 1.2km',
+              latitude: 30.5734,
+              longitude: 104.0702
+            }
+          },
+          {
+            type: 'route',
+            fromMe: false,
+            time: '09:22',
+            data: {
+              id: 'route-city-1',
+              title: '城市夜景摄影路线',
+              subtitle: '8.6km · 52分钟',
+              latitude: 30.5726,
+              longitude: 104.0669
+            }
+          },
+          {
+            type: 'poll',
+            fromMe: false,
+            time: '09:25',
+            data: {
+              title: '本周频道共创主题',
+              selectedId: '',
+              options: [
+                { id: 'walk', label: '城市漫步', votes: 18 },
+                { id: 'photo', label: '夜景摄影', votes: 12 }
+              ]
+            }
+          }
+        ]
       } else if (this.chatType === 'group' || this.chatName.indexOf('群') !== -1) {
         this.messages = [
           { type: 'text', content: '这家店真的很推荐，周末要不要一起去？', fromMe: false, time: '09:18' },
@@ -285,6 +372,22 @@ export default {
           }
         ]
       }
+      messageApi.seed(this.conversationId, this.messages.map((item, index) => ({
+        id: `legacy-${index}`,
+        conversationId: this.conversationId,
+        sender: item.fromMe ? 'self' : 'other',
+        type: item.type,
+        payload: {
+          text: item.content || '',
+          title: item.title,
+          desc: item.desc,
+          duration: item.duration,
+          card: item.card,
+          data: item.data
+        },
+        deliveryState: item.fromMe ? 'read' : 'delivered',
+        createdAt: Date.now() - (this.messages.length - index) * 60000
+      })))
     },
     goBack() {
       uni.navigateBack()
@@ -302,14 +405,16 @@ export default {
     sendMessage() {
       const text = this.inputText.trim()
       if (!text || this.isVoiceMode) return
-      this.messages.push({ type: 'text', content: text, fromMe: true, time: this.getCurrentTime(), status: '发送中' })
+      const stored = messageApi.send(this.conversationId, { type: 'text', text })
+      this.messages.push({ id: stored.id, type: 'text', content: text, fromMe: true, time: this.getCurrentTime(), status: '已发送' })
       this.inputText = ''
+      conversationApi.setDraft(this.conversationId, '')
       this.showToolbar = false
       this.calcChatHeight()
       this.scrollBottom()
       const index = this.messages.length - 1
       setTimeout(() => {
-        if (this.messages[index]) this.messages[index].status = '已读'
+        if (this.messages[index]) this.messages[index].status = '已送达'
         this.simulateReply()
       }, 700)
     },
@@ -332,9 +437,29 @@ export default {
     },
     onTool(key) {
       if (key === 'image') {
-        this.messages.push({ type: 'image', fromMe: true, time: this.getCurrentTime(), status: '已发送' })
+        const stored = messageApi.send(this.conversationId, { type: 'image' })
+        this.messages.push({ id: stored.id, type: 'image', fromMe: true, time: this.getCurrentTime(), status: '已发送' })
       } else if (key === 'location') {
-        this.messages.push({ type: 'location', title: '当前位置', desc: '成都市锦江区春熙路', fromMe: true, time: this.getCurrentTime(), status: '已发送' })
+        uni.showActionSheet({
+          itemList: ['分享模糊位置（推荐）', '分享精确位置'],
+          success: ({ tapIndex }) => {
+            const precise = tapIndex === 1
+            const append = () => {
+              const title = precise ? '精确位置' : '附近位置'
+              const desc = precise ? '成都市锦江区春熙路 12 号' : '春熙路附近约 500 米'
+              const stored = messageApi.send(this.conversationId, { type: 'location', title, desc, precision: precise ? 'exact' : 'fuzzy' })
+              this.messages.push({ id: stored.id, type: 'location', title, desc, fromMe: true, time: this.getCurrentTime(), status: '已发送' })
+              this.scrollBottom()
+            }
+            if (!precise) return append()
+            uni.showModal({
+              title: '确认分享精确位置',
+              content: '精确地址会发送给当前会话成员，请确认你信任对方。',
+              confirmText: '确认发送',
+              success: ({ confirm }) => { if (confirm) append() }
+            })
+          }
+        })
       } else if (key === 'event') {
         this.messages.push({
           type: 'card',
@@ -366,7 +491,9 @@ export default {
     endRecording() {
       if (!this.isRecording) return
       this.isRecording = false
-      this.messages.push({ type: 'voice', duration: Math.floor(3 + Math.random() * 12), fromMe: true, time: this.getCurrentTime(), status: '已发送' })
+      const duration = Math.floor(3 + Math.random() * 12)
+      const stored = messageApi.send(this.conversationId, { type: 'voice', duration })
+      this.messages.push({ id: stored.id, type: 'voice', duration, fromMe: true, time: this.getCurrentTime(), status: '已发送' })
       this.scrollBottom()
     },
     cancelRecording() {
@@ -381,6 +508,7 @@ export default {
         this.isMuted = !this.isMuted
         this.moreActions[1].label = this.isMuted ? '开启通知' : '消息免打扰'
         this.showToast(this.isMuted ? '已开启免打扰' : '已关闭免打扰')
+        conversationApi.patch(this.conversationId, { muted: this.isMuted })
       } else if (key === 'clear') {
         uni.showModal({
           title: '确认清空',
@@ -389,12 +517,88 @@ export default {
             if (res.confirm) this.messages = []
           }
         })
+      } else if (key === 'profile' && this.chatType === 'channel') {
+        uni.navigateTo({ url: `/pages/channel-detail/index?id=${encodeURIComponent(this.conversationId.replace(/-\d+$/, ''))}` })
       } else {
-        this.showToast(key === 'search' ? '搜索聊天记录' : '查看资料')
+        this.showToast(key === 'search' ? '可在消息首页搜索聊天记录' : '查看资料')
       }
     },
-    onMessageLongPress() {
-      this.showToast('可复制、转发或删除该消息')
+    onMessageLongPress(msg) {
+      const items = ['回复', '收藏', '转发', '举报']
+      if (msg.fromMe) items.push('撤回')
+      uni.showActionSheet({
+        itemList: items,
+        success: ({ tapIndex }) => {
+          const action = items[tapIndex]
+          if (action === '撤回') {
+            const ok = messageApi.recall(this.conversationId, msg.id)
+            if (ok) {
+              msg.type = 'text'
+              msg.content = '消息已撤回'
+              msg.status = '已撤回'
+            } else {
+              this.showToast('超过可撤回时间')
+            }
+            return
+          }
+          this.showToast(`${action}操作已记录`)
+        }
+      })
+    },
+    linkedTypeLabel(type) {
+      return ({ service: '服务', route: '路线', order: '订单', video: '视频' })[type] || '内容'
+    },
+    openMapMessage(msg) {
+      const latitude = Number(msg.data?.latitude || 30.572269)
+      const longitude = Number(msg.data?.longitude || 104.066541)
+      setMapExploreCommand({
+        focusPoint: {
+          _id: msg.data?.id || msg.id,
+          name: msg.title || msg.data?.title || '会话位置',
+          location: { type: 'Point', coordinates: [longitude, latitude] }
+        },
+        scale: 16
+      })
+      uni.switchTab({ url: '/pages/index/index' })
+    },
+    openLinkedMessage(msg) {
+      if (msg.type === 'route') return this.openMapMessage(msg)
+      if (msg.type === 'service') {
+        uni.setStorageSync('LAST_SERVICE_ITEM', msg.data)
+        return uni.navigateTo({ url: `/pages/service/detail/index?id=${encodeURIComponent(msg.data?.id || '')}` })
+      }
+      if (msg.type === 'order') return uni.navigateTo({ url: `/pages/order/index?id=${encodeURIComponent(msg.data?.id || '')}` })
+      uni.navigateTo({ url: `/pages/detail/index?id=${encodeURIComponent(msg.data?.id || '')}&type=video` })
+    },
+    votePoll(msg, optionId) {
+      if (!msg.data) return
+      const previous = msg.data.selectedId
+      msg.data.options.forEach(option => {
+        if (option.id === previous) option.votes = Math.max(0, Number(option.votes || 0) - 1)
+        if (option.id === optionId) option.votes = Number(option.votes || 0) + 1
+      })
+      msg.data.selectedId = optionId
+      this.showToast('投票已更新')
+    },
+    restoreStoredMessages() {
+      const stored = messageApi.list(this.conversationId)
+      if (stored.length) {
+        this.messages = stored.map(item => ({
+          id: item.id,
+          type: item.type,
+          content: item.payload?.text || '',
+          title: item.payload?.title,
+          desc: item.payload?.desc,
+          duration: item.payload?.duration,
+          card: item.payload?.card,
+          data: item.payload?.data,
+          fromMe: item.sender === 'self',
+          time: new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          status: ({ sent: '已发送', delivered: '已送达', read: '已读', failed: '发送失败', recalled: '已撤回' })[item.deliveryState] || item.deliveryState
+        }))
+      }
+      const conversation = conversationApi.get(this.conversationId)
+      if (conversation?.draft) this.inputText = conversation.draft
     },
     showToast(title) {
       uni.showToast({ title, icon: 'none' })
@@ -410,6 +614,48 @@ export default {
   flex-direction: column;
   background: #F4F4F6;
   overflow: hidden;
+}
+
+.order-strip {
+  flex-shrink: 0;
+  min-height: 88rpx;
+  padding: 14rpx 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+  background: #FFF7EE;
+  border-bottom: 1rpx solid #F3DEC8;
+}
+
+.order-strip > view:first-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+}
+
+.order-strip-title {
+  color: #7F3E00;
+  font-size: 25rpx;
+  font-weight: 700;
+}
+
+.order-strip-desc {
+  color: #8A6B4F;
+  font-size: 22rpx;
+}
+
+.order-strip-action {
+  min-width: 112rpx;
+  height: 60rpx;
+  border-radius: 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 23rpx;
 }
 
 .chat-header {
@@ -512,7 +758,7 @@ export default {
   align-items: center;
   gap: 18rpx;
   padding: 0 24rpx;
-  border-bottom: 1rpx solid #F1F1F1;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .more-item:last-child {
@@ -545,7 +791,7 @@ export default {
   padding: 0 28rpx;
   margin: 0 auto 24rpx;
   border-radius: 24rpx;
-  background: #E8E8EB;
+  background: #e8e8eb;
   color: #999;
   font-size: 23rpx;
   text-align: center;
@@ -846,7 +1092,7 @@ export default {
   flex: 1;
   height: 58rpx;
   border-radius: 30rpx;
-  background: #F3F3F5;
+  background: #f3f3f5;
   padding: 0 26rpx;
   box-sizing: border-box;
   color: #222;
@@ -857,7 +1103,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #777;
+  color: #222;
 }
 
 .voice-input.recording {
@@ -891,7 +1137,7 @@ export default {
   grid-template-columns: repeat(4, 1fr);
   row-gap: 24rpx;
   padding: 20rpx 20rpx 26rpx;
-  border-top: 1rpx solid #F0F0F0;
+  border-top: 1rpx solid #f1f5f9;
 }
 
 .tool-item {
@@ -919,4 +1165,113 @@ export default {
   color: #666;
   font-size: 23rpx;
 }
+
+.linked-card,
+.poll-card {
+  width: 450rpx;
+  box-sizing: border-box;
+  border-radius: 18rpx;
+  background: #fff;
+  border: .03125rem solid #E8EBF0;
+  overflow: hidden;
+}
+
+.linked-card {
+  min-height: 116rpx;
+  padding: 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.linked-mark {
+  width: 64rpx;
+  height: 64rpx;
+  flex-shrink: 0;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #eaf4ff;
+  color: #2478D3;
+  font-size: 20rpx;
+  font-weight: 700;
+}
+
+.linked-mark.service { background: #E9FAF2; color: #148A5B; }
+.linked-mark.route { background: #FFF1E7; color: #C55819; }
+.linked-mark.order { background: #F2EDFF; color: #6A43C8; }
+
+.linked-copy {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 7rpx;
+}
+
+.linked-title {
+  color: #202633;
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.linked-desc {
+  color: #808999;
+  font-size: 22rpx;
+}
+
+.linked-chevron {
+  width: 13rpx;
+  height: 13rpx;
+  border-right: 3rpx solid #A7AFBA;
+  border-top: 3rpx solid #A7AFBA;
+  transform: rotate(45deg);
+}
+
+.poll-card {
+  padding: 22rpx;
+}
+
+.poll-title {
+  display: block;
+  margin-bottom: 14rpx;
+  color: #202633;
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.poll-option {
+  min-height: 70rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  border-top: 1rpx solid #EEF0F3;
+  color: #4E5868;
+  font-size: 23rpx;
+}
+
+.poll-option text:nth-child(2) { flex: 1; }
+
+.poll-radio {
+  width: 24rpx;
+  height: 24rpx;
+  border: 3rpx solid #B7BFCB;
+  border-radius: 50%;
+}
+
+.poll-option.selected .poll-radio {
+  border: 8rpx solid #3D8BFF;
+  box-sizing: border-box;
+}
+
+.poll-option.selected { color: #2478D3; }
+
+.poll-hint {
+  display: block;
+  margin-top: 10rpx;
+  color: #929BAA;
+  font-size: 20rpx;
+}
+
 </style>

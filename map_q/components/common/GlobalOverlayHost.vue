@@ -41,8 +41,19 @@ export default {
       }
     }
 
+    const _syncTabBar = open => {
+      try {
+        const pages = getCurrentPages()
+        const page = pages[pages.length - 1]
+        const tabBar = page?.getTabBar?.()
+        if (tabBar?.setData) tabBar.setData({ publishOpen: Boolean(open) })
+      } catch (e) {}
+      try { uni.$emit(open ? 'publishOverlayOpened' : 'publishOverlayClosed') } catch (e) {}
+    }
+
     const showHandler = () => {
       visible.value = true
+      _syncTabBar(true)
       try {
         const app = getApp()
         if (app && app.globalData) app.globalData.showPublishOverlay = true
@@ -51,6 +62,7 @@ export default {
 
     const hideHandler = () => {
       visible.value = false
+      _syncTabBar(false)
       try {
         const app = getApp()
         if (app && app.globalData) app.globalData.showPublishOverlay = false
@@ -59,6 +71,7 @@ export default {
 
     const closeHandler = () => {
       visible.value = false
+      _syncTabBar(false)
       try {
         const app = getApp()
         if (app && app.globalData) app.globalData.showPublishOverlay = false
@@ -140,7 +153,9 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 100000;
+  /* Keep the real custom tab bar above the scrim so its + button becomes
+     the single, position-stable × close control while the overlay is open. */
+  z-index: 9000;
   pointer-events: none;
 }
 </style>

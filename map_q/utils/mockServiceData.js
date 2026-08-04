@@ -1,9 +1,12 @@
 import { ROUTE_PLANNER } from './routePlanner.js'
 
 const CATEGORY_PREFIX = {
+  'personal': { prefix: '个人兴趣', address: '成都市青羊区' },
+  'merchant': { prefix: '商家场景', address: '成都市锦江区' },
+  'event': { prefix: '活动协作', address: '成都市武侯区' },
   'repair': { prefix: '维修', address: '成都市锦江区' },
   'clean': { prefix: '清洁', address: '成都市高新区' },
-  'delivery': { prefix: '配送', address: '成都市武侯区' }
+  'travel': { prefix: '旅拍向导', address: '成都市青羊区' }
 }
 
 const buildServiceTrackCard = async (index, prefix, centerLat, centerLng, latRange, lngRange, activeCategory, currentPage) => {
@@ -60,13 +63,20 @@ const buildServiceTrackCard = async (index, prefix, centerLat, centerLng, latRan
 }
 
 const buildServiceCard = (index, prefix, addressPrefix, centerLat, centerLng, latRange, lngRange, activeCategory, currentPage) => {
+  const date = new Date().toISOString().slice(0, 10)
   return {
     _id: `${activeCategory}_${currentPage}_${index}_${Date.now()}`,
     type: 'service',
     name: `${prefix}服务 ${index + 1}`,
     author: `服务商${Math.floor(Math.random() * 1000)}`,
     address: `${addressPrefix}测试地址 ${index + 1}`,
-    description: `这是一个${prefix}服务测试描述 ${index + 1}`,
+    description: `提供${prefix}服务，包含明确的服务范围、预约时间和取消规则。`,
+    providerKind: activeCategory === 'personal' ? 'personal' : 'merchant',
+    verified: activeCategory !== 'personal' || index % 3 !== 0,
+    price: 68 + (index % 5) * 20,
+    serviceArea: { mode: 'radius', radiusKm: 5, description: '到店或附近 5km 上门' },
+    availableSlots: ['09:30','14:00','16:30','19:30'].map((time, slotIndex) => ({ id: `${activeCategory}_${index}_${slotIndex}`, date, time, available: slotIndex !== index % 4 })),
+    policies: { cancellation: '开始前24小时免费取消', reschedule: '开始前12小时可免费改期一次', refund: '符合规则时原路退回', privacy: '联系方式仅用于本次履约' },
     location: {
       type: 'Point',
       coordinates: [

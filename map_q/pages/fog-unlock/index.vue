@@ -135,7 +135,7 @@ function onBuild() {
   justify-content: center;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
+  color: #fff;
   font-size: 56rpx;
   line-height: 56rpx;
   box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.2);
@@ -150,7 +150,7 @@ function onBuild() {
 .nav-title {
   font-size: 34rpx;
   font-weight: 700;
-  color: #ffffff;
+  color: #fff;
 }
 
 .nav-right {
@@ -162,7 +162,7 @@ function onBuild() {
   align-items: center;
   justify-content: center;
   font-size: 26rpx;
-  color: #ffffff;
+  color: #fff;
 }
 
 .map-bg {
@@ -187,7 +187,7 @@ function onBuild() {
 
 .map-road {
   position: absolute;
-  background: #ffffff;
+  background: #fff;
   opacity: 0.55;
 }
 
@@ -285,7 +285,7 @@ function onBuild() {
   width: 40rpx;
   height: 40rpx;
   border-radius: 50%;
-  background: #ffd400;
+  background: var(--color-warning);
   border: 6rpx solid #ffffff;
   box-shadow: 0 4rpx 16rpx rgba(255, 212, 0, 0.6);
 }
@@ -344,7 +344,7 @@ function onBuild() {
 }
 
 .info-value.highlight {
-  color: #ff7043;
+  color: var(--color-primary);
 }
 
 .info-divider {
@@ -407,7 +407,7 @@ function onBuild() {
 }
 
 .btn-primary {
-  color: #ffffff;
+  color: #fff;
   background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
   box-shadow: 0 8rpx 20rpx rgba(255, 91, 53, 0.28);
 }

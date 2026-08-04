@@ -110,6 +110,10 @@
           <text>↗</text>
           <text>分享</text>
         </view>
+        <view class="bar-action" @tap="toggleReminder">
+          <text :class="{ active: isReminded }">◷</text>
+          <text>{{ isReminded ? '已提醒' : '提醒' }}</text>
+        </view>
       </view>
       <view class="bar-right" :class="{ disabled: !canRegister }" @tap="handleRegister">
         <text>{{ canRegister ? (isRegistered ? '已报名' : '立即报名') : '报名已截止' }}</text>
@@ -120,6 +124,8 @@
 
 <script>
 import { ref, computed, onMounted } from 'vue'
+import { contentInteractionApi } from '../../../utils/api/contentInteraction.js'
+import { merchantEventApi } from '../../../utils/api/merchantEvent.js'
 
 export default {
   name: 'EventDetail',
@@ -140,6 +146,8 @@ export default {
 
     const isLiked = ref(false)
     const isRegistered = ref(false)
+    const isReminded = ref(false)
+    const contentId = ref('')
     const bottomHeight = ref(80)
     const statusBarHeight = ref(20)
 
@@ -180,7 +188,8 @@ export default {
     })
 
     const toggleLike = () => {
-      isLiked.value = !isLiked.value
+      const state = contentInteractionApi.toggle(contentId.value, 'liked')
+      isLiked.value = state.liked
       eventData.value.likes = (eventData.value.likes || 0) + (isLiked.value ? 1 : -1)
     }
 
@@ -201,6 +210,8 @@ export default {
             if (res.confirm) {
               isRegistered.value = false
               eventData.value.participants--
+              const registered = (uni.getStorageSync('REGISTERED_EVENTS') || []).filter(id => id !== contentId.value)
+              uni.setStorageSync('REGISTERED_EVENTS', registered)
               uni.showToast({
                 title: '已取消报名',
                 icon: 'none'
@@ -214,12 +225,17 @@ export default {
           content: '确定要报名参加此活动吗？',
           success: (res) => {
             if (res.confirm) {
-              isRegistered.value = true
-              eventData.value.participants++
-              uni.showToast({
-                title: '报名成功',
-                icon: 'success'
-              })
+              try {
+                const merchantEvent = merchantEventApi.list().find(item => item.id === contentId.value)
+                if (merchantEvent) merchantEventApi.register(contentId.value)
+                const registered = uni.getStorageSync('REGISTERED_EVENTS') || []
+                if (!registered.includes(contentId.value)) uni.setStorageSync('REGISTERED_EVENTS', [contentId.value, ...registered])
+                isRegistered.value = true
+                eventData.value.participants++
+                uni.showToast({ title: '报名成功', icon: 'success' })
+              } catch (cause) {
+                uni.showToast({ title: cause.message || '报名失败', icon: 'none' })
+              }
             }
           }
         })
@@ -227,10 +243,22 @@ export default {
     }
 
     const shareContent = () => {
-      uni.showToast({
-        title: '分享功能待实现',
-        icon: 'none'
-      })
+      const path = `/pages/detail/index?id=${encodeURIComponent(contentId.value)}&type=event&source=share`
+      // #ifdef H5
+      uni.setClipboardData({ data: `${location.origin}${location.pathname}#${path}` })
+      // #endif
+      // #ifndef H5
+      uni.showShareMenu({ withShareTicket: true })
+      // #endif
+    }
+
+    const toggleReminder = () => {
+      const reminders = uni.getStorageSync('EVENT_REMINDERS_V1') || {}
+      isReminded.value = !isReminded.value
+      if (isReminded.value) reminders[contentId.value] = { id: contentId.value, title: eventData.value.name, remindAt: Math.max(Date.now(), new Date(eventData.value.startTime).getTime() - 3600000) }
+      else delete reminders[contentId.value]
+      uni.setStorageSync('EVENT_REMINDERS_V1', reminders)
+      uni.showToast({ title: isReminded.value ? '已添加应用内提醒' : '已取消提醒', icon: 'none' })
     }
 
     const back = () => {
@@ -239,10 +267,11 @@ export default {
 
     const loadData = () => {
       try {
-        const item = uni.getStorageSync('INDEX_LAST_ITEM')
+      const item = uni.getStorageSync('CONTENT_DETAIL_ACTIVE_V1') || uni.getStorageSync('INDEX_LAST_ITEM')
         if (item && item._id) {
+          contentId.value = item.id || item._id
           eventData.value.name = item.name || item.title || '活动名称'
-          eventData.value.author = item.author || '主办方'
+          eventData.value.author = item.author?.name || item.author || '主办方'
           eventData.value.description = item.description || ''
           eventData.value.address = item.address || ''
           eventData.value.startTime = item.startTime || ''
@@ -251,6 +280,10 @@ export default {
           eventData.value.maxParticipants = item.maxParticipants || 100
           eventData.value.likes = item.likes || 0
           eventData.value.status = item.status || 'upcoming'
+          const actionState = contentInteractionApi.getState(contentId.value)
+          isLiked.value = actionState.liked
+          isRegistered.value = (uni.getStorageSync('REGISTERED_EVENTS') || []).includes(contentId.value)
+          isReminded.value = Boolean((uni.getStorageSync('EVENT_REMINDERS_V1') || {})[contentId.value])
         }
       } catch (e) {
         console.warn('加载活动数据失败:', e)
@@ -269,6 +302,7 @@ export default {
       eventData,
       isLiked,
       isRegistered,
+      isReminded,
       bottomHeight,
       statusBarHeight,
       statusClass,
@@ -279,6 +313,7 @@ export default {
       canRegister,
       toggleLike,
       handleRegister,
+      toggleReminder,
       shareContent,
       back
     }
@@ -289,7 +324,7 @@ export default {
 <style scoped>
 .detail-page {
   min-height: 100vh;
-  background: #f8f8f8;
+  background: var(--color-page);
 }
 
 .detail-nav {
@@ -630,7 +665,7 @@ export default {
 }
 
 .bar-action text:first-child.active {
-  color: #ff4757;
+  color: var(--color-danger);
 }
 
 .bar-action text:last-child {

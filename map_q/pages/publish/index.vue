@@ -1,409 +1,128 @@
 <template>
-  <view class="publish-page">
-    <!-- Fixed Top Navigation Bar -->
-    <view class="nav-container" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <view class="nav-bar" :style="{ paddingRight: rightPadding + 'rpx' }">
-        <button class="nav-btn cancel" @click="goBack">取消</button>
-        <text class="nav-title">发布动态</text>
-        <button class="nav-btn submit" @click="handlePublish">发布</button>
-      </view>
-    </view>
+  <view class="page">
+    <GlobalNavBar title="发布动态">
+      <template #left><view class="nav-action secondary" @tap="leaveEditor">取消</view></template>
+      <template #right><view class="nav-action preview" @tap="openPreview">预览</view></template>
+    </GlobalNavBar>
 
-    <!-- Scrollable Content Area -->
-    <scroll-view class="content" scroll-y :style="{ paddingTop: totalNavHeight + 'px' }">
-      <!-- Text Input Area -->
-      <view class="input-section">
-        <textarea
-          class="textarea"
-          v-model="content"
-          placeholder="分享你的创作、想法或日常..."
-          maxlength="500"
-          :rows="5"
-        />
-        <text class="word-count">{{ content.length }}/500</text>
+    <scroll-view class="page-scroll" scroll-y :style="{ paddingTop: topOffset + 'px' }">
+      <view class="editor-card">
+        <text class="field-label">正文</text>
+        <textarea v-model="draft.text" class="content-input" maxlength="500" placeholder="分享你的创作、想法或日常…" />
+        <view class="input-meta"><text v-if="errors.content" class="field-error">{{ errors.content }}</text><text class="counter">{{ draft.text.length }}/500</text></view>
       </view>
 
-      <!-- Image/Video Picker - 9-Grid Layout -->
-      <view class="media-section">
-        <view class="media-grid">
-          <view v-for="(item, index) in mediaList" :key="index" class="media-item">
-            <image v-if="item" class="media-image" :src="item" mode="aspectFill" />
-            <button class="delete-btn" @click="removeMedia(index)">
-              <text class="delete-icon">×</text>
-            </button>
-          </view>
-          <button v-if="mediaList.length < 9" class="media-add" @click="addMedia">
-            <text class="add-icon">+</text>
-          </button>
-        </view>
+      <CreationMediaGrid v-model="draft.media" />
+      <text v-if="errors.media" class="standalone-error">{{ errors.media }}</text>
+
+      <view class="settings-card">
+        <view class="setting-row" @tap="openTypePicker"><view><text class="setting-label">内容类型</text><text class="setting-help">决定详情展示结构</text></view><view class="setting-value">{{ typeText }}<text class="chevron">›</text></view></view>
+        <view class="setting-row" @tap="openTopicPicker"><view><text class="setting-label">话题</text><text class="setting-help">最多添加 5 个</text></view><view class="setting-value">{{ topicText }}<text class="chevron">›</text></view></view>
+        <view class="setting-row" @tap="openMentionPicker"><view><text class="setting-label">@ 用户</text><text class="setting-help">最多选择 20 位</text></view><view class="setting-value">{{ mentionText }}<text class="chevron">›</text></view></view>
+        <view class="setting-row" @tap="openLocationPicker"><view><text class="setting-label">位置</text><text class="setting-help">精确、模糊或隐藏</text></view><view class="setting-value">{{ locationText }}<text class="chevron">›</text></view></view>
       </view>
 
-      <!-- Feature Options List -->
-      <view class="options-section">
-        <view class="option-row" @click="handleTopic">
-          <view class="option-left">
-            <text class="option-icon">#</text>
-            <text class="option-text">添加话题</text>
-          </view>
-          <text class="option-arrow">›</text>
+      <view class="form-card">
+        <text class="section-title">谁可以看</text>
+        <view class="segmented">
+          <view v-for="item in visibilityOptions" :key="item.id" :class="{ active: draft.visibility === item.id }" @tap="draft.visibility = item.id">{{ item.name }}</view>
         </view>
-        <view class="option-row" @click="handleMention">
-          <view class="option-left">
-            <text class="option-icon">@</text>
-            <text class="option-text">@好友</text>
-          </view>
-          <text class="option-arrow">›</text>
-        </view>
-        <view class="option-row" @click="handleLocation">
-          <view class="option-left">
-            <text class="option-icon">📍</text>
-            <text class="option-text">添加位置</text>
-          </view>
-          <text class="option-arrow">›</text>
-        </view>
-        <view class="option-row" @click="handlePrivacy">
-          <view class="option-left">
-            <text class="option-icon">🔒</text>
-            <text class="option-text">谁可以看</text>
-          </view>
-          <view class="option-right">
-            <text class="option-value">{{ privacyText }}</text>
-            <text class="option-arrow">›</text>
-          </view>
-        </view>
-        <view class="option-row" @click="toggleOriginal">
-          <view class="option-left">
-            <text class="option-icon">✓</text>
-            <text class="option-text">原创声明</text>
-          </view>
-          <view class="toggle" :class="{ active: isOriginal }">
-            <view class="toggle-dot" />
-          </view>
-        </view>
+        <text class="section-hint">{{ visibilityHint }}</text>
       </view>
 
-      <view class="safe-bottom" />
+      <view class="form-card">
+        <text class="section-title">版权与来源</text>
+        <view class="segmented copyright-tabs">
+          <view v-for="item in copyrightOptions" :key="item.id" :class="{ active: draft.copyright.kind === item.id }" @tap="selectCopyright(item)">{{ item.name }}</view>
+        </view>
+        <view v-if="draft.copyright.kind !== 'original'" class="input-field">
+          <text>{{ draft.copyright.kind === 'repost' ? '内容来源' : '授权说明' }}</text>
+          <input v-if="draft.copyright.kind === 'repost'" v-model="draft.copyright.sourceName" placeholder="填写作者、机构或原始链接" />
+          <textarea v-else v-model="draft.copyright.statement" maxlength="200" placeholder="填写授权主体、范围和期限" />
+        </view>
+        <text v-if="errors.copyright" class="field-error">{{ errors.copyright }}</text>
+      </view>
+
+      <view class="draft-tip"><view class="save-dot"></view><text>内容已自动保存为草稿</text></view>
+      <view class="safe-space"></view>
     </scroll-view>
   </view>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      content: '',
-      mediaList: [],
-      privacyText: '公开',
-      isOriginal: true,
-      statusBarHeight: 0,
-      navBarHeight: 88,
-      rightPadding: 40,
-      totalNavHeight: 0
-    }
-  },
-  created() {
-    try {
-      const windowInfo = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
-      const windowWidth = windowInfo.windowWidth || 375
-      const pxToRpx = 750 / windowWidth
+<script setup>
+import { computed, reactive, watch } from 'vue'
+import { onLoad, onShow } from '@dcloudio/uni-app'
+import GlobalNavBar from '../../components/common/GlobalNavBar.vue'
+import CreationMediaGrid from '../../components/creation/CreationMediaGrid.vue'
+import { creationApi, createCreationDraft, validateCreationDraft } from '../../utils/api/creation.js'
+import { mediaUploadApi } from '../../utils/api/mediaUpload.js'
+import { consumeCreationCommand, setActiveCreationDraft } from '../../utils/creationCommand.js'
 
-      const metrics = uni.getStorageSync('TOP_NAV_METRICS') || null
-      if (metrics) {
-        this.statusBarHeight = metrics.statusPx || 0
-      } else {
-        this.statusBarHeight = (windowInfo && windowInfo.statusBarHeight) || 0
-      }
+const draft = reactive(createCreationDraft('normal'))
+const errors = reactive({})
+const topOffset = uni.getStorageSync('TOP_NAV_METRICS')?.totalPx || 64
+const visibilityOptions = [{ id: 'public', name: '公开' }, { id: 'friends', name: '好友' }, { id: 'private', name: '私密' }]
+const copyrightOptions = [{ id: 'original', name: '原创' }, { id: 'repost', name: '转载' }, { id: 'licensed', name: '授权素材' }]
+const typeLabels = { normal: '图文动态', video: '视频', article: '文章', event: '活动' }
+const typeText = computed(() => typeLabels[draft.contentType] || '图文动态')
+const topicText = computed(() => draft.topics.length ? `${draft.topics.length} 个话题` : '未添加')
+const mentionText = computed(() => draft.mentions.length ? `${draft.mentions.length} 位用户` : '未添加')
+const locationText = computed(() => draft.location.precision === 'hidden' ? '隐藏位置' : (draft.location.name || (draft.location.precision === 'fuzzy' ? '模糊位置' : '精确位置')))
+const visibilityHint = computed(() => ({ public: '公开内容审核通过后进入地图和频道。', friends: '仅好友可见，地图锚点带好友访问范围。', private: '仅自己可见，不生成地图锚点。' }[draft.visibility]))
 
-      const navBarHeightPx = 88 / pxToRpx
-      this.totalNavHeight = this.statusBarHeight + navBarHeightPx
+let saveTimer = null
+watch(draft, value => {
+  clearTimeout(saveTimer)
+  saveTimer = setTimeout(() => creationApi.saveDraft(JSON.parse(JSON.stringify(value))), 500)
+}, { deep: true })
 
-      const menuBtnInfo = uni.getMenuButtonBoundingClientRect ? uni.getMenuButtonBoundingClientRect() : null
-      if (menuBtnInfo) {
-        const menuRight = windowWidth - menuBtnInfo.left
-        this.rightPadding = Math.round(Math.max(menuRight + 32, 90) * pxToRpx)
-      } else {
-        this.rightPadding = 180
-      }
-    } catch (e) {
-      this.statusBarHeight = 0
-      this.rightPadding = 40
-      this.totalNavHeight = 44
-    }
-  },
-  methods: {
-    goBack() {
-      uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/index/index' }) })
-    },
-    handlePublish() {
-      if (!this.content.trim() && this.mediaList.length === 0) {
-        uni.showToast({ title: '请输入内容或添加图片', icon: 'none' })
-        return
-      }
-      uni.showToast({ title: '发布成功', icon: 'success' })
-      setTimeout(() => this.goBack(), 1200)
-    },
-    addMedia() {
-      uni.chooseImage({
-        count: 9 - this.mediaList.length,
-        success: (res) => {
-          this.mediaList = [...this.mediaList, ...res.tempFilePaths]
-        }
-      })
-    },
-    removeMedia(index) {
-      this.mediaList.splice(index, 1)
-    },
-    handleTopic() {
-      uni.showToast({ title: '添加话题', icon: 'none' })
-    },
-    handleMention() {
-      uni.showToast({ title: '@好友', icon: 'none' })
-    },
-    handleLocation() {
-      uni.showToast({ title: '添加位置', icon: 'none' })
-    },
-    handlePrivacy() {
-      const options = ['公开', '仅好友可见', '私密']
-      uni.showActionSheet({
-        itemList: options,
-        success: (res) => {
-          this.privacyText = options[res.tapIndex]
-        }
-      })
-    },
-    toggleOriginal() {
-      this.isOriginal = !this.isOriginal
-    }
-  }
+function applyCommand(command) {
+  if (!command) return
+  if (command.applyType) draft.contentType = command.applyType
+  if (command.applyTopics) draft.topics = command.applyTopics.slice(0, 5)
+  if (command.applyMentions) draft.mentions = command.applyMentions.slice(0, 20)
+  if (command.applyLocation) draft.location = command.applyLocation
 }
+function clearErrors() { Object.keys(errors).forEach(key => delete errors[key]) }
+function openTypePicker() { setActiveCreationDraft(draft.id); uni.navigateTo({ url: '/pages/publish-type/index?picker=1' }) }
+function openTopicPicker() { setActiveCreationDraft(draft.id); uni.navigateTo({ url: '/pages/publish-topic-picker/index' }) }
+function openMentionPicker() { setActiveCreationDraft(draft.id); uni.navigateTo({ url: '/pages/publish-mention-picker/index' }) }
+function openLocationPicker() { setActiveCreationDraft(draft.id); uni.navigateTo({ url: '/pages/publish-location-picker/index' }) }
+function selectCopyright(item) {
+  draft.copyright.kind = item.id
+  if (item.id === 'original') draft.copyright = { kind: 'original', sourceName: '', statement: '原创内容，未经许可请勿转载' }
+  if (item.id === 'repost') draft.copyright.statement = '转载内容，来源见标注'
+  if (item.id === 'licensed') draft.copyright.statement = ''
+}
+function openPreview() {
+  clearErrors()
+  Object.assign(errors, validateCreationDraft(draft, { forSubmit: false }))
+  if (Object.keys(errors).length) return uni.showToast({ title: Object.values(errors)[0], icon: 'none' })
+  creationApi.saveDraft(draft)
+  setActiveCreationDraft(draft.id)
+  uni.navigateTo({ url: `/pages/publish-preview/index?draftId=${encodeURIComponent(draft.id)}` })
+}
+function leaveEditor() {
+  uni.showModal({
+    title: '保留当前草稿？',
+    content: '保留后可在下次进入时继续编辑。',
+    cancelText: '放弃',
+    confirmText: '保留',
+    success: result => {
+      if (result.confirm) creationApi.saveDraft(draft)
+      else creationApi.removeDraft(draft.id)
+      uni.navigateBack({ fail: () => uni.switchTab({ url: '/pages/index/index' }) })
+    }
+  })
+}
+onLoad(options => {
+  const saved = creationApi.getDraft(options?.draftId) || creationApi.getLatestDraft('normal')
+  if (saved) Object.assign(draft, saved, { media: mediaUploadApi.restore(saved.media || []) })
+  setActiveCreationDraft(draft.id)
+})
+onShow(() => applyCommand(consumeCreationCommand()))
 </script>
 
 <style scoped>
-.publish-page {
-  min-height: 100vh;
-  background: #ffffff;
-}
-
-.nav-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  background: #ffffff;
-  border-bottom: 1rpx solid #eeeeee;
-}
-
-.nav-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 88rpx;
-  padding: 0 40rpx;
-}
-
-.nav-btn {
-  font-size: 28rpx;
-  background: transparent;
-  border: none;
-  padding: 0;
-  margin: 0;
-  line-height: 1;
-}
-
-.nav-btn::after {
-  border: none;
-}
-
-.nav-btn.cancel {
-  color: #666666;
-}
-
-.nav-btn.submit {
-  color: #ffffff;
-  background: linear-gradient(135deg, #FF6B9D, #C44DFF);
-  padding: 12rpx 28rpx;
-  border-radius: 9999rpx;
-  font-weight: 600;
-}
-
-.nav-title {
-  font-size: 32rpx;
-  font-weight: 700;
-  color: #1A1A1A;
-}
-
-.content {
-  padding-bottom: 32rpx;
-  height: 100vh;
-  box-sizing: border-box;
-}
-
-.input-section {
-  position: relative;
-  margin: 32rpx 40rpx 0;
-  max-height: 40vh;
-}
-
-.textarea {
-  width: 100%;
-  min-height: 240rpx;
-  max-height: 40vh;
-  font-size: 28rpx;
-  line-height: 1.6;
-  color: #1A1A1A;
-  background: transparent;
-  border: none;
-  resize: none;
-  outline: none;
-}
-
-.word-count {
-  position: absolute;
-  bottom: 16rpx;
-  right: 0;
-  font-size: 24rpx;
-  color: #999999;
-}
-
-.media-section {
-  margin: 32rpx 40rpx;
-}
-
-.media-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16rpx;
-}
-
-.media-item,
-.media-add {
-  width: calc((100% - 32rpx) / 3);
-  aspect-ratio: 1;
-  border-radius: 16rpx;
-  overflow: hidden;
-  position: relative;
-}
-
-.media-image {
-  width: 100%;
-  height: 100%;
-}
-
-.delete-btn {
-  position: absolute;
-  top: 8rpx;
-  right: 8rpx;
-  width: 40rpx;
-  height: 40rpx;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  margin: 0;
-}
-
-.delete-btn::after {
-  border: none;
-}
-
-.delete-icon {
-  color: #ffffff;
-  font-size: 28rpx;
-  line-height: 1;
-}
-
-.media-add {
-  background: #F5F5F7;
-  border: 2rpx dashed #EEEEEE;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.add-icon {
-  font-size: 48rpx;
-  color: #999999;
-  line-height: 1;
-}
-
-.options-section {
-  margin: 40rpx 40rpx 0;
-}
-
-.option-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 96rpx;
-  border-bottom: 1rpx solid #F0F0F0;
-}
-
-.option-left {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-}
-
-.option-icon {
-  font-size: 32rpx;
-  width: 40rpx;
-  text-align: center;
-}
-
-.option-text {
-  font-size: 28rpx;
-  color: #1A1A1A;
-}
-
-.option-right {
-  display: flex;
-  align-items: center;
-  gap: 8rpx;
-}
-
-.option-value {
-  font-size: 26rpx;
-  color: #999999;
-}
-
-.option-arrow {
-  font-size: 32rpx;
-  color: #999999;
-}
-
-.toggle {
-  width: 88rpx;
-  height: 48rpx;
-  border-radius: 9999rpx;
-  background: #e5e5e5;
-  position: relative;
-  transition: background 0.2s;
-}
-
-.toggle.active {
-  background: linear-gradient(135deg, #FF6B9D, #C44DFF);
-}
-
-.toggle-dot {
-  position: absolute;
-  top: 4rpx;
-  right: 4rpx;
-  width: 40rpx;
-  height: 40rpx;
-  border-radius: 50%;
-  background: #ffffff;
-  transition: transform 0.2s;
-  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
-}
-
-.toggle.active .toggle-dot {
-  transform: translateX(-40rpx);
-}
-
-.safe-bottom {
-  height: calc(env(safe-area-inset-bottom) + 34rpx);
-}
+.page { min-height: 100vh; color: #0f172a; background: var(--color-page); }.nav-action { min-width: 54px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 14px; font-size: 14px; font-weight: 700; }.nav-action.secondary { color: #475569; background: #f1f5f9; }.nav-action.preview { color: #fff; background: #ea580c; }.page-scroll { height: 100vh; padding: 14px; box-sizing: border-box; }.editor-card,.settings-card,.form-card { margin-bottom: 12px; padding: 16px; border: 1px solid #eef2f7; border-radius: 20px; background: #fff; box-shadow: 0 8px 24px rgba(15,23,42,.05); }.field-label,.section-title,.section-hint,.field-error,.counter,.setting-label,.setting-help { display: block; }.field-label,.section-title { color: #0f172a; font-size: 16px; font-weight: 750; }.content-input { width: 100%; min-height: 150px; margin-top: 10px; font-size: 16px; line-height: 1.65; }.input-meta { display: flex; justify-content: space-between; gap: 10px; }.counter { margin-left: auto; color: #94a3b8; font-size: 11px; font-variant-numeric: tabular-nums; }.field-error,.standalone-error { color: #b91c1c; font-size: 12px; }.standalone-error { display: block; margin: -2px 4px 12px; }.settings-card { padding-top: 2px; padding-bottom: 2px; }.setting-row { min-height: 70px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid #f1f5f9; }.setting-row:last-child { border-bottom: 0; }.setting-label { font-size: 14px; font-weight: 700; }.setting-help { margin-top: 4px; color: #64748b; font-size: 11px; }.setting-value { max-width: 48%; display: flex; align-items: center; color: #475569; font-size: 13px; text-align: right; }.chevron { margin-left: 7px; color: #94a3b8; font-size: 22px; }.section-hint { margin-top: 10px; color: #64748b; font-size: 11px; line-height: 1.5; }.segmented { margin-top: 13px; padding: 4px; display: grid; grid-template-columns: repeat(3,1fr); gap: 4px; border-radius: 15px; background: #f1f5f9; }.segmented view { min-height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; color: #64748b; font-size: 13px; }.segmented view.active { color: #c2410c; background: #fff; box-shadow: 0 3px 10px rgba(15,23,42,.08); font-weight: 700; }.input-field { margin-top: 14px; }.input-field>text { display: block; color: #334155; font-size: 12px; font-weight: 700; }.input-field input,.input-field textarea { width: 100%; min-height: 48px; margin-top: 7px; padding: 11px 12px; border-radius: 13px; background: var(--color-page); box-sizing: border-box; font-size: 14px; }.input-field textarea { min-height: 90px; }.draft-tip { height: 44px; display: flex; align-items: center; justify-content: center; gap: 7px; color: #64748b; font-size: 11px; }.save-dot { width: 7px; height: 7px; border-radius: 50%; background: #22c55e; }.safe-space { height: calc(34px + env(safe-area-inset-bottom)); }
 </style>

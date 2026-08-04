@@ -87,6 +87,10 @@ export default {
       type: Boolean,
       default: false
     },
+    selectedPointId: {
+      type: [String, Number],
+      default: ''
+    },
     scaleFactor: {
       type: Number,
       default: 0.6667 // 将卡片缩放到当前大小的 1/3（原始尺寸的 2/3）
@@ -233,10 +237,14 @@ export default {
     },
     
     mapMarkers() {
-      return this.visibleLocations.map((location, index) => ({
+      return this.visibleLocations.map((location, index) => {
+        const selected = String(location.footprintId || location.id) === String(this.selectedPointId || '')
+        return {
         id: index,
-        latitude: location.latitude,
-        longitude: location.longitude,
+        sourceId: location.id,
+        footprintId: location.footprintId,
+        latitude: Number(location.latitude),
+        longitude: Number(location.longitude),
         title: location.title,
         subtitle: location.subtitle || '',
         likes: typeof location.likes === 'number' ? location.likes : (parseInt(location.likes, 10) || undefined),
@@ -245,9 +253,10 @@ export default {
         // 新增：透传类型，便于区分服务与内容
         type: location.type || 'content',
         clusterCount: location.clusterCount || 0,
-        iconPath: '/static/marker.png',
-        width: 20,
-        height: 20,
+        selected,
+        iconPath: selected ? '/static/marker-orange.png' : '/static/marker-blue.png',
+        width: selected ? 32 : 26,
+        height: selected ? 32 : 26,
         callout: {
           content: location.title,
           color: '#333',
@@ -255,14 +264,14 @@ export default {
           borderRadius: 8,
           bgColor: '#fff',
           padding: 8,
-          display: 'BYCLICK'
+          display: selected ? 'ALWAYS' : 'BYCLICK'
         },
         customCallout: {
           display: 'ALWAYS',
           anchorX: 0,
           anchorY: -Math.round(12 * this.scaleFactor) // 调整更贴近标记：减少垂直偏移，让卡片更靠近标记（随缩放）
         }
-      }))
+      }})
     },
     cardScaleStyle() {
       return `transform: scale(${this.scaleFactor}); transform-origin: bottom center;`;
@@ -279,6 +288,27 @@ export default {
     }
   },
   methods: {
+    focusLocation(location) {
+      if (!location || !Number.isFinite(Number(location.latitude)) || !Number.isFinite(Number(location.longitude))) return
+      this.currentScale = Math.max(Number(this.currentScale || 0), 15)
+      const target = {
+        latitude: Number(location.latitude),
+        longitude: Number(location.longitude)
+      }
+      this.currentRegion = this.approximateRegionFromScale(target.latitude, target.longitude, this.currentScale)
+      this.$nextTick(() => {
+        if (!this.mapCtx) return
+        try {
+          this.mapCtx.moveToLocation({
+            latitude: target.latitude,
+            longitude: target.longitude,
+            success: () => this.updateScaleAndRegion()
+          })
+        } catch (error) {
+          console.warn('足迹地图聚焦失败', error)
+        }
+      })
+    },
     handleCardTap(id) {
       this.$emit('marker-tap', id)
       this.hasTappedOnce = true
@@ -425,7 +455,11 @@ export default {
     },
     handleMarkerTap(e) {
       const id = e?.detail?.markerId ?? e?.markerId ?? e?.detail?.id ?? e?.id
-      this.$emit('marker-tap', id)
+      const marker = this.mapMarkers.find(item => item.id === id)
+      const location = marker
+        ? this.userLocations.find(item => String(item.footprintId || item.id) === String(marker.footprintId || marker.sourceId))
+        : this.visibleLocations[id]
+      this.$emit('marker-tap', location || id)
     },
     handleRegionChange(e) {
       try {
@@ -812,7 +846,7 @@ export default {
   position: absolute;
   right: 9px;
   top: 9px;
-  background: #FF4D4F; /* 红色醒目 */
+  background: #ff4d4f; /* 红色醒目 */
   color: #fff;
   font-size: 12px;
   border-radius: 999px;
@@ -834,7 +868,7 @@ export default {
   border: 2px solid #FF4D4F;
 }
 .cluster-bubble-count {
-  color: #FF4D4F;
+  color: #ff4d4f;
   font-weight: 800;
   font-size: 14px;
 }

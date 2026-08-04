@@ -168,6 +168,7 @@
 <script>
 import { ref, computed, onMounted } from 'vue'
 import { useInteraction } from '../../../utils/interaction.js'
+import { shareActiveContent } from '../../../utils/contentShare.js'
 
 export default {
   name: 'ServiceDetail',
@@ -285,7 +286,7 @@ export default {
     }
 
     const shareContent = () => {
-      uni.showToast({ title: '分享功能待实现', icon: 'none' })
+      shareActiveContent()
     }
 
     const back = () => {
@@ -294,7 +295,7 @@ export default {
 
     const loadData = () => {
       try {
-        const item = uni.getStorageSync('INDEX_LAST_ITEM')
+        const item = uni.getStorageSync('CONTENT_DETAIL_ACTIVE_V1') || uni.getStorageSync('INDEX_LAST_ITEM')
         if (item && item._id) {
           serviceData.value = { ...serviceData.value, ...item }
           const cardId = item._id || item.id
@@ -361,7 +362,7 @@ export default {
 <style scoped>
 .detail-page {
   min-height: 100vh;
-  background: #f8f8f8;
+  background: var(--color-page);
 }
 
 .detail-nav {
@@ -420,7 +421,7 @@ export default {
 .service-cover {
   height: 200px;
   position: relative;
-  background: linear-gradient(135deg, #e0f2fe 0%, #f0fdf4 54%, #fff7ed 100%);
+  background: linear-gradient(135deg,#e0f2fe,#f0fdf4 54%,#fff7ed);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -793,7 +794,7 @@ export default {
 .bar-right {
   margin-left: auto;
   padding: 12px 32px;
-  background: linear-gradient(135deg, #0ea5e9 0%, #22c55e 100%);
+  background: linear-gradient(135deg,#0ea5e9,#22c55e);
   border-radius: 24px;
 }
 

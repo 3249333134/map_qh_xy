@@ -87,11 +87,11 @@ function sendComment() {
 .media-image { width: 100%; height: 100%; }
 .side-actions { position: fixed; z-index: 8; right: 16px; bottom: 164px; display: flex; flex-direction: column; gap: 14px; }
 .side-action { width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255,255,255,.16); font-size: 22px; }
-.side-action.active,.mini-action.active { color: #ff7043; }
+.side-action.active,.mini-action.active { color: var(--color-primary); }
 .media-caption { position: fixed; z-index: 7; left: 16px; right: 78px; bottom: 88px; max-height: 66px; overflow: hidden; color: rgba(255,255,255,.92); font-size: 14px; line-height: 22px; }
 .comment-bar { position: fixed; z-index: 12; left: 0; right: 0; bottom: 0; min-height: 70px; padding: 10px 12px; display: grid; grid-template-columns: 1fr 38px 38px 52px; gap: 8px; align-items: center; background: rgba(12,12,14,.96); box-sizing: border-box; }
 .comment-input { height: 38px; padding: 0 14px; border-radius: 19px; color: #fff; background: rgba(255,255,255,.14); font-size: 13px; }
 .mini-action { height: 38px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-.send-btn { height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 17px; background: #ff7043; font-size: 13px; font-weight: 700; }
+.send-btn { height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 17px; background: var(--color-primary); font-size: 13px; font-weight: 700; }
 .send-btn.disabled { opacity: .42; }
 </style>

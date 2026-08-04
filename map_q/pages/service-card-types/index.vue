@@ -68,8 +68,8 @@ const onFilter = () => uni.showToast({ title: '筛选服务类型', icon: 'none'
 
 const types = ref([
   { name: '个人兴趣服务', char: '技', color: '#f6b33b', desc: '1v1定制/作品展示' },
-  { name: '商家场景服务', char: '店', color: '#248cf5', desc: '预约/会员/优惠' },
-  { name: '活动协作服务', char: '组', color: '#ff7043', desc: '组队/行前资料' },
+  { name: '商家场景服务', char: '店', color: 'var(--color-info)', desc: '预约/会员/优惠' },
+  { name: '活动协作服务', char: '组', color: 'var(--color-primary)', desc: '组队/行前资料' },
   { name: '服务频道', char: '频', color: '#24d06c', desc: '售后/评价/通知' }
 ])
 
@@ -78,15 +78,15 @@ const onTypeTap = (t) => uni.showToast({ title: t.name, icon: 'none' })
 
 <style scoped>
 .page {
-  --brand-blue: #248cf5;
-  --brand-orange: #ff7043;
-  --brand-purple: #7650c8;
+  --brand-blue: var(--color-info);
+  --brand-orange: var(--color-primary);
+  --brand-purple: var(--color-info);
   --success: #24d06c;
   --text-primary: #222;
   --text-body: #5f646d;
   --text-secondary: #8a8f98;
   --surface-app: #f7f7f8;
-  --surface-card: #ffffff;
+  --surface-card: #fff;
   --surface-muted: #f0f1f3;
   --card-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   min-height: 100vh;
@@ -104,7 +104,7 @@ const onTypeTap = (t) => uni.showToast({ title: t.name, icon: 'none' })
   justify-content: center;
   position: relative;
   background: var(--surface-card);
-  border-bottom: 1rpx solid #f0f1f3;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .nav-back {

@@ -141,7 +141,7 @@ export default {
   position: relative;
   z-index: 1;           /* 位于下层，避免遮挡右侧操作区 */
 }
-.comment-username { font-size: 14px; font-weight: 600; color: #333; }
+.comment-username { font-size: 14px; font-weight: 600; color: var(--color-text); }
 .comment-time { font-size: 12px; color: #999; }
 .comment-right-section {
   display: flex;
@@ -155,21 +155,21 @@ export default {
 .comment-text {
   font-size: 14px; color: #333; line-height: 1.4; margin-bottom: 6px; word-wrap: break-word;
 }
-.comment-reply { font-size: 12px; color: #999; }
-.comment-reply:hover { color: #007AFF; }
-.like-icon { color: #999; font-size: 16px; }
-.like-icon.liked { color: #ff4757; }
-.like-count { font-size: 12px; color: #999; }
+.comment-reply { font-size: 12px; color: var(--color-text-muted); }
+.comment-reply:hover { color: var(--color-info); }
+.like-icon { color: var(--color-text-muted); font-size: 16px; }
+.like-icon.liked { color: var(--color-danger); }
+.like-count { font-size: 12px; color: var(--color-text-muted); }
 
 /* 回复区域样式（与 /test 一致的灰色气泡） */
 .replies-section {
   margin-top: 8px;
   padding-left: 12px;
-  border-left: 2px solid #f0f0f0;
+  border-left: 2px solid #f1f5f9;
 }
 .reply-item {
   display: flex;
-  background: #f8f8f8;
+  background: var(--color-page);
   padding: 12px 8px;
   border-radius: 8px;
   margin-bottom: 6px;
@@ -193,8 +193,8 @@ export default {
   z-index: 2;
 }
 .reply-left { display: flex; align-items: center; gap: 6px; }
-.reply-username { font-size: 12px; font-weight: 600; color: #666; }
-.reply-time { font-size: 11px; color: #999; }
+.reply-username { font-size: 12px; font-weight: 600; color: var(--color-text-body); }
+.reply-time { font-size: 11px; color: var(--color-text-muted); }
 .reply-right-section {
   display: flex;
   flex-direction: column;
@@ -203,7 +203,7 @@ export default {
 }
 .reply-content {
   font-size: 12px;
-  color: #333;
+  color: var(--color-text);
   line-height: 1.4;
   word-wrap: break-word;
 }

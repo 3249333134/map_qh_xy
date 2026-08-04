@@ -62,8 +62,8 @@ export default {
   left: 0;
   right: 0;
   z-index: 999;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #e7e7e7;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .global-nav-bar.is-transparent {
@@ -104,7 +104,7 @@ export default {
 .nav-title {
   font-size: 17px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

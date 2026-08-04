@@ -41,6 +41,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { profileApi } from '../../utils/api/social.js'
 
 const statusBarHeight = ref(20)
 onMounted(() => {
@@ -48,6 +49,9 @@ onMounted(() => {
     const info = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
     statusBarHeight.value = info.statusBarHeight || 20
   } catch (e) {}
+  const profile = profileApi.get()
+  username.value = profile.username
+  desc.value = profile.description
 })
 
 const goBack = () => uni.navigateBack()
@@ -56,7 +60,12 @@ const username = ref('用户名')
 const desc = ref('这里是用户描述信息')
 const region = ref('成都')
 
-const onSave = () => uni.showToast({ title: '资料已保存', icon: 'none' })
+const onSave = () => {
+  if (!username.value.trim()) return uni.showToast({ title: '用户名不能为空', icon: 'none' })
+  profileApi.patch({ username: username.value.trim(), description: desc.value.trim() })
+  uni.showToast({ title: '资料已保存', icon: 'success' })
+  setTimeout(() => uni.navigateBack(), 400)
+}
 const onChangeAvatar = () => uni.showToast({ title: '更换头像', icon: 'none' })
 const onPickRegion = () => uni.showToast({ title: '选择地区', icon: 'none' })
 const onBg = () => uni.showToast({ title: '选择主页背景', icon: 'none' })
@@ -64,15 +73,15 @@ const onBg = () => uni.showToast({ title: '选择主页背景', icon: 'none' })
 
 <style scoped>
 .page {
-  --brand-blue: #248cf5;
-  --brand-orange: #ff7043;
-  --brand-purple: #7650c8;
+  --brand-blue: var(--color-info);
+  --brand-orange: var(--color-primary);
+  --brand-purple: var(--color-info);
   --success: #24d06c;
   --text-primary: #222;
   --text-body: #5f646d;
   --text-secondary: #8a8f98;
   --surface-app: #f7f7f8;
-  --surface-card: #ffffff;
+  --surface-card: #fff;
   --surface-muted: #f0f1f3;
   --card-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   min-height: 100vh;
@@ -90,7 +99,7 @@ const onBg = () => uni.showToast({ title: '选择主页背景', icon: 'none' })
   justify-content: center;
   position: relative;
   background: var(--surface-card);
-  border-bottom: 1rpx solid #f0f1f3;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .nav-back {
@@ -140,7 +149,7 @@ const onBg = () => uni.showToast({ title: '选择主页背景', icon: 'none' })
   width: 160rpx;
   height: 160rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #248cf5 0%, #7650c8 100%);
+  background: var(--color-info);
   display: flex;
   align-items: center;
   justify-content: center;

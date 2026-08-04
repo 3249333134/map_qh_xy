@@ -46,6 +46,20 @@
       }
     },
     {
+      "path": "pages/order/index",
+      "style": {
+        "navigationBarTitleText": "订单详情",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/merchant-events/index",
+      "style": {
+        "navigationBarTitleText": "商家活动管理",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/service/index",
       "style": {
         "navigationBarTitleText": "服务",
@@ -179,13 +193,20 @@
         "navigationStyle": "custom"
       }
     },
-    {
-      "path": "pages/publish-topic-picker/index",
-      "style": {
-        "navigationBarTitleText": "话题选择",
-        "navigationStyle": "custom"
-      }
-    },
+      {
+        "path": "pages/publish-topic-picker/index",
+        "style": {
+          "navigationBarTitleText": "话题选择",
+          "navigationStyle": "custom"
+        }
+      },
+      {
+        "path": "pages/publish-mention-picker/index",
+        "style": {
+          "navigationBarTitleText": "选择用户",
+          "navigationStyle": "custom"
+        }
+      },
     {
       "path": "pages/publish-location-picker/index",
       "style": {
@@ -250,30 +271,9 @@
       }
     },
     {
-      "path": "pages/channel-map/index",
-      "style": {
-        "navigationBarTitleText": "地图频道",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/message-search/index",
-      "style": {
-        "navigationBarTitleText": "消息搜索",
-        "navigationStyle": "custom"
-      }
-    },
-    {
       "path": "pages/channel-detail/index",
       "style": {
-        "navigationBarTitleText": "频道详情",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/channel-thread/index",
-      "style": {
-        "navigationBarTitleText": "频道线程",
+        "navigationBarTitleText": "地图频道",
         "navigationStyle": "custom"
       }
     },
@@ -281,13 +281,6 @@
       "path": "pages/contact-profile/index",
       "style": {
         "navigationBarTitleText": "联系人资料",
-        "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/channel-permissions/index",
-      "style": {
-        "navigationBarTitleText": "权限角色",
         "navigationStyle": "custom"
       }
     },
@@ -306,13 +299,6 @@
       }
     },
     {
-      "path": "pages/my-timeline/index",
-      "style": {
-        "navigationBarTitleText": "时间轴回顾",
-        "navigationStyle": "custom"
-      }
-    },
-    {
       "path": "pages/my-settings/index",
       "style": {
         "navigationBarTitleText": "设置",
@@ -323,6 +309,20 @@
       "path": "pages/my-privacy/index",
       "style": {
         "navigationBarTitleText": "隐私控制",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/my-timeline/index",
+      "style": {
+        "navigationBarTitleText": "时间轴回顾",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/my-channels/index",
+      "style": {
+        "navigationBarTitleText": "我的频道",
         "navigationStyle": "custom"
       }
     },

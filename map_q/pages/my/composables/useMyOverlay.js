@@ -1,13 +1,16 @@
 import { ref, computed } from 'vue'
+import { socialViewStateApi } from '../../../utils/api/social.js'
 
 export function useMyOverlay(params) {
-  const { favoriteData, contentTranslateY, screenHeight, safeTopOffset, activeModule, isOverlayExpanded: overlayExpandedRef } = params
+  const { footprintCards, contentTranslateY, screenHeight, safeTopOffset, activeModule, isOverlayExpanded: overlayExpandedRef } = params
+  const savedView = socialViewStateApi.getFootprint()
 
   // 允许外部传入同一 isOverlayExpanded 引用，保证布局和覆盖层状态一致
   const isOverlayExpanded = overlayExpandedRef || ref(false)
+  isOverlayExpanded.value = !!savedView.expanded
   const overlayLevels = ref(['国', '县', '市', '区', '街'])
   const activeOverlayLevel = ref('市')
-  const activeOverlayAreaGroup = ref('all')
+  const activeOverlayAreaGroup = ref(savedView.area || 'all')
   const overlayDisplayMode = ref('sections')
   const overlayScrollIntoView = ref('')
   const overlayLeftColumnData = ref([])
@@ -19,41 +22,49 @@ export function useMyOverlay(params) {
   const overlaySwipeVelocityThreshold = ref(0.35)
 
   // 新增：内容类别（列分类）
-  const activeCategory = ref('all')
+  const activeCategory = ref(savedView.category || 'all')
   const categoryFilterGroups = computed(() => {
-    const f = favoriteData.value || {}
-    const groups = ['photos', 'videos', 'articles', 'music', 'locations', 'services']
-    const labels = { photos: '照片', videos: '视频', articles: '文章', music: '音乐', locations: '地点', services: '服务' }
-    let total = 0
-    const arr = groups.map((g) => {
-      const len = Array.isArray(f[g]) ? f[g].length : 0
-      total += len
-      return { key: g, label: labels[g], count: len }
-    })
-    arr.unshift({ key: 'all', label: '全部', count: total })
-    return arr
+    const items = Array.isArray(footprintCards.value) ? footprintCards.value : []
+    const definitions = [
+      { key: 'content', label: '内容' },
+      { key: 'place', label: '地点' },
+      { key: 'service', label: '服务' },
+      { key: 'event', label: '活动' },
+      { key: 'route', label: '路线' },
+      { key: 'favorite', label: '收藏' }
+    ]
+    const groups = definitions
+      .map((definition) => ({
+        ...definition,
+        count: items.filter(item => {
+          if (definition.key === 'route') return item.layer === 'route' || item.layer === 'track'
+          if (definition.key === 'favorite') return item.sourceType === 'favorite'
+          return item.layer === definition.key
+        }).length
+      }))
+      .filter(item => item.count > 0)
+    groups.unshift({ key: 'all', label: '全部', count: items.length })
+    return groups
   })
 
   const favoriteAllItems = computed(() => {
-    const f = favoriteData.value || {}
-    const groups = ['photos', 'videos', 'articles', 'music', 'locations', 'services']
-    const all = []
-    groups.forEach((g) => {
-      const arr = Array.isArray(f[g]) ? f[g] : []
-      arr.forEach((item) => {
-        const copied = Object.assign({}, item)
-        copied.category = g
-        copied.type = (item && item.type === 'service') ? 'service' : (g === 'services' ? 'service' : 'content')
-        all.push(copied)
-      })
-    })
-    return all
+    return (Array.isArray(footprintCards.value) ? footprintCards.value : []).map((item) => ({
+      ...item,
+      category: item.sourceType === 'favorite'
+        ? 'favorite'
+        : item.layer === 'track' ? 'route' : item.layer,
+      type: item.detailType === 'service' ? 'service' : 'content',
+      _id: item.id,
+      id: item.sourceId,
+      name: item.title,
+      time: item.createdAt,
+      location: item.hasLocation ? { coordinates: [item.longitude, item.latitude] } : null
+    }))
   })
 
   const matchAreaGroup = (item, key) => {
     if (!key || key === 'all') return true
-    const txt = ((item && (item.address || item.location || '')) || '').toString()
-    return txt.indexOf(key) !== -1
+    return [item?.district, item?.city, item?.address].filter(Boolean).some(value => String(value).includes(key))
   }
 
   const matchCardScope = (item, lvl) => {
@@ -72,7 +83,7 @@ export function useMyOverlay(params) {
   // 新增：按类别匹配
   const matchCategory = (item, key) => {
     if (!key || key === 'all') return true
-    return ((item && item.category) || '') === key
+    return item?.category === key
   }
 
   const overlayFilteredCards = computed(() => {
@@ -102,11 +113,7 @@ export function useMyOverlay(params) {
     const items = favoriteAllItems.value
     const dict = {}
     items.forEach((it) => {
-      const txt = ((it && (it.address || it.location || '')) || '').toString()
-      const mDistrict = txt.match(/[\u4e00-\u9fa5]+区/)
-      const mCity = txt.match(/[\u4e00-\u9fa5]+市/)
-      const mStreet = txt.match(/[\u4e00-\u9fa5]+(?:路|街)/)
-      const seg = (mDistrict && mDistrict[0]) || (mCity && mCity[0]) || (mStreet && mStreet[0]) || '未知'
+      const seg = it.district || it.city || '未定位'
       dict[seg] = (dict[seg] || 0) + 1
     })
     const arr = Object.keys(dict).map((k) => ({ key: k, label: k, count: dict[k] }))
@@ -128,9 +135,7 @@ export function useMyOverlay(params) {
   }
 
   const getOverlayCardHeight = (column, idx) => {
-    const base = 220
-    const variance = 0
-    return base + variance
+    return 196
   }
 
   const expandMapFullScreen = () => {
@@ -140,9 +145,7 @@ export function useMyOverlay(params) {
       overlayDisplayMode.value = 'sections'
       computeOverlayColumns()
     }
-    try {
-      uni.showToast({ title: isOverlayExpanded.value ? '展开我的足迹地图卡片' : '收起我的足迹地图卡片', icon: 'none', duration: 600 })
-    } catch (e) {}
+    socialViewStateApi.patchFootprint({ expanded: isOverlayExpanded.value })
   }
 
   const handleOverlayLevelChange = (lvl) => { activeOverlayLevel.value = lvl }
@@ -151,13 +154,13 @@ export function useMyOverlay(params) {
     // 选中具体区域时，滚动到对应分段；选择“全部”时取消定点滚动
     overlayScrollIntoView.value = (key && key !== 'all') ? ('section-' + key) : ''
     if (isOverlayExpanded.value) computeOverlayColumns()
-    try { uni.showToast({ title: '区域：' + (key || '全部'), icon: 'none', duration: 500 }) } catch (e) {}
+    socialViewStateApi.patchFootprint({ area: activeOverlayAreaGroup.value })
   }
   // 新增：选择类别
   const selectCategoryGroup = (key) => {
     activeCategory.value = key || 'all'
     if (isOverlayExpanded.value) computeOverlayColumns()
-    try { uni.showToast({ title: '类别：' + (key || '全部'), icon: 'none', duration: 500 }) } catch (e) {}
+    socialViewStateApi.patchFootprint({ category: activeCategory.value })
   }
 
   const viewSectionAll = (sec) => {
@@ -165,7 +168,7 @@ export function useMyOverlay(params) {
     activeOverlayAreaGroup.value = sec.key
     overlayScrollIntoView.value = 'section-' + sec.key
     if (isOverlayExpanded.value) computeOverlayColumns()
-    try { uni.showToast({ title: '已切换到 ' + (sec.label || sec.key), icon: 'none', duration: 500 }) } catch (e) {}
+    socialViewStateApi.patchFootprint({ area: activeOverlayAreaGroup.value })
   }
 
   const onOverlayTouchStart = (e) => {
@@ -187,9 +190,14 @@ export function useMyOverlay(params) {
     const velocity = Math.abs(deltaY) / duration
     const threshold = overlaySwipeThreshold.value || 50
     const velocityThreshold = overlaySwipeVelocityThreshold.value || 0.35
-    if (deltaY < 0 && (Math.abs(deltaY) >= threshold || velocity >= velocityThreshold)) {
+    if (deltaY > 0 && (Math.abs(deltaY) >= threshold || velocity >= velocityThreshold)) {
       isOverlayExpanded.value = false
+      socialViewStateApi.patchFootprint({ expanded: false })
     }
+  }
+
+  const onOverlayScroll = (event) => {
+    socialViewStateApi.patchFootprint({ scrollTop: Number(event?.detail?.scrollTop || 0) })
   }
 
   return {
@@ -226,6 +234,7 @@ export function useMyOverlay(params) {
     viewSectionAll,
     onOverlayTouchStart,
     onOverlayTouchMove,
-    onOverlayTouchEnd
+    onOverlayTouchEnd,
+    onOverlayScroll
   }
 }

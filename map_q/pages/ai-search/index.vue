@@ -53,6 +53,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { setMapExploreCommand } from '../../utils/mapExploreState.js'
 
 const statusBarHeight = ref(20)
 const keyword = ref('')
@@ -70,7 +72,8 @@ const results = ref([
     icon: 'POI',
     title: '猫咖兴趣 POI',
     description: '距离 820m · 服务可预约',
-    action: '定位'
+    action: '定位',
+    location: { type: 'Point', coordinates: [104.0809, 30.6572] }
   },
   {
     id: 'track-1',
@@ -78,7 +81,8 @@ const results = ref([
     icon: '轨迹',
     title: '城市夜景摄影路线',
     description: '8.6km · 52分钟 · 轨迹',
-    action: '路线'
+    action: '路线',
+    location: { type: 'LineString', coordinates: [[104.072,30.653],[104.081,30.657],[104.09,30.661]] }
   },
   {
     id: 'content-1',
@@ -89,6 +93,10 @@ const results = ref([
     action: '查看'
   }
 ])
+
+onLoad(options => {
+  keyword.value = options?.q ? decodeURIComponent(options.q) : ''
+})
 
 onMounted(() => {
   try {
@@ -103,29 +111,25 @@ function goBack() {
 
 function openResult(item) {
   if (item.type === 'poi') {
-    try {
-      uni.setStorageSync('PENDING_MAP_FOCUS', {
-        id: item.id,
-        type: 'place',
-        name: item.title,
-        location: { type: 'Point', coordinates: [104.0809, 30.6572] }
-      })
-    } catch (e) {}
+    setMapExploreCommand({
+      focusPoint: { ...item, _id: item.id, type: 'place', name: item.title },
+      applyFilters: { category: 'all' }
+    })
     uni.switchTab({ url: '/pages/index/index' })
     return
   }
   if (item.type === 'track') {
-    try {
-      uni.setStorageSync('PENDING_MAP_FOCUS', {
-        id: item.id,
-        type: 'track',
-        name: item.title
-      })
-    } catch (e) {}
+    const firstPoint = item.location.coordinates[0]
+    setMapExploreCommand({
+      showRoute: { ...item, _id: item.id, type: 'track', name: item.title },
+      focusPoint: { ...item, _id: item.id, type: 'place', name: item.title, location: { type: 'Point', coordinates: firstPoint } }
+    })
     uni.switchTab({ url: '/pages/index/index' })
     return
   }
-  uni.showToast({ title: '查看用户内容', icon: 'none' })
+  const content = { ...item, _id: item.id, type: 'normal', name: item.title }
+  uni.setStorageSync('INDEX_LAST_ITEM', content)
+  uni.navigateTo({ url: `/pages/detail/index?id=${encodeURIComponent(item.id)}&source=ai-search&type=normal` })
 }
 </script>
 
@@ -137,7 +141,7 @@ function openResult(item) {
 }
 
 .status-spacer {
-  background: #ffffff;
+  background: #fff;
 }
 
 .search-header {
@@ -146,7 +150,7 @@ function openResult(item) {
   display: flex;
   align-items: center;
   gap: 20rpx;
-  border-bottom: 1rpx solid #f0f1f3;
+  border-bottom: 1rpx solid #f1f5f9;
   background: rgba(255, 255, 255, 0.98);
 }
 
@@ -219,7 +223,7 @@ function openResult(item) {
   margin-bottom: 36rpx;
   padding: 28rpx;
   border-radius: 14rpx;
-  background: #ffffff;
+  background: #fff;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   display: flex;
   align-items: flex-start;
@@ -230,7 +234,7 @@ function openResult(item) {
   width: 64rpx;
   height: 64rpx;
   border-radius: 16rpx;
-  background: linear-gradient(135deg, #248cf5 0%, #7650c8 100%);
+  background: linear-gradient(135deg, var(--color-info) 0%, var(--color-info) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -238,7 +242,7 @@ function openResult(item) {
 }
 
 .ai-badge-text {
-  color: #ffffff;
+  color: #fff;
   font-size: 26rpx;
   font-weight: 800;
 }
@@ -284,7 +288,7 @@ function openResult(item) {
   padding: 24rpx;
   margin-bottom: 16rpx;
   border-radius: 14rpx;
-  background: #ffffff;
+  background: #fff;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
 }
 
@@ -296,7 +300,7 @@ function openResult(item) {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  color: #fff;
   font-size: 26rpx;
   font-weight: 700;
 }
@@ -310,11 +314,11 @@ function openResult(item) {
 }
 
 .result-thumb.content {
-  background: linear-gradient(135deg, #69c8ff 0%, #7650c8 100%);
+  background: linear-gradient(135deg,#69c8ff 0%,var(--color-info) 100%);
 }
 
 .thumb-text {
-  color: #ffffff;
+  color: #fff;
   font-size: 28rpx;
   font-weight: 800;
 }
@@ -354,7 +358,7 @@ function openResult(item) {
   align-items: center;
   justify-content: center;
   border-radius: 999rpx;
-  color: #248cf5;
+  color: var(--color-info);
   background: rgba(36, 140, 245, 0.1);
   font-size: 24rpx;
   font-weight: 700;
@@ -365,7 +369,7 @@ function openResult(item) {
   margin: 20rpx 0 60rpx;
   padding: 28rpx;
   border-radius: 14rpx;
-  background: #ffffff;
+  background: #fff;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
 }
 

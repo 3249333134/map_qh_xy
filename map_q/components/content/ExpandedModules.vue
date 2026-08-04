@@ -2,20 +2,21 @@
   <scroll-view class="expanded-modules" scroll-y :style="{ height: height + 'px' }" @scroll="onScroll">
     <view class="modules-header">
       <view class="header-kicker-row">
-        <text class="header-kicker">附近地点</text>
-        <view class="open-badge"><view class="status-dot"></view><text>营业中</text></view>
+        <text class="header-kicker">{{ typeLabel }}详情</text>
+        <view class="open-badge"><view class="status-dot"></view><text>{{ statusLabel }}</text></view>
       </view>
-      <view class="title-row">
-        <text class="header-title">{{ headerTitle }}</text>
+      <view class="detail-summary-row">
+        <view class="detail-copy">
+          <text class="header-address">{{ addressText }}</text>
+          <view class="stats-row">
+            <text class="stat strong">{{ ratingText }}</text>
+            <text class="dot">•</text>
+            <text class="stat">{{ popularityText }}</text>
+            <text class="dot">•</text>
+            <text class="stat">{{ distanceText }}</text>
+          </view>
+        </view>
         <view class="header-nav" @tap="onNavigate({ type: 'point' })"><text>去这里</text><view class="arrow-icon"></view></view>
-      </view>
-      <text class="header-address">{{ addressText }}</text>
-      <view class="stats-row">
-        <text class="stat strong">4.8 分</text>
-        <text class="dot">•</text>
-        <text class="stat">10.8 万人来过</text>
-        <text class="dot">•</text>
-        <text class="stat">距你 1.2km</text>
       </view>
     </view>
 
@@ -31,14 +32,65 @@
     </swiper>
 
     <view class="description">
-      <text class="desc-text">{{ description }}</text>
+      <text class="desc-text">{{ placeDescription }}</text>
     </view>
 
-    <view class="subtabs">
-      <view v-for="t in tabs" :key="t.id" :class="['subtab',{ active: t.id===activeTab }]" @tap="selectTab(t.id)">{{ t.name }}</view>
+    <view v-if="detailType === 'service'" class="typed-detail service-detail">
+      <view class="identity-row">
+        <view class="identity-mark">服</view>
+        <view class="identity-copy">
+          <text class="identity-title">{{ providerName }}</text>
+          <text class="identity-sub">{{ verificationLabel }} · {{ serviceAreaText }}</text>
+        </view>
+        <text class="price-text">¥{{ servicePrice }}<text>/次</text></text>
+      </view>
+      <text class="typed-title">可预约时间</text>
+      <view class="slot-list">
+        <view v-for="slot in serviceSlots" :key="slot.id" class="slot-chip" :class="{ disabled: !slot.available, active: selectedSlotId === slot.id }" @tap="selectServiceSlot(slot)">
+          <text>{{ slot.date.slice(5) }}</text><text>{{ slot.time }}</text>
+        </view>
+      </view>
+      <view class="policy-card">
+        <text>取消：{{ servicePolicies.cancellation }}</text>
+        <text>改期：{{ servicePolicies.reschedule }}</text>
+        <text>退款：{{ servicePolicies.refund }}</text>
+      </view>
+      <view class="secondary-actions">
+        <view @tap="consultService">咨询</view>
+        <view :class="{ active: serviceCollected }" @tap="toggleServiceAction('collected')">{{ serviceCollected ? '已收藏' : '收藏' }}</view>
+        <view :class="{ active: providerFollowed }" @tap="toggleServiceAction('followed')">{{ providerFollowed ? '已关注' : '关注' }}</view>
+      </view>
+      <view class="primary-action" :class="{ disabled: !selectedSlotId }" @tap="reserveSelectedService">预约这项服务</view>
     </view>
 
-    <view v-for="section in sections" :key="section.id" class="module">
+    <view v-else-if="detailType === 'track'" class="typed-detail track-detail">
+      <view class="track-stats">
+        <view><text>{{ trackDistance }}</text><text>公里</text></view>
+        <view><text>{{ trackDuration }}</text><text>分钟</text></view>
+        <view><text>{{ trackDifficulty }}</text><text>难度</text></view>
+      </view>
+      <text class="typed-title">路线节点</text>
+      <view class="node-list">
+        <view v-for="(node,index) in trackNodes" :key="node.id || index" class="node-row" @tap="focusNode(node)">
+          <view class="node-index">{{ index + 1 }}</view>
+          <view class="node-copy"><text>{{ node.name || node.label }}</text><text>{{ node.note || '路线关键节点' }}</text></view>
+          <view class="chevron"></view>
+        </view>
+      </view>
+      <view class="primary-action" @tap="copyTrack">复制为我的路线</view>
+    </view>
+
+    <view v-else>
+      <view class="place-tools">
+        <view @tap="submitCorrection">地点纠错</view>
+        <view @tap="contactPlace">联系地点</view>
+      </view>
+      <view class="subtabs">
+        <view v-for="t in tabs" :key="t.id" :class="['subtab',{ active: t.id===activeTab }]" @tap="selectTab(t.id)">{{ t.name }}</view>
+      </view>
+    </view>
+
+    <view v-for="section in detailType === 'place' ? sections : []" :key="section.id" class="module">
       <view class="module-title">{{ section.name }}</view>
       <view class="module-list">
         <view v-for="item in section.items" :key="item.id" class="list-item" @tap="onItemTap(item)">
@@ -60,6 +112,8 @@
 </template>
 
 <script>
+import { contentInteractionApi } from '../../utils/api/contentInteraction.js'
+
 export default {
   props: {
     height: { type: Number, default: 0 },
@@ -73,13 +127,16 @@ export default {
         '/static/logo.png',
         '/static/logo.png'
       ],
-      description: '这里是地点简介，包含历史、特色与注意事项等信息，帮助你更好地了解。',
+      defaultDescription: '这里汇集地点介绍、附近内容、活动与服务，帮助你在出发前快速了解。',
       tabs: [
         { id: 'overview', name: '概览' },
         { id: '热门', name: '热门' },
         { id: '项目', name: '项目' }
       ],
       activeTab: 'overview',
+      selectedSlotId: '',
+      serviceCollected: false,
+      providerFollowed: false,
       sections: [
         { id: 'hot', name: '热门推荐', items: [
           { id: 'h1', title: '不见人精品展', desc: '当代艺术 | 今日 10:00-18:00', price: 29 },
@@ -115,14 +172,36 @@ export default {
     }
   },
   computed: {
-    headerTitle() {
-      const p = this.selectedPoint && this.selectedPoint.point
-      const name = p && (p.name || p.title || p.poiName)
-      if (name && String(name).trim()) return String(name).trim()
-      const addr = p && (p.address || p.detailAddress || p.fullAddress)
-      if (addr && String(addr).trim()) return String(addr).trim()
-      if (this.resolvedAddress && String(this.resolvedAddress).trim()) return String(this.resolvedAddress).trim()
-      return '正在解析地址…'
+    pointData() {
+      return (this.selectedPoint && this.selectedPoint.point) || {}
+    },
+    detailType() {
+      const kind = this.pointData.type
+      return kind === 'service' || kind === 'track' ? kind : 'place'
+    },
+    typeLabel() {
+      const labels = { place: '地点', service: '服务', event: '活动', replica: '地图副本' }
+      return labels[this.pointData.type] || '地点'
+    },
+    statusLabel() {
+      if (this.pointData.status === 'closed') return '已休息'
+      if (this.pointData.status === 'upcoming') return '即将开始'
+      return this.pointData.openingStatus || '可探索'
+    },
+    ratingText() {
+      const value = Number(this.pointData.rating || 4.8)
+      return `${value.toFixed(1)} 分`
+    },
+    popularityText() {
+      const likes = Number(this.pointData.likes || this.pointData.visits || 0)
+      if (likes >= 10000) return `${(likes / 10000).toFixed(1)} 万人关注`
+      return likes > 0 ? `${likes} 人关注` : '附近热门'
+    },
+    distanceText() {
+      return this.pointData.distanceText || this.pointData.distance || '地图范围内'
+    },
+    placeDescription() {
+      return this.pointData.description || this.pointData.summary || this.defaultDescription
     },
     addressText() {
       const p = this.selectedPoint && this.selectedPoint.point
@@ -138,12 +217,51 @@ export default {
     },
     gallerySlides() {
       return this.galleryImages.length ? this.galleryImages : [null]
+    },
+    providerName() {
+      return this.pointData.provider?.name || this.pointData.author || '认证服务者'
+    },
+    verificationLabel() {
+      return this.pointData.verification?.label || (this.pointData.verified === false ? '身份待认证' : '主体已认证')
+    },
+    serviceAreaText() {
+      return this.pointData.serviceArea?.description || '到店或附近上门'
+    },
+    servicePrice() {
+      return Number(this.pointData.pricing?.amount || this.pointData.price || 88)
+    },
+    serviceSlots() {
+      const slots = this.pointData.availableSlots || this.pointData.service?.availableSlots
+      if (Array.isArray(slots) && slots.length) return slots
+      const date = new Date().toISOString().slice(0, 10)
+      return ['09:30','14:00','16:30','19:30'].map((time,index) => ({ id: `inline_${index}`, date, time, available: index !== 2 }))
+    },
+    servicePolicies() {
+      return this.pointData.policies || this.pointData.service?.policies || { cancellation: '开始前24小时免费取消', reschedule: '开始前12小时可改期', refund: '符合规则时原路退回' }
+    },
+    trackDistance() {
+      return Number(this.pointData.distance || this.pointData.track?.distanceKm || 8.6)
+    },
+    trackDuration() {
+      return Number.parseInt(this.pointData.duration || this.pointData.track?.durationMinutes, 10) || 52
+    },
+    trackDifficulty() {
+      return this.pointData.difficulty || this.pointData.track?.difficulty || '轻松'
+    },
+    trackNodes() {
+      const nodes = this.pointData.track?.nodes || this.pointData.highEnergyPoints || []
+      return Array.isArray(nodes) ? nodes : []
     }
   },
   watch: {
     selectedPoint: {
       handler(val) {
         const p = val && val.point
+        if (p) {
+          const actionState = contentInteractionApi.getState(p._id || p.id || 'inline_detail')
+          this.serviceCollected = actionState.collected
+          this.providerFollowed = actionState.followed
+        }
         const addr = p && (p.address || p.detailAddress || p.fullAddress)
         if (addr && String(addr).trim()) { this.resolvedAddress = String(addr).trim(); return }
         const coords = p && p.location && Array.isArray(p.location.coordinates) ? p.location.coordinates : null
@@ -168,8 +286,64 @@ export default {
     onScroll() {},
     onImageTap(img) { this.$emit('item-tap', { type: 'image', src: img }) },
     onItemTap(item) { this.$emit('item-tap', item) },
-    onReserve(item) { this.$emit('reserve', { item }) },
+    onReserve(item) { this.$emit('reserve', { item, cardData: this.pointData }) },
     onNavigate(item) { this.$emit('navigate', { item }) },
+    selectServiceSlot(slot) {
+      if (!slot.available) return uni.showToast({ title: '该时段已约满', icon: 'none' })
+      this.selectedSlotId = slot.id
+    },
+    reserveSelectedService() {
+      if (!this.selectedSlotId) return uni.showToast({ title: '请先选择可预约时间', icon: 'none' })
+      const slot = this.serviceSlots.find(item => item.id === this.selectedSlotId)
+      this.$emit('reserve', { cardData: this.pointData, slot })
+    },
+    consultService() {
+      const name = this.providerName || '服务助手'
+      uni.navigateTo({ url: `/pages/chat/index?name=${encodeURIComponent(name)}&serviceId=${encodeURIComponent(this.pointData._id || this.pointData.id || '')}` })
+    },
+    toggleServiceAction(field) {
+      const id = this.pointData._id || this.pointData.id || 'inline_service'
+      const state = contentInteractionApi.toggle(id, field)
+      this.serviceCollected = state.collected
+      this.providerFollowed = state.followed
+      uni.showToast({ title: field === 'collected' ? (state.collected ? '已收藏' : '已取消收藏') : (state.followed ? '已关注' : '已取消关注'), icon: 'none' })
+    },
+    submitCorrection() {
+      uni.showModal({
+        title: '地点纠错',
+        content: '请说明名称、地址或营业信息中需要修正的内容。',
+        editable: true,
+        placeholderText: '填写纠错说明',
+        success: result => {
+          const content = String(result.content || '').trim()
+          if (!result.confirm || !content) return
+          try {
+            const list = uni.getStorageSync('PLACE_CORRECTIONS_V1') || []
+            uni.setStorageSync('PLACE_CORRECTIONS_V1', [{ id: `correction_${Date.now()}`, pointId: this.pointData._id || this.pointData.id, content, status: 'pending', createdAt: Date.now() }, ...list])
+            uni.showToast({ title: '纠错已提交', icon: 'none' })
+          } catch (error) {
+            uni.showToast({ title: '提交失败，请重试', icon: 'none' })
+          }
+        }
+      })
+    },
+    contactPlace() {
+      const phone = this.pointData.phone || this.pointData.place?.phone
+      if (!phone) return uni.showToast({ title: '该地点暂未提供联系电话', icon: 'none' })
+      uni.makePhoneCall({ phoneNumber: String(phone), fail: () => uni.showToast({ title: '无法调起电话，请检查设备权限', icon: 'none' }) })
+    },
+    focusNode(node) {
+      this.$emit('navigate', { type: 'node', node, cardData: this.pointData })
+    },
+    copyTrack() {
+      try {
+        const copies = uni.getStorageSync('COPIED_TRACKS_V1') || []
+        if (!copies.some(item => item._id === this.pointData._id)) uni.setStorageSync('COPIED_TRACKS_V1', [{ ...this.pointData, copiedAt: Date.now() }, ...copies])
+        uni.showToast({ title: '已复制到我的路线', icon: 'none' })
+      } catch (error) {
+        uni.showToast({ title: '复制失败，请重试', icon: 'none' })
+      }
+    },
     fetchReverseAddress(lat, lng) {
       try {
         const app = (typeof getApp === 'function') ? getApp() : null
@@ -229,28 +403,28 @@ export default {
 </script>
 
 <style scoped>
-.expanded-modules { width: 100%; box-sizing: border-box; background: #f8fafc; }
-.modules-header { position: relative; padding: 12px 16px 10px; background: #fff; }
-.header-kicker-row,.title-row,.stats-row,.header-nav,.open-badge { display: flex; align-items: center; }
-.header-kicker-row { min-height: 40px; padding-right: 92px; }
-.header-kicker-row,.title-row { justify-content: space-between; gap: 12px; }
+.expanded-modules { width: 100%; box-sizing: border-box; background: var(--color-page); }
+.modules-header { position: relative; padding: 14px 16px 12px; background: #fff; }
+.header-kicker-row,.detail-summary-row,.stats-row,.header-nav,.open-badge { display: flex; align-items: center; }
+.header-kicker-row { min-height: 28px; padding-right: 0; }
+.header-kicker-row { justify-content: space-between; gap: 12px; }
 .header-kicker { font-size: 12px; color: #64748b; font-weight: 600; }
-.header-kicker-row .open-badge { display: none; }
+.header-kicker-row .open-badge { display: flex; }
 .open-badge { gap: 5px; padding: 4px 8px; background: #f0fdf4; border-radius: 999px; color: #15803d; }
 .open-badge text { font-size: 11px; font-weight: 600; }
 .status-dot { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; }
-.title-row { position: absolute; top: 12px; right: 16px; justify-content: flex-end; margin-top: 0; }
-.header-title { display: none; }
-.header-nav { flex: 0 0 auto; min-height: 40px; padding: 0 12px; gap: 6px; color: #c2410c; background: #fff7ed; border-radius: 20px; }
-.header-nav text { font-size: 13px; font-weight: 650; }
-.arrow-icon { width: 7px; height: 7px; border-top: 1.5px solid #c2410c; border-right: 1.5px solid #c2410c; transform: rotate(45deg); }
-.header-address { font-size: 13px; color: #64748b; margin-top: 2px; display: block; line-height: 1.5; }
+.detail-summary-row { justify-content: space-between; gap: 12px; margin-top: 8px; }
+.detail-copy { flex: 1; min-width: 0; }
+.header-nav { flex: 0 0 auto; min-width: 76px; min-height: 44px; padding: 0 14px; justify-content: center; gap: 6px; color: #fff; background: #ea580c; border-radius: 15px; box-shadow: 0 6px 16px rgba(234,88,12,.2); }
+.header-nav text { color: #fff; font-size: 13px; font-weight: 700; }
+.arrow-icon { width: 7px; height: 7px; border-top: 1.5px solid #fff; border-right: 1.5px solid #fff; transform: rotate(45deg); }
+.header-address { font-size: 13px; color: #64748b; display: block; line-height: 1.5; }
 .stats-row { margin-top: 8px; color: #64748b; font-size: 12px; }
 .stat { font-size: 12px; }.stat.strong { color: #ea580c; font-weight: 700; }.dot { margin: 0 7px; color: #cbd5e1; }
-.image-swiper { width: 100%; height: 190px; padding: 10px 16px 0; box-sizing: border-box; background: #fff; }
+.image-swiper { width: 100%; height: 176px; padding: 8px 16px 0; box-sizing: border-box; background: #fff; }
 .slide-img,.map-placeholder { width: 100%; height: 100%; border-radius: 16px; overflow: hidden; }
 .slide-img { background: #e2e8f0; }
-.map-placeholder { position: relative; background: linear-gradient(145deg,#e0f2fe 0%,#f0fdf4 52%,#fff7ed 100%); }
+.map-placeholder { position: relative; background: linear-gradient(145deg,#e0f2fe,#f0fdf4 52%,#fff7ed); }
 .route-line { position: absolute; height: 4px; border-radius: 4px; background: rgba(255,255,255,.9); transform-origin: left center; }
 .route-one { width: 120%; left: -10%; top: 34%; transform: rotate(14deg); }.route-two { width: 92%; left: 14%; top: 56%; transform: rotate(-19deg); }.route-three { width: 70%; left: 42%; top: 10%; transform: rotate(68deg); }
 .place-marker { position: absolute; left: 54%; top: 38%; width: 34px; height: 34px; background: #ea580c; border: 4px solid #fff; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-shadow: 0 8px 18px rgba(234,88,12,.25); }
@@ -259,6 +433,10 @@ export default {
 .placeholder-label { font-size: 13px; color: #0f172a; font-weight: 700; }.placeholder-hint { margin-top: 2px; font-size: 11px; color: #64748b; }
 .description { padding: 12px 16px; background: #fff; }
 .desc-text { font-size: 14px; color: #475569; line-height: 1.65; }
+.typed-detail { padding: 2px 16px 26px; background: #fff; }.identity-row { display: flex; align-items: center; gap: 10px; padding: 14px 0; border-top: 1px solid #f1f5f9; }.identity-mark { flex: 0 0 44px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 14px; color: #fff; background: #0f9f92; font-size: 16px; font-weight: 800; }.identity-copy { flex: 1; min-width: 0; }.identity-title,.identity-sub,.price-text,.policy-card text,.slot-chip text,.node-copy text,.track-stats text { display: block; }.identity-title { color: #0f172a; font-size: 15px; font-weight: 750; }.identity-sub { margin-top: 4px; color: #64748b; font-size: 11px; }.price-text { color: #ea580c; font-size: 20px; font-weight: 800; }.price-text text { display: inline; font-size: 11px; font-weight: 600; }
+.typed-title { display: block; margin: 14px 0 10px; color: #0f172a; font-size: 15px; font-weight: 750; }.slot-list { display: flex; gap: 8px; overflow-x: auto; }.slot-chip { flex: 0 0 64px; min-height: 52px; border: 1px solid #e2e8f0; border-radius: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #475569; background: #fff; }.slot-chip text { font-size: 11px; line-height: 18px; }.slot-chip.active { border-color: #ea580c; color: #c2410c; background: #fff7ed; }.slot-chip.disabled { opacity: .38; }
+.policy-card { margin-top: 14px; padding: 12px; border-radius: 14px; background: var(--color-page); }.policy-card text { color: #64748b; font-size: 11px; line-height: 20px; }.primary-action { min-height: 48px; margin-top: 16px; border-radius: 15px; display: flex; align-items: center; justify-content: center; color: #fff; background: #ea580c; font-size: 14px; font-weight: 750; box-shadow: 0 7px 18px rgba(234,88,12,.2); }.primary-action.disabled { opacity: .42; box-shadow: none; }
+.track-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; padding: 14px 0; border-top: 1px solid #f1f5f9; }.track-stats view { min-height: 66px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 14px; background: var(--color-page); }.track-stats text:first-child { color: #0f172a; font-size: 18px; font-weight: 800; }.track-stats text:last-child { margin-top: 3px; color: #64748b; font-size: 10px; }.node-row { min-height: 58px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #f1f5f9; }.node-index { flex: 0 0 30px; width: 30px; height: 30px; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #1d4ed8; background: #eff6ff; font-size: 12px; font-weight: 750; }.node-copy { flex: 1; }.node-copy text:first-child { color: #0f172a; font-size: 13px; font-weight: 700; }.node-copy text:last-child { margin-top: 3px; color: #64748b; font-size: 11px; }.chevron { width: 7px; height: 7px; margin-right: 6px; border-top: 2px solid #94a3b8; border-right: 2px solid #94a3b8; transform: rotate(45deg); }
 .subtabs { display: flex; padding: 4px 16px 14px; background: #fff; }
 .subtab { min-height: 36px; padding: 0 16px; margin-right: 8px; border-radius: 18px; background: #f1f5f9; color: #64748b; font-size: 13px; display: flex; align-items: center; justify-content: center; }
 .subtab.active { background: #eff6ff; color: #1d4ed8; font-weight: 650; box-shadow: inset 0 0 0 1px #bfdbfe; }

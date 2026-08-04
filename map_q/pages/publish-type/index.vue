@@ -37,15 +37,25 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { setCreationCommand } from '../../utils/creationCommand.js'
 
 const statusBarHeight = ref(20)
-const types = [
+const pickerMode = ref(false)
+const entryTypes = [
   { key: 'feed', name: '图文动态', icon: '图', desc: '图片 / 视频 / 文章', bg: 'rgba(36, 140, 245, 0.12)', color: '#248cf5', url: '/pages/publish/index' },
   { key: 'track', name: '轨迹内容', icon: '轨', desc: '路径 + 多媒体节点', bg: 'rgba(36, 208, 108, 0.12)', color: '#24d06c', url: '/pages/publish-track-editor/index' },
   { key: 'cocreate', name: '地图共创', icon: '协', desc: '锚点 / Wiki / 审核', bg: 'rgba(118, 80, 200, 0.12)', color: '#7650c8', url: '/pages/publish-cocreate/index' },
   { key: 'ai', name: 'AI模板', icon: 'AI', desc: '摘要 / 标题 / 模板', bg: 'rgba(255, 112, 67, 0.12)', color: '#ff7043', url: '/pages/publish-ai-template/index' }
 ]
+const pickerTypes = [
+  { key: 'normal', name: '普通动态', icon: '文', desc: '图文与位置动态', bg: 'rgba(234,88,12,.1)', color: '#ea580c' },
+  { key: 'video', name: '视频', icon: '播', desc: '单个视频内容', bg: 'rgba(124,58,237,.1)', color: '#7c3aed' },
+  { key: 'article', name: '文章', icon: '章', desc: '长文与目录', bg: 'rgba(37,99,235,.1)', color: '#2563eb' },
+  { key: 'event', name: '活动', icon: '活', desc: '时间、地点与报名', bg: 'rgba(22,163,74,.1)', color: '#16a34a' }
+]
+const types = computed(() => pickerMode.value ? pickerTypes : entryTypes)
 
 onMounted(() => {
   try {
@@ -56,6 +66,11 @@ onMounted(() => {
 
 const goBack = () => uni.navigateBack()
 const onPickType = (item) => {
+  if (pickerMode.value) {
+    setCreationCommand({ applyType: item.key || 'normal' })
+    uni.navigateBack()
+    return
+  }
   uni.navigateTo({
     url: item.url,
     fail: () => {
@@ -63,6 +78,7 @@ const onPickType = (item) => {
     }
   })
 }
+onLoad(options => { pickerMode.value = options?.picker === '1' })
 </script>
 
 <style scoped>
@@ -72,7 +88,7 @@ const onPickType = (item) => {
 }
 
 .status-spacer {
-  background: #ffffff;
+  background: #fff;
 }
 
 .nav-bar {
@@ -81,8 +97,8 @@ const onPickType = (item) => {
   justify-content: space-between;
   height: 88rpx;
   padding: 0 24rpx;
-  background: #ffffff;
-  border-bottom: 1rpx solid #f0f1f3;
+  background: #fff;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .nav-back {
@@ -139,7 +155,7 @@ const onPickType = (item) => {
 .type-card {
   padding: 32rpx 24rpx;
   border-radius: 14rpx;
-  background: #ffffff;
+  background: #fff;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   display: flex;
   flex-direction: column;

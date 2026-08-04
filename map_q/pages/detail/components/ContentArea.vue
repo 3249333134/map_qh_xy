@@ -47,7 +47,7 @@ export default {
 <style scoped>
 .content-area {
   padding: 32rpx;
-  background-color: #fff;
+  background-color: var(--color-surface);
   border-top-left-radius: 32rpx;
   border-top-right-radius: 32rpx;
   margin-top: -20rpx;
@@ -109,8 +109,8 @@ export default {
 
 .tag {
   font-size: 24rpx;
-  color: #ff7a45;
-  background: #fff7ed;
+  color: #666;
+  background: #f0f0f0;
   padding: 8rpx 20rpx;
   border-radius: 20rpx;
 }

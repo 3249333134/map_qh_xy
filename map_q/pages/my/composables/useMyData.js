@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import { favoriteApi, footprintApi, profileApi, timelineApi } from '../../../utils/api/social.js'
 
 export function useMyData() {
   // 用户信息
@@ -51,91 +52,156 @@ export function useMyData() {
   })
 
   const userLocations = ref([])
-  const _favoriteRandomLocations = {}
-
-  const getRandomCoordinateInChengdu = () => {
-    const minLat = 30.55, maxLat = 30.75
-    const minLng = 104.03, maxLng = 104.15
-    const lat = +(minLat + Math.random() * (maxLat - minLat)).toFixed(6)
-    const lng = +(minLng + Math.random() * (maxLng - minLng)).toFixed(6)
-    return [lng, lat]
+  const footprintCards = ref([])
+  const knownLocations = {
+    1: { coordinates: [104.0832, 30.6571], address: '成都市锦江区春熙路', district: '锦江区' },
+    2: { coordinates: [104.0431, 30.6324], address: '成都市武侯区科华北路', district: '武侯区' },
+    3: { coordinates: [104.0559, 30.6733], address: '成都市青羊区人民公园', district: '青羊区' },
+    4: { coordinates: [104.0816, 30.6547], address: '成都市锦江区春熙路', district: '锦江区' },
+    5: { coordinates: [104.0577, 30.6718], address: '成都市青羊区宽窄巷子', district: '青羊区' },
+    7: { coordinates: [104.0722, 30.6991], address: '成都市金牛区文化路', district: '金牛区' },
+    8: { coordinates: [104.0669, 30.6643], address: '成都市青羊区音乐厅', district: '青羊区' },
+    9: { coordinates: [104.0564, 30.6739], address: '成都市青羊区宽窄巷子', district: '青羊区' },
+    10: { coordinates: [104.0812, 30.6518], address: '成都市锦江区锦里古街', district: '锦江区' },
+    1001: { coordinates: [104.0668, 30.5728], address: '成都市锦江区春熙路', district: '锦江区' },
+    1002: { coordinates: [104.0431, 30.6765], address: '成都市武侯区火车南站', district: '武侯区' },
+    1003: { coordinates: [104.0720, 30.6710], address: '成都市青羊区太升南路', district: '青羊区' }
   }
 
-  const getRandomAddress = () => {
-    const addresses = [
-      '成都市锦江区春熙路',
-      '成都市武侯区科华北路',
-      '成都市青羊区顺城大街',
-      '成都市高新区天府大道',
-      '成都市金牛区一环路北一段'
-    ]
-    return addresses[Math.floor(Math.random() * addresses.length)]
+  const resolveKnownLocation = (item) => {
+    if (!item || typeof item !== 'object') return { coordinates: null, address: '', district: '未定位' }
+    const coordinates = item.location && Array.isArray(item.location.coordinates)
+      ? item.location.coordinates
+      : Array.isArray(item.coordinates) ? item.coordinates : null
+    const known = knownLocations[item._id || item.id] || {}
+    return {
+      coordinates: coordinates || known.coordinates || null,
+      address: item.address || known.address || '',
+      district: item.district || known.district || '未定位'
+    }
   }
 
-  const ensureRandomLocationForIndex = (item, index, categoryKey) => {
-    if (!item || typeof item !== 'object') return { coordinates: null, address: '' }
-    const hasCoords = !!(item.location && Array.isArray(item.location.coordinates) && item.location.coordinates.length === 2)
-    const coordsFromAlt = Array.isArray(item.coordinates) ? item.coordinates : null
-    if (hasCoords) {
-      return { coordinates: item.location.coordinates, address: item.address || '' }
-    }
-    if (coordsFromAlt) {
-      return { coordinates: coordsFromAlt, address: item.address || '' }
-    }
-    const key = (item._id || item.id) ? (item._id || item.id) : `${categoryKey}-${index}`
-    if (!_favoriteRandomLocations[key]) {
-      const coordinates = getRandomCoordinateInChengdu()
-      _favoriteRandomLocations[key] = {
-        coordinates,
-        address: item.address || getRandomAddress()
-      }
-    }
-    return _favoriteRandomLocations[key]
+  const buildUserLocationsFromFootprints = () => {
+    userLocations.value = footprintApi.cards()
+      .filter(item => item.hasLocation)
+      .map(item => ({
+        id: item.sourceId,
+        footprintId: item.id,
+        title: item.title,
+        latitude: item.latitude,
+        longitude: item.longitude,
+        address: item.address,
+        cover: item.cover,
+        subtitle: item.author || item.subtitle,
+        likes: item.likes,
+        type: item.detailType === 'service' ? 'service' : item.detailType,
+        detailType: item.detailType,
+        layer: item.layer
+      }))
   }
 
-  const buildUserLocationsFromFavorites = () => {
-    try {
-      const result = []
-      const data = favoriteData.value || {}
-      const categoryKeys = Object.keys(data)
-      categoryKeys.forEach((key) => {
-        const list = Array.isArray(data[key]) ? data[key] : []
-        list.forEach((item, index) => {
-          const isService = item && (item.type === 'service' || key === 'services' || item.category === 'service' || item.category === 'services')
-          let coords = null
-          let address = item.address || ''
-          if (isService) {
-            if (item.location && Array.isArray(item.location.coordinates)) {
-              coords = item.location.coordinates
-            } else if (Array.isArray(item.coordinates)) {
-              coords = item.coordinates
-            }
-          } else {
-            const ensured = ensureRandomLocationForIndex(item, index, key)
-            coords = ensured.coordinates
-            address = address || ensured.address
-          }
-          if (Array.isArray(coords) && coords.length === 2) {
-            const [lng, lat] = coords
-            result.push({
-              id: item._id || item.id || `${key}-${index}`,
-              title: item.title || item.name || '收藏项',
-              latitude: lat,
-              longitude: lng,
-              address,
-              cover: item.cover || item.thumbnail || (item.images && item.images[0]) || '',
-              subtitle: item.author || item.subtitle || item.desc || '',
-              likes: typeof item.likes === 'number' ? item.likes : (parseInt(item.likes, 10) || undefined),
-              type: isService ? 'service' : 'content'
-            })
-          }
+  const hydrateRepositories = () => {
+    const profile = profileApi.get()
+    userInfo.value = {
+      avatar: profile.avatar || '/static/logo.png',
+      username: profile.username || '用户名',
+      description: profile.description || '这里是用户描述信息',
+      verified: !!profile.verified,
+      interests: profile.interests || []
+    }
+
+    const favoriteRecords = []
+    Object.keys(favoriteData.value || {}).forEach((category) => {
+      ;(favoriteData.value[category] || []).forEach((item, index) => {
+        favoriteRecords.push({
+          id: `favorite-${category}-${item.id || index}`,
+          objectType: category === 'locations' ? 'place' : category === 'services' ? 'service' : 'content',
+          objectId: String(item.id || index),
+          folderId: 'default',
+          availableState: 'available',
+          title: item.title || item.name,
+          snapshot: item,
+          createdAt: Date.parse(item.time || '') || Date.now() - index * 86400000
         })
       })
-      userLocations.value = result
-    } catch (e) {
-      console.warn('根据收藏数据构建位置标记点失败', e)
+    })
+    favoriteApi.seed(favoriteRecords)
+
+    const detailTypes = {
+      photos: 'normal',
+      videos: 'video',
+      articles: 'article',
+      music: 'normal',
+      locations: 'place',
+      services: 'service'
     }
+    const footprints = []
+    Object.keys(favoriteData.value || {}).forEach((category) => {
+      ;(favoriteData.value[category] || []).forEach((item, index) => {
+        const location = resolveKnownLocation(item)
+        const coordinates = location.coordinates
+        const hasLocation = Array.isArray(coordinates) && coordinates.length === 2
+        const detailType = detailTypes[category] || 'normal'
+        const layer = detailType === 'normal' || detailType === 'video' || detailType === 'article'
+          ? 'content'
+          : detailType
+        footprints.push({
+          id: `footprint-${item.id || `${category}-${index}`}`,
+          sourceType: layer,
+          sourceId: String(item.id || `${category}-${index}`),
+          detailType,
+          title: item.title || item.name || '足迹内容',
+          author: item.author || '',
+          subtitle: item.desc || '',
+          cover: item.cover || item.thumbnail || '',
+          latitude: hasLocation ? coordinates[1] : null,
+          longitude: hasLocation ? coordinates[0] : null,
+          city: '成都',
+          district: location.district,
+          address: location.address,
+          layer,
+          likes: Number(item.likes || 0),
+          locationPrecision: hasLocation ? 'exact' : 'hidden',
+          visibility: 'public',
+          snapshot: item,
+          dataOrigin: 'profile-fixture',
+          createdAt: Date.parse(item.time || '') || Date.now() - index * 86400000,
+          deleted: false
+        })
+      })
+    })
+    footprintApi.sync(footprints)
+    footprintCards.value = footprintApi.cards()
+    buildUserLocationsFromFootprints()
+
+    timelineApi.seed([
+      ...scheduleData.value.map((item, index) => ({
+        id: `timeline-event-${item.id}`,
+        type: 'event',
+        sourceId: String(item.id),
+        title: item.title,
+        private: false,
+        createdAt: Date.parse(`${item.date} ${item.time}`) || Date.now() - index * 86400000
+      })),
+      ...footprints.map((item) => ({
+        id: `timeline-${item.id}`,
+        type: item.sourceType,
+        sourceId: item.sourceId,
+        title: item.title,
+        private: item.visibility !== 'public',
+        createdAt: item.createdAt
+      }))
+    ])
+
+    const stats = profileApi.stats()
+    profileStats.value = [
+      { number: stats.following, label: '关注' },
+      { number: stats.followers, label: '粉丝' },
+      { number: stats.posts, label: '动态' }
+    ]
   }
+
+  hydrateRepositories()
 
   return {
     userInfo,
@@ -143,9 +209,9 @@ export function useMyData() {
     scheduleData,
     favoriteData,
     userLocations,
-    ensureRandomLocationForIndex,
-    getRandomCoordinateInChengdu,
-    getRandomAddress,
-    buildUserLocationsFromFavorites
+    footprintCards,
+    resolveKnownLocation,
+    buildUserLocationsFromFootprints,
+    hydrateRepositories
   }
 }

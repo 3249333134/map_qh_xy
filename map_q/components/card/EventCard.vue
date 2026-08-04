@@ -1,6 +1,6 @@
 <template>
   <view
-    class="card event-card"
+    class="card event-card app-card"
     :style="{ '--card-height': height + 'rpx' }">
     <!-- 上半部分：活动封面 -->
     <view
@@ -284,7 +284,7 @@ export default {
   width: 100%;
   cursor: pointer;
   overflow: hidden;
-  background: #f8f8f8;
+  background: var(--color-page);
 }
 
 .event-card .card-cover {
@@ -300,7 +300,7 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #f8f8f8;
+  background: var(--color-page);
 }
 
 .placeholder-icon {
@@ -428,8 +428,7 @@ export default {
 .progress-fill {
   height: 100%;
   border-radius: 3rpx;
-  background: #ff8a65;
-  transition: width 0.3s ease;
+  background: var(--color-primary);
 }
 
 .progress-text {
@@ -496,11 +495,11 @@ export default {
 }
 
 .event-card .action-btn.active .action-icon {
-  color: #ff2442;
+  color: var(--color-primary);
 }
 
 .event-card .action-btn.active .action-text {
-  color: #ff2442;
+  color: var(--color-primary);
 }
 
 .event-card .action-btn.active {
@@ -522,7 +521,7 @@ export default {
   font-size: 20rpx;
   font-weight: 500;
   line-height: 40rpx;
-  background: #ff8a65;
+  background: var(--color-primary);
 }
 
 .register-btn.registered {

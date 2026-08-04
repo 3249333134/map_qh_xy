@@ -88,7 +88,7 @@ const onChip = (c) => {
 }
 
 .status-spacer {
-  background: #ffffff;
+  background: #fff;
 }
 
 .nav-bar {
@@ -97,8 +97,8 @@ const onChip = (c) => {
   justify-content: space-between;
   height: 88rpx;
   padding: 0 24rpx;
-  background: #ffffff;
-  border-bottom: 1rpx solid #f0f1f3;
+  background: #fff;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .nav-back {
@@ -134,7 +134,7 @@ const onChip = (c) => {
   height: 56rpx;
   border-radius: 999rpx;
   background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
-  color: #ffffff;
+  color: #fff;
   font-size: 26rpx;
   font-weight: 700;
 }
@@ -155,8 +155,8 @@ const onChip = (c) => {
   width: 72rpx;
   height: 72rpx;
   border-radius: 18rpx;
-  background: #ff7043;
-  color: #ffffff;
+  background: var(--color-primary);
+  color: #fff;
   font-size: 26rpx;
   font-weight: 800;
   display: flex;
@@ -193,7 +193,7 @@ const onChip = (c) => {
 }
 
 .result-card {
-  background: #ffffff;
+  background: #fff;
   border-radius: 14rpx;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   padding: 0 24rpx;
@@ -204,7 +204,7 @@ const onChip = (c) => {
   align-items: center;
   justify-content: space-between;
   padding: 28rpx 0;
-  border-bottom: 1rpx solid #f0f1f3;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .result-row.last {
@@ -246,22 +246,22 @@ const onChip = (c) => {
 .chip {
   padding: 14rpx 28rpx;
   border-radius: 999rpx;
-  background: #ffffff;
+  background: #fff;
   color: #5f646d;
   font-size: 26rpx;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
 }
 
 .chip.active {
-  background: #248cf5;
-  color: #ffffff;
+  background: var(--color-info);
+  color: #fff;
 }
 
 .preview-card {
   margin-top: 32rpx;
   padding: 28rpx 24rpx;
   border-radius: 14rpx;
-  background: #ffffff;
+  background: #fff;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
 }
 
@@ -270,7 +270,7 @@ const onChip = (c) => {
   padding: 4rpx 16rpx;
   border-radius: 999rpx;
   background: rgba(36, 140, 245, 0.12);
-  color: #248cf5;
+  color: var(--color-info);
   font-size: 22rpx;
   font-weight: 600;
 }

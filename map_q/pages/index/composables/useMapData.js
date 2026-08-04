@@ -1,170 +1,202 @@
 import { ref, reactive } from 'vue'
-import { MONGO_CONFIG } from '../../../utils/db.js'
+import mapDataApi from '../../../utils/api/map.js'
 import { generateMockMapData, isMockEnabled } from '../../../utils/mockMapData.js'
+import { creationApi } from '../../../utils/api/creation.js'
+import {
+  buildMapQueryKey,
+  loadExploreDataCache,
+  saveExploreDataCache
+} from '../../../utils/mapExploreState.js'
+
+const TYPE_LAYER_MAP = {
+  normal: 'content',
+  video: 'content',
+  article: 'content',
+  place: 'place',
+  service: 'service',
+  event: 'event',
+  track: 'route',
+  replica: 'replica'
+}
+
+function filterItems(items, query) {
+  const layers = new Set(query.layers || [])
+  const start = query.timeStart ? new Date(query.timeStart).getTime() : 0
+  const end = query.timeEnd ? new Date(query.timeEnd).getTime() : 0
+  return (items || []).filter(item => {
+    const layer = item.anchorKind === 'replica' ? 'replica' : (TYPE_LAYER_MAP[item.type] || 'content')
+    if (layers.size && !layers.has(layer)) return false
+    if (!start && !end) return true
+    const itemTime = new Date(item.startTime || item.createdAt || item.time || 0).getTime()
+    if (!itemTime) return item.type !== 'event'
+    return (!start || itemTime >= start) && (!end || itemTime <= end)
+  })
+}
+
+function mergeCreationItems(items, query) {
+  const combined = [...(items || []), ...creationApi.getMapItems()]
+  const seen = new Set()
+  return filterItems(combined, query).filter(item => {
+    const id = String(item._id || item.id || '')
+    if (!id || seen.has(id)) return false
+    seen.add(id)
+    return true
+  })
+}
 
 export function useMapData() {
-  // 数据状态
   const mapPoints = ref([])
+  const previewPoints = ref([])
   const isLoading = ref(false)
+  const isRefreshing = ref(false)
+  const error = ref(null)
   const hasMoreData = ref(true)
   const currentPage = ref(1)
-  const pageSize = ref(10)
-
-  // 缓存相关
-  const cachedMapPoints = ref([])
-  const hasNewCachedData = ref(false)
-
-  // 分类数据缓存
-  const categoryData = reactive({})
-  const categoryPages = reactive({})
-
-  // 地图边界
+  const pageSize = ref(12)
   const mapBounds = ref(null)
-  const searchExpansionFactor = ref(1.0)
-  const maxExpansionFactor = ref(2.0)
+  const lastQuery = ref(null)
+  const categoryData = reactive({})
+  const memoryCache = new Map()
+  let requestSequence = 0
 
-  // 获取地图数据
-  // 在fetchMapData函数中添加更好的错误处理
-  const fetchMapData = async (activeCategory, mapConfig, isLoadMore = false) => {
-    if (isLoading.value && !isLoadMore) {
-      console.log('数据正在加载中，跳过重复请求')
-      return
-    }
+  const restorePreview = () => {
+    const cached = loadExploreDataCache({ allowStale: true })
+    if (!cached || !cached.items.length) return false
+    previewPoints.value = cached.items.slice(0, 6)
+    mapPoints.value = [...previewPoints.value]
+    return true
+  }
 
-    isLoading.value = true
-
-    try {
-      console.log('开始获取地图数据:', { activeCategory, isLoadMore })
-
-      const params = {
-        page: currentPage.value,
-        pageSize: pageSize.value,
-        lat: mapConfig.latitude,
-        lng: mapConfig.longitude,
-        radius: 5000
-      }
-
-      if (activeCategory !== 'all') {
-        const categoryMap = {
-          'hot': '热门资源',
-          'exhibition': '展会活动',
-          'personal': '个人活动'
-        }
-        params.category = categoryMap[activeCategory] || activeCategory
-      }
-
-      // 直接使用 uni.request 的 Promise，移除手动 setTimeout
-      const res = await uni.request({
-        url: MONGO_CONFIG.API_URL,
-        method: 'GET',
-        data: params
-      })
-
-      console.log('API响应:', res)
-      const responseData = res.data && res.data.data ? res.data.data :
-                          (Array.isArray(res.data) ? res.data : [])
-
-      if (res.statusCode === 200 && responseData && responseData.length > 0) {
-        const newData = responseData.map(item => ({
-          ...item,
-          _id: item._id || item.id || `id_${Date.now()}_${Math.random()}`,
-          name: item.name || item.title || `地点 ${Math.floor(Math.random() * 1000)}`,
-          author: item.author || '未知作者'
-        }))
-
-        if (isLoadMore) {
-          mapPoints.value = [...mapPoints.value, ...newData]
-        } else {
-          mapPoints.value = newData
-        }
-
-        const pagination = res.data && res.data.pagination ? res.data.pagination : {}
-        hasMoreData.value = currentPage.value < (pagination.totalPages || 1)
-
-        categoryData[activeCategory] = [...mapPoints.value]
-        categoryPages[activeCategory] = currentPage.value
-      } else if (isMockEnabled()) {
-        await generateTestData(activeCategory, mapConfig, isLoadMore)
-      } else {
-        if (!isLoadMore) {
-          mapPoints.value = []
-        }
-        hasMoreData.value = false
-      }
-    } catch (error) {
-      console.error('请求失败:', error)
-      if (isMockEnabled()) {
-        await generateTestData(activeCategory, mapConfig, isLoadMore)
-      } else {
-        if (!isLoadMore) {
-          mapPoints.value = []
-        }
-        hasMoreData.value = false
-      }
-    } finally {
-      isLoading.value = false
+  const buildQuery = (activeCategory, mapConfig, filters = {}, page = 1) => {
+    const timeRange = filters.timeRange || {}
+    const spatialFilter = filters.spatialFilter || {}
+    return {
+      bounds: mapBounds.value,
+      center: {
+        latitude: Number(mapConfig.latitude),
+        longitude: Number(mapConfig.longitude)
+      },
+      category: activeCategory || 'all',
+      timeStart: timeRange.start || '',
+      timeEnd: timeRange.end || '',
+      radiusKm: spatialFilter.mode === 'radius' ? Number(spatialFilter.radiusKm || 5) : 0,
+      layers: filters.layers || [],
+      page,
+      pageSize: pageSize.value
     }
   }
 
-  const generateTestData = async (activeCategory, mapConfig, isLoadMore = false) => {
-    if (!isLoadMore) {
-      mapPoints.value = []
-      categoryData[activeCategory] = []
+  const requestData = async (query, mapConfig, activeCategory, isLoadMore) => {
+    if (!isMockEnabled()) {
+      return mapDataApi.fetchByBounds(query.bounds, query)
     }
-
-    const newItems = await generateMockMapData(
+    const items = await generateMockMapData(
       activeCategory,
       mapConfig,
-      mapBounds.value,
-      currentPage.value,
-      mapPoints.value.length,
+      query.bounds,
+      query.page,
+      isLoadMore ? mapPoints.value.length : 0,
       isLoadMore
     )
-
-    mapPoints.value = [...mapPoints.value, ...newItems]
-    hasMoreData.value = true
+    return {
+      list: filterItems(items, query),
+      pagination: { page: query.page, totalPages: 3 },
+      totalInBounds: items.length,
+      densityInfo: {}
+    }
   }
 
-  // 加载更多数据
-  const loadMoreItems = (activeCategory, mapConfig) => {
+  const fetchMapData = async (activeCategory, mapConfig, options = {}) => {
+    const isLoadMore = options === true || options.isLoadMore === true
+    const filters = typeof options === 'object' ? options.filters || {} : {}
+    const force = typeof options === 'object' && options.force === true
+    if (isLoading.value && !isLoadMore && !force) return
+
+    const page = isLoadMore ? currentPage.value + 1 : 1
+    const query = buildQuery(activeCategory, mapConfig, filters, page)
+    const queryKey = buildMapQueryKey(query)
+    const sequence = ++requestSequence
+    lastQuery.value = { activeCategory, mapConfig, filters, query }
+    error.value = null
+    isLoading.value = true
+    isRefreshing.value = mapPoints.value.length > 0 && !isLoadMore
+
+    try {
+      const memory = memoryCache.get(queryKey)
+      if (!force && memory && Date.now() - memory.cachedAt < 10 * 60 * 1000) {
+        if (sequence !== requestSequence) return
+        mapPoints.value = isLoadMore ? [...mapPoints.value, ...memory.items] : [...memory.items]
+        currentPage.value = page
+        hasMoreData.value = memory.hasMore
+        return
+      }
+
+      const result = await requestData(query, mapConfig, activeCategory, isLoadMore)
+      if (sequence !== requestSequence) return
+      const items = mergeCreationItems(result.list, query)
+      mapPoints.value = isLoadMore ? [...mapPoints.value, ...items] : items
+      currentPage.value = page
+      hasMoreData.value = result.hasMore != null
+        ? result.hasMore
+        : page < Number(result.pagination?.totalPages || 1)
+      memoryCache.set(queryKey, { items, hasMore: hasMoreData.value, cachedAt: Date.now() })
+      categoryData[activeCategory] = [...mapPoints.value]
+      if (!isLoadMore) saveExploreDataCache(queryKey, mapPoints.value)
+    } catch (requestError) {
+      if (sequence !== requestSequence) return
+      error.value = {
+        message: requestError?.message || '内容加载失败，请检查网络后重试',
+        canRetry: true
+      }
+      if (!mapPoints.value.length) mapPoints.value = [...previewPoints.value]
+      hasMoreData.value = false
+    } finally {
+      if (sequence === requestSequence) {
+        isLoading.value = false
+        isRefreshing.value = false
+      }
+    }
+  }
+
+  const retry = async () => {
+    if (!lastQuery.value) return
+    const { activeCategory, mapConfig, filters } = lastQuery.value
+    await fetchMapData(activeCategory, mapConfig, { filters, force: true })
+  }
+
+  const loadMoreItems = async (activeCategory, mapConfig, filters = {}) => {
     if (isLoading.value || !hasMoreData.value) return
-
-    currentPage.value++
-    uni.showToast({
-      title: '加载更多数据...',
-      icon: 'loading',
-      duration: 500
-    })
-
-    fetchMapData(activeCategory, mapConfig, true)
+    await fetchMapData(activeCategory, mapConfig, { isLoadMore: true, filters })
   }
 
-  // 切换分类 - 禁用缓存，确保每次都重新生成数据
-  const switchCategory = (newCategory) => {
-    // 不使用缓存，强制重新生成数据
+  const switchCategory = () => {
     currentPage.value = 1
-    return false // 表示需要重新获取数据
+    return false
+  }
+
+  const invalidateRequests = () => {
+    requestSequence++
+    isLoading.value = false
+    isRefreshing.value = false
   }
 
   return {
-    // 状态
     mapPoints,
+    previewPoints,
     isLoading,
+    isRefreshing,
+    error,
     hasMoreData,
     currentPage,
     pageSize,
-    cachedMapPoints,
-    hasNewCachedData,
-    categoryData,
-    categoryPages,
     mapBounds,
-    searchExpansionFactor,
-    maxExpansionFactor,
-
-    // 方法
+    categoryData,
+    lastQuery,
+    restorePreview,
     fetchMapData,
-    generateTestData,
     loadMoreItems,
-    switchCategory
+    switchCategory,
+    retry,
+    invalidateRequests
   }
 }

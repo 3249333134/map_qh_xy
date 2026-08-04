@@ -1,6 +1,6 @@
 <template>
   <view
-    class="card article-card"
+    class="card article-card app-card"
     :style="{ '--card-height': height + 'rpx' }">
     <!-- 上半部分：文章封面（横向长图） -->
     <view
@@ -209,7 +209,7 @@ export default {
   width: 100%;
   cursor: pointer;
   overflow: hidden;
-  background: #f8f8f8;
+  background: var(--color-page);
 }
 
 .article-card .card-cover {
@@ -225,7 +225,7 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #f8f8f8;
+  background: var(--color-page);
 }
 
 .placeholder-icon {
@@ -363,11 +363,11 @@ export default {
 }
 
 .article-card .action-btn.active .action-icon {
-  color: #ff2442;
+  color: var(--color-primary);
 }
 
 .article-card .action-btn.active .action-text {
-  color: #ff2442;
+  color: var(--color-primary);
 }
 
 .article-card .action-btn.active {

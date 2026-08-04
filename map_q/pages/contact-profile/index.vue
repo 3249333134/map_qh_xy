@@ -203,14 +203,14 @@ const sendMessage = () => {
   align-items: center;
   justify-content: center;
   font-size: 52rpx;
-  color: #ffffff;
+  color: #fff;
   font-weight: 300;
   line-height: 1;
 }
 .nav-title {
   font-size: 34rpx;
   font-weight: 800;
-  color: #ffffff;
+  color: #fff;
 }
 .nav-right {
   position: absolute;
@@ -221,7 +221,7 @@ const sendMessage = () => {
   align-items: center;
   justify-content: center;
   font-size: 44rpx;
-  color: #ffffff;
+  color: #fff;
   line-height: 1;
 }
 
@@ -276,7 +276,7 @@ const sendMessage = () => {
   width: 168rpx;
   height: 168rpx;
   border-radius: 50%;
-  background: #ffffff;
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -293,7 +293,7 @@ const sendMessage = () => {
   height: 140rpx;
   border-radius: 50%;
   background: linear-gradient(135deg, #24d06c 0%, #1fae58 100%);
-  color: #ffffff;
+  color: #fff;
   font-size: 64rpx;
   font-weight: 800;
   display: flex;
@@ -305,7 +305,7 @@ const sendMessage = () => {
   margin-top: 24rpx;
   font-size: 42rpx;
   font-weight: 800;
-  color: #ffffff;
+  color: #fff;
 }
 
 .hero-desc {
@@ -327,7 +327,7 @@ const sendMessage = () => {
 }
 .hero-tag-text {
   font-size: 22rpx;
-  color: #ffffff;
+  color: #fff;
 }
 
 /* 信息卡片 */
@@ -335,7 +335,7 @@ const sendMessage = () => {
   margin: -40rpx 28rpx 0;
   position: relative;
   z-index: 5;
-  background: #ffffff;
+  background: #fff;
   border-radius: 24rpx;
   padding: 8rpx 28rpx;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
@@ -360,7 +360,7 @@ const sendMessage = () => {
 .info-icon.icon-blue {
   background: rgba(36, 140, 245, 0.12);
 }
-.info-icon.icon-blue .info-icon-text { color: #248cf5; }
+.info-icon.icon-blue .info-icon-text { color: var(--color-info); }
 .info-icon.icon-orange {
   background: rgba(255, 112, 67, 0.12);
 }
@@ -368,7 +368,7 @@ const sendMessage = () => {
 .info-icon.icon-purple {
   background: rgba(118, 80, 200, 0.12);
 }
-.info-icon.icon-purple .info-icon-text { color: #7650c8; }
+.info-icon.icon-purple .info-icon-text { color: var(--color-info); }
 
 .info-icon-text {
   font-size: 28rpx;
@@ -412,7 +412,7 @@ const sendMessage = () => {
 .shared-card {
   margin: 28rpx 28rpx 0;
   padding: 28rpx;
-  background: #ffffff;
+  background: #fff;
   border-radius: 24rpx;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
 }
@@ -456,13 +456,13 @@ const sendMessage = () => {
   background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
 }
 .shared-avatar.purple {
-  background: linear-gradient(135deg, #7650c8 0%, #9b6fe0 100%);
+  background: linear-gradient(135deg,var(--color-info) 0%,#9b6fe0 100%);
 }
 .shared-avatar.blue {
-  background: linear-gradient(135deg, #248cf5 0%, #4aa6ff 100%);
+  background: linear-gradient(135deg,var(--color-info) 0%,#4aa6ff 100%);
 }
 .shared-avatar-text {
-  color: #ffffff;
+  color: #fff;
   font-size: 34rpx;
   font-weight: 800;
 }
@@ -482,8 +482,8 @@ const sendMessage = () => {
   gap: 20rpx;
   padding: 20rpx 28rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
-  background: #ffffff;
-  border-top: 1rpx solid #f0f1f3;
+  background: #fff;
+  border-top: 1rpx solid #f1f5f9;
 }
 
 .bottom-btn {
@@ -518,7 +518,7 @@ const sendMessage = () => {
   box-shadow: 0 6rpx 16rpx rgba(255, 91, 53, 0.3);
 }
 .message-text {
-  color: #ffffff;
+  color: #fff;
   font-size: 30rpx;
   font-weight: 700;
 }

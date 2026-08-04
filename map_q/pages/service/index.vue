@@ -4,7 +4,7 @@
     <map-background
       :height="mapHeight"
       :config="mapConfig"
-      @refresh-location="getUserLocation"
+      @refresh-location="requestCurrentLocation"
       @region-changed="onMapRegionChanged"
       @move-to-location="handleMoveToLocation"
       @markertap="onMarkerTap"
@@ -26,6 +26,14 @@
       :visible-card-indices="visibleCardIndices"
       :is-dragging="isDragging"
       :selected-point="selectedPoint"
+      :city-name="exploreState.center.cityName"
+      :location-state="locationState"
+      :time-range="exploreState.timeRange"
+      :spatial-filter="exploreState.spatialFilter"
+      :explore-tool-mode="exploreToolMode"
+      :layers="exploreState.layers"
+      :explore-snapshot="exploreState"
+      show-explore-controls
       storage-key-prefix="serviceContentArea"
       @drag-start="handleDragStart"
       @drag="handleDrag"
@@ -43,6 +51,14 @@
       @close-point-detail="closePointDetail"
       @navigate-to-point="navigateToPoint"
       @right-action-tap="openCenterPointDetail"
+      @city-select="handleCitySelect"
+      @time-change="handleTimeChange"
+      @space-change="handleSpaceChange"
+      @layer-tap="openLayers"
+      @share-tap="openShare"
+      @close-explore-tool="closeExploreTool"
+      @layers-change="handleLayersChange"
+      @request-location="requestCurrentLocation"
     />
     <!-- 全局发布弹窗挂载点 -->
     <GlobalOverlayHost />
@@ -50,8 +66,8 @@
 </template>
 
 <script>
-import { onReady, onShow, onHide } from '@dcloudio/uni-app'
-import { ref, watch } from 'vue'
+import { onReady, onShow, onHide, onShareAppMessage } from '@dcloudio/uni-app'
+import { reactive, ref, watch } from 'vue'
 import MapBackground from '../../components/map/MapBackground.vue'
 import ContentArea from '../../components/content/ContentArea.vue'
 import GlobalOverlayHost from '../../components/common/GlobalOverlayHost.vue'
@@ -60,6 +76,12 @@ import { useServiceCategory } from './composables/useServiceCategory.js'
 import { useServiceMapData } from './composables/useServiceMapData.js'
 import { resolveAddressByCoords } from '../../utils/geocoder.js'
 import { getQqMapKey } from '../../utils/mapKey.js'
+import {
+  consumeMapExploreCommand,
+  encodeShareSnapshot,
+  loadMapExploreState,
+  saveMapExploreState
+} from '../../utils/mapExploreState.js'
 
 console.log('=== 服务页脚本加载 ===')
 
@@ -109,7 +131,9 @@ export default {
       fetchMapDataByBounds,
       getUserLocation,
       loadMoreItems: baseLoadMoreItems,
-      handleCardTap,
+      updateMapMarkers,
+      setExploreFilters,
+      handleCardTap: baseHandleCardTap,
       handleVisibleCardsChange,
       onMapRegionChanged,
       onSearchInput,
@@ -119,11 +143,104 @@ export default {
 
     // 地图组件引用（用于调用 moveToLocation）
     const mapBackground = ref(null)
+    const pendingMapCommand = ref(null)
+    const restoredExploreState = loadMapExploreState().state
+    const exploreState = reactive({
+      ...restoredExploreState,
+      center: {
+        ...restoredExploreState.center,
+        latitude: mapConfig.latitude,
+        longitude: mapConfig.longitude
+      },
+      layers: [...restoredExploreState.layers]
+    })
+    const exploreToolMode = ref('')
+    const locationState = ref('idle')
+    const contentHeightBeforeTool = ref(0)
+
+    const persistExploreState = () => {
+      exploreState.center.latitude = mapConfig.latitude
+      exploreState.center.longitude = mapConfig.longitude
+      exploreState.scale = mapConfig.scale
+      const saved = saveMapExploreState(exploreState)
+      Object.assign(exploreState, saved)
+      setExploreFilters(exploreState)
+    }
 
     const onSearchTap = () => {
+      exploreToolMode.value = ''
       if (maxContentHeight.value > 0) {
         contentHeight.value = maxContentHeight.value
       }
+    }
+
+    const requestCurrentLocation = async () => {
+      if (locationState.value === 'loading') return
+      locationState.value = 'loading'
+      try {
+        await getUserLocation()
+        locationState.value = 'granted'
+        exploreState.center.cityName = '当前位置'
+        persistExploreState()
+        currentPage.value = 1
+        await fetchMapData(activeCategory.value)
+      } catch (error) {
+        locationState.value = 'denied'
+        uni.showToast({ title: '定位失败，已保留当前城市', icon: 'none' })
+      }
+    }
+
+    const handleCitySelect = async city => {
+      locationState.value = 'manual'
+      mapConfig.latitude = Number(city.latitude)
+      mapConfig.longitude = Number(city.longitude)
+      mapConfig.scale = 14
+      exploreState.center = { ...city }
+      persistExploreState()
+      currentPage.value = 1
+      await fetchMapData(activeCategory.value)
+    }
+
+    const handleTimeChange = async value => {
+      exploreState.timeRange = { ...value }
+      persistExploreState()
+      currentPage.value = 1
+      await fetchMapData(activeCategory.value)
+    }
+
+    const handleSpaceChange = async value => {
+      exploreState.spatialFilter = { ...value }
+      persistExploreState()
+      currentPage.value = 1
+      await fetchMapData(activeCategory.value)
+    }
+
+    const openLayers = () => {
+      selectedPoint.value = null
+      if (!exploreToolMode.value) contentHeightBeforeTool.value = contentHeight.value
+      exploreToolMode.value = 'layers'
+      contentHeight.value = maxContentHeight.value
+    }
+
+    const openShare = () => {
+      selectedPoint.value = null
+      persistExploreState()
+      if (!exploreToolMode.value) contentHeightBeforeTool.value = contentHeight.value
+      exploreToolMode.value = 'share'
+      contentHeight.value = maxContentHeight.value
+    }
+
+    const closeExploreTool = () => {
+      exploreToolMode.value = ''
+      contentHeight.value = contentHeightBeforeTool.value || (screenHeight.value * 0.55)
+      contentHeightBeforeTool.value = 0
+    }
+
+    const handleLayersChange = async layers => {
+      exploreState.layers = [...layers]
+      persistExploreState()
+      currentPage.value = 1
+      await fetchMapData(activeCategory.value)
     }
 
     // 新增：接收地图组件发出的定位事件，回写到 mapConfig 驱动地图移动
@@ -134,6 +251,7 @@ export default {
         if (typeof scale === 'number') {
           mapConfig.scale = scale
         }
+        persistExploreState()
       } else {
         console.warn('handleMoveToLocation 收到无效坐标:', { latitude, longitude, scale })
       }
@@ -145,10 +263,31 @@ export default {
       uni.showToast({ title: String(msg || '地图加载失败'), icon: 'none' })
     }
 
-    // 处理上方媒体区域点击：跳转详情页并定位
+    const showInlineServiceDetail = item => {
+      if (!item) return
+      const coords = item.location?.coordinates || item.coordinates
+      selectedPoint.value = {
+        point: { ...item, type: item.type || 'service' },
+        marker: {
+          latitude: Number(coords?.[1] || mapConfig.latitude),
+          longitude: Number(coords?.[0] || mapConfig.longitude),
+          customData: { pointId: item._id || item.id, name: item.name || item.title }
+        }
+      }
+      contentHeight.value = Math.min(maxContentHeight.value, screenHeight.value * 0.7)
+    }
+
+    const handleCardTap = index => {
+      const item = baseHandleCardTap(index)
+      if (item) showInlineServiceDetail(item)
+      return item
+    }
+
+    // 处理上方媒体区域点击：在当前地图中替换内容区域
     const handleMediaTap = async ({ cardData, index }) => {
-      // 将媒体区域点击统一委托给 handleCardTap（内部负责定位与跳转服务详情页）
-      return handleCardTap(index)
+      const item = typeof index === 'number' ? baseHandleCardTap(index) : cardData
+      if (item) showInlineServiceDetail(item)
+      return item
     }
 
     // 处理下方内容区域点击：只定位到地图
@@ -176,12 +315,11 @@ export default {
       }
     }
 
-    // 处理“预”按钮：最小实现，不改变其他逻辑
-    const handleReserve = ({ cardData, index }) => {
-      console.log('点击预约:', { cardData, index })
-      uni.showToast({ title: '预约', icon: 'none' })
-      // 如需跳转预约详情页，请在此处替换为实际路径：
-      // uni.navigateTo({ url: `/pages/reserve/index?id=${cardData._id}` })
+    const handleReserve = ({ cardData, index, slot } = {}) => {
+      const item = cardData || (typeof index === 'number' ? mapPoints.value[index] : null) || selectedPoint.value?.point
+      if (!item) return uni.showToast({ title: '未找到服务数据', icon: 'none' })
+      uni.setStorageSync('BOOKING_ITEM', { ...item, type: 'service', selectedSlot: slot || null })
+      uni.navigateTo({ url: `/pages/booking/index?source=service&id=${encodeURIComponent(item._id || item.id || '')}` })
     }
 
     // 选中点详情状态
@@ -199,6 +337,7 @@ export default {
 
     // 标记点点击处理
     const onMarkerTap = (payload) => {
+      exploreToolMode.value = ''
       // 页面未初始化完成时不处理点击事件
       if (!isPageReady.value) {
         console.log('服务页未就绪，忽略标记点点击')
@@ -254,6 +393,7 @@ export default {
 
     // POI点击处理
     const onPoiTap = (payload) => {
+      exploreToolMode.value = ''
       // 页面未初始化完成时不处理点击事件
       if (!isPageReady.value) {
         console.log('服务页未就绪，忽略POI点击')
@@ -352,6 +492,7 @@ export default {
       getUserLocation().then(() => {
         initLayout()
         loadMapState()
+        persistExploreState()
         searchBoxHeight.value = 60
         loadInitialData()
         console.log('服务页初始化完成')
@@ -364,6 +505,10 @@ export default {
           selectedPoint.value = null
           console.log('服务页就绪前再次重置 selectedPoint:', selectedPoint.value)
           isPageReady.value = true
+          if (pendingMapCommand.value?.openDetail) {
+            showInlineServiceDetail(pendingMapCommand.value.openDetail)
+            pendingMapCommand.value = null
+          }
           console.log('服务页已就绪，开始接收点击事件')
           console.log('就绪时 selectedPoint:', selectedPoint.value)
         }, 2000) // 延长延迟时间，确保地图完全初始化
@@ -371,12 +516,17 @@ export default {
         console.error('服务页初始化失败:', err)
         initLayout()
         loadMapState()
+        persistExploreState()
         searchBoxHeight.value = 60
         loadInitialData()
         // 即使初始化失败也标记页面就绪（延迟后）
         setTimeout(() => {
           selectedPoint.value = null
           isPageReady.value = true
+          if (pendingMapCommand.value?.openDetail) {
+            showInlineServiceDetail(pendingMapCommand.value.openDetail)
+            pendingMapCommand.value = null
+          }
           console.log('服务页已就绪（异常路径），开始接收点击事件')
         }, 2000)
       })
@@ -391,12 +541,26 @@ export default {
           page.getTabBar().setData({ selected: 1 })
         }
       } catch (e) {}
+      const command = consumeMapExploreCommand()
+      if (command) {
+        pendingMapCommand.value = command
+        if (isPageReady.value && command.openDetail) {
+          showInlineServiceDetail(command.openDetail)
+          pendingMapCommand.value = null
+        }
+      }
     })
     
     // 页面隐藏时保存服务页状态
     onHide(() => {
       saveMapState()
+      persistExploreState()
     })
+
+    onShareAppMessage(() => ({
+      title: `${exploreState.center.cityName}服务地图 · 足迹`,
+      path: `/pages/service/index?map=${encodeShareSnapshot(exploreState)}`
+    }))
     
     return {
       // 组件引用
@@ -421,6 +585,9 @@ export default {
       hasMoreData,
       mapConfig,
       visibleCardIndices,
+      exploreState,
+      exploreToolMode,
+      locationState,
       // 选中点详情
       selectedPoint,
       // 方法
@@ -436,6 +603,14 @@ export default {
       handleCategoryChange,
       onSearchInput,
       onSearchTap,
+      requestCurrentLocation,
+      handleCitySelect,
+      handleTimeChange,
+      handleSpaceChange,
+      openLayers,
+      openShare,
+      closeExploreTool,
+      handleLayersChange,
       loadMoreItems,
       handleCardTap,
       handleVisibleCardsChange,

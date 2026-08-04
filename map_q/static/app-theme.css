@@ -1,0 +1,367 @@
+/*
+ * Footprint light theme
+ * A single visual contract shared by H5 and Weixin builds.
+ */
+:root,
+page {
+  --color-primary: #ea580c;
+  --color-primary-strong: #c2410c;
+  --color-primary-soft: #fff7ed;
+  --color-info: #2563eb;
+  --color-info-soft: #eff6ff;
+  --color-success: #16a34a;
+  --color-success-soft: #f0fdf4;
+  --color-warning: #d97706;
+  --color-warning-soft: #fffbeb;
+  --color-danger: #dc2626;
+  --color-danger-soft: #fef2f2;
+  --color-page: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-soft: #f1f5f9;
+  --color-text: #0f172a;
+  --color-text-body: #475569;
+  --color-text-muted: #94a3b8;
+  --color-border: #e2e8f0;
+  --color-scrim: rgba(15, 23, 42, 0.52);
+
+  --space-unit: 8rpx;
+  --space-1: 8rpx;
+  --space-2: 16rpx;
+  --space-3: 24rpx;
+  --space-4: 32rpx;
+  --space-5: 40rpx;
+  --space-6: 48rpx;
+
+  --radius-control: 16rpx;
+  --radius-card: 24rpx;
+  --radius-panel: 32rpx;
+  --radius-pill: 999rpx;
+
+  --shadow-card: 0 8rpx 28rpx rgba(15, 23, 42, 0.075);
+  --shadow-float: 0 16rpx 40rpx rgba(15, 23, 42, 0.12);
+  --shadow-sheet: 0 -16rpx 48rpx rgba(15, 23, 42, 0.1);
+
+  --tap-size: 88rpx;
+  --motion-fast: 150ms;
+  --motion-standard: 180ms;
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  color: var(--color-text);
+  background: var(--color-page);
+}
+
+page {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea,
+picker,
+scroll-view,
+swiper,
+view {
+  box-sizing: border-box;
+}
+
+button,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+button::after {
+  border: 0;
+}
+
+input,
+textarea {
+  color: var(--color-text);
+  caret-color: var(--color-primary);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-muted);
+}
+
+/* Shared card shell. Component-specific media and information layouts remain intact. */
+.app-card {
+  overflow: hidden !important;
+  border: 1rpx solid rgba(226, 232, 240, 0.72) !important;
+  border-radius: var(--radius-card) !important;
+  background: var(--color-surface) !important;
+  box-shadow: 0 8rpx 28rpx rgba(15, 23, 42, 0.08) !important;
+  transform: translateZ(0);
+  transition:
+    transform var(--motion-standard) var(--ease-standard),
+    box-shadow var(--motion-standard) var(--ease-standard),
+    opacity var(--motion-fast) ease;
+}
+
+.app-card:active {
+  opacity: 0.94;
+  transform: translateZ(0) scale(0.99);
+  box-shadow: 0 4rpx 18rpx rgba(15, 23, 42, 0.07) !important;
+}
+
+.app-card .card-content,
+.app-card .journal-body,
+.app-card .coupon-content,
+.app-card .hotspot-info {
+  padding: var(--space-2) !important;
+  background: var(--color-surface) !important;
+}
+
+.app-card .card-title,
+.app-card .title-text,
+.app-card .hotspot-title,
+.app-card .service-title {
+  color: var(--color-text) !important;
+  font-size: 28rpx !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+}
+
+.app-card .card-author,
+.app-card .card-address,
+.app-card .card-excerpt,
+.app-card .entry-loc,
+.app-card .hotspot-author,
+.app-card .service-address {
+  color: var(--color-text-body) !important;
+  line-height: 1.5 !important;
+}
+
+.app-card .card-footer,
+.app-card .journal-footer {
+  border-top-color: var(--color-surface-soft) !important;
+}
+
+.app-card .action-btn,
+.app-card .action-stamp,
+.app-card .quick-btn {
+  min-width: 64rpx;
+  min-height: 64rpx;
+  color: var(--color-text-body) !important;
+  transition:
+    color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    opacity var(--motion-fast) ease;
+}
+
+.app-card .action-btn.active,
+.app-card .action-stamp.active {
+  color: var(--color-primary) !important;
+}
+
+.app-card .article-badge,
+.app-card .event-badge,
+.app-card .place-badge,
+.app-card .type-stamp,
+.app-card .event-time,
+.app-card .hotspot-status {
+  border-radius: var(--radius-pill) !important;
+}
+
+/* Normalize the page-level cards already used throughout the registered routes. */
+.card,
+.form-card,
+.summary-card,
+.note-card,
+.info-card,
+.list-card,
+.settings-card,
+.editor-card,
+.option-card,
+.preview-card,
+.channel-card,
+.location-card,
+.record-card,
+.coordinate-card,
+.result-card,
+.progress-card,
+.history-card,
+.map-link-card,
+.policy-card,
+.detail-card,
+.task-card,
+.income-card,
+.profile-card,
+.business-card,
+.identity-card,
+.copyright-card,
+.author-card,
+.participants-card,
+.time-card,
+.license-card,
+.activity-card,
+.behavior-card,
+.linked-card,
+.action-card,
+.review-card,
+.service-card,
+.share-card {
+  border: 1rpx solid var(--color-border) !important;
+  border-radius: var(--radius-card) !important;
+  background-color: var(--color-surface) !important;
+  box-shadow: var(--shadow-card) !important;
+}
+
+.error-card {
+  border-color: rgba(220, 38, 38, 0.24) !important;
+  background: var(--color-danger-soft) !important;
+  box-shadow: none !important;
+}
+
+.warning-card,
+.notice-card {
+  border-color: rgba(217, 119, 6, 0.22) !important;
+  background: var(--color-warning-soft) !important;
+  box-shadow: none !important;
+}
+
+/* Distill purely decorative card treatments without removing their data or actions. */
+.footprint-card .postmark,
+.footprint-card .wax-seal,
+.footprint-card .empty-corner,
+.footprint-card .title-underline,
+.coupon-card .brand-deco,
+.coupon-card .perforation {
+  display: none !important;
+}
+
+.footprint-card .photo-frame,
+.footprint-card .photo-paper,
+.coupon-card .coupon-body,
+.coupon-card .coupon-stage {
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: var(--color-surface-soft) !important;
+  box-shadow: none !important;
+}
+
+.footprint-card .journal-body,
+.coupon-card .coupon-content {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.coupon-card .coupon-header {
+  padding: var(--space-2) !important;
+  border-bottom: 1rpx solid var(--color-border) !important;
+  color: var(--color-text-body) !important;
+  background: var(--color-primary-soft) !important;
+}
+
+.coupon-card .brand-text,
+.coupon-card .rating-value,
+.coupon-card .service-title {
+  color: var(--color-text) !important;
+}
+
+.coupon-card .rating-star,
+.coupon-card .business-status,
+.coupon-card .reserve-btn {
+  color: var(--color-primary-strong) !important;
+}
+
+/* Shared page primitives used by both legacy and newer screens. */
+.global-nav-bar,
+.nav-bar,
+.top-bar,
+.page-header {
+  color: var(--color-text);
+}
+
+.search-box,
+.search-bar,
+.search,
+.input-field input,
+.input-field textarea {
+  border-color: var(--color-border) !important;
+  background: var(--color-surface) !important;
+  box-shadow: none !important;
+}
+
+.primary,
+.primary-btn,
+.primary-button,
+.btn-primary,
+.confirm-btn,
+.submit-btn,
+.nav-btn.primary,
+.nav-btn.done {
+  color: #ffffff !important;
+  background: var(--color-primary) !important;
+  box-shadow: none !important;
+}
+
+.publish-btn,
+.preview-btn,
+.reserve-btn,
+.save-btn,
+.submit,
+.done {
+  color: #ffffff !important;
+  background-color: var(--color-primary) !important;
+  box-shadow: none !important;
+}
+
+.secondary,
+.secondary-btn,
+.secondary-button {
+  color: var(--color-text-body) !important;
+  background: var(--color-surface-soft) !important;
+}
+
+.primary:active,
+.primary-btn:active,
+.primary-button:active,
+.btn-primary:active,
+.confirm-btn:active,
+.submit-btn:active {
+  opacity: 0.86;
+}
+
+.disabled,
+[disabled] {
+  opacity: 0.45;
+}
+
+.empty-state,
+.loading-state,
+.empty {
+  color: var(--color-text-body);
+}
+
+.modal-mask,
+.overlay-mask,
+.publish-overlay {
+  background: var(--color-scrim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-card,
+  .primary,
+  .primary-btn,
+  .primary-button,
+  .btn-primary,
+  .confirm-btn,
+  .submit-btn,
+  .tabbar-item,
+  .plus-wrapper,
+  .search-box,
+  .search-bar,
+  .fade-in,
+  .slide-up,
+  .scale-in {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

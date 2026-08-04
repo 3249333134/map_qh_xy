@@ -50,6 +50,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { setCreationCommand } from '../../utils/creationCommand.js'
 
 const statusBarHeight = ref(20)
 const keyword = ref('')
@@ -73,8 +74,12 @@ onMounted(() => {
 
 const goBack = () => uni.navigateBack()
 const onDone = () => {
-  uni.showToast({ title: '已选择话题', icon: 'success' })
-  setTimeout(goBack, 800)
+  const selected = [
+    ...recommends.value.filter(item => item.active).map(item => ({ id: item.key, name: item.name.replace(/^#/, '') })),
+    ...results.value.filter(item => item.added).map(item => ({ id: item.key, name: item.title.replace(/^#/, '') }))
+  ].slice(0, 5)
+  setCreationCommand({ applyTopics: selected })
+  goBack()
 }
 const onRecommend = (c) => { c.active = !c.active }
 const onAdd = (r) => {
@@ -90,7 +95,7 @@ const onAdd = (r) => {
 }
 
 .status-spacer {
-  background: #ffffff;
+  background: #fff;
 }
 
 .nav-bar {
@@ -99,8 +104,8 @@ const onAdd = (r) => {
   justify-content: space-between;
   height: 88rpx;
   padding: 0 24rpx;
-  background: #ffffff;
-  border-bottom: 1rpx solid #f0f1f3;
+  background: #fff;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .nav-back {
@@ -136,14 +141,14 @@ const onAdd = (r) => {
   height: 56rpx;
   border-radius: 999rpx;
   background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
-  color: #ffffff;
+  color: #fff;
   font-size: 26rpx;
   font-weight: 700;
 }
 
 .search-bar {
   padding: 16rpx 24rpx;
-  background: #ffffff;
+  background: #fff;
 }
 
 .search-input {
@@ -189,19 +194,19 @@ const onAdd = (r) => {
 .chip {
   padding: 14rpx 28rpx;
   border-radius: 999rpx;
-  background: #ffffff;
+  background: #fff;
   color: #5f646d;
   font-size: 26rpx;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
 }
 
 .chip.active {
-  background: #248cf5;
-  color: #ffffff;
+  background: var(--color-info);
+  color: #fff;
 }
 
 .result-list {
-  background: #ffffff;
+  background: #fff;
   border-radius: 14rpx;
   box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   padding: 0 24rpx;
@@ -211,7 +216,7 @@ const onAdd = (r) => {
   display: flex;
   align-items: center;
   padding: 24rpx 0;
-  border-bottom: 1rpx solid #f0f1f3;
+  border-bottom: 1rpx solid #f1f5f9;
 }
 
 .result-row.last {
@@ -252,7 +257,7 @@ const onAdd = (r) => {
   padding: 12rpx 28rpx;
   border-radius: 999rpx;
   background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
-  color: #ffffff;
+  color: #fff;
   font-size: 26rpx;
   font-weight: 600;
 }

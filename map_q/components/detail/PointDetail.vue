@@ -63,14 +63,14 @@ export default {
 </script>
 
 <style scoped>
-.detail-wrap { background:#fff; border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.12); padding:12px; }
+.detail-wrap { background: var(--color-surface); border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.12); padding:12px; }
 .detail-header { display:flex; justify-content:space-between; align-items:center; }
-.detail-title { font-size:16px; font-weight:600; color:#333; }
+.detail-title { font-size:16px; font-weight:600; color: var(--color-text); }
 .detail-actions { display:flex; gap:8px; }
-.detail-btn { padding:6px 12px; border-radius:6px; border:1px solid #ddd; background:#f7f7f7; }
-.detail-btn.primary { background:#ff7a45; color:#fff; border-color:#ff7a45; }
+.detail-btn { padding:6px 12px; border-radius:6px; border: 1px solid #ddd; background: #f7f7f7; }
+.detail-btn.primary { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
 .detail-swiper { width:100%; height:160px; margin:10px 0; }
-.slider-img { width:100%; height:100%; border-radius:10px; background:#eee; }
-.detail-body { margin-top:8px; color:#666; font-size:13px; }
+.slider-img { width:100%; height:100%; border-radius:10px; background: #eee; }
+.detail-body { margin-top:8px; color: var(--color-text-body); font-size:13px; }
 .detail-line { display:block; margin-bottom:4px; }
 </style>
