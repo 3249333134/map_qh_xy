@@ -206,7 +206,7 @@ const send = () => {
 <style scoped>
 .thread-page {
   height: 100vh;
-  background: #f7f7f8;
+  background: var(--color-page);
   display: flex;
   flex-direction: column;
 }
@@ -222,7 +222,7 @@ const send = () => {
   align-items: center;
   justify-content: center;
   background: #ffffff;
-  border-bottom: 1rpx solid #f0f1f3;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .nav-back {
@@ -234,7 +234,7 @@ const send = () => {
   align-items: center;
   justify-content: center;
   font-size: 52rpx;
-  color: #222;
+  color: var(--color-text);
   font-weight: 300;
   line-height: 1;
 }
@@ -242,7 +242,7 @@ const send = () => {
 .nav-title {
   font-size: 34rpx;
   font-weight: 800;
-  color: #222;
+  color: var(--color-text);
 }
 
 .nav-right {
@@ -254,7 +254,7 @@ const send = () => {
   align-items: center;
   justify-content: center;
   font-size: 44rpx;
-  color: #5f646d;
+  color: var(--color-text-body);
   line-height: 1;
 }
 
@@ -269,7 +269,7 @@ const send = () => {
   background: #ffffff;
   border-radius: 24rpx;
   padding: 28rpx;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .thread-head {
@@ -283,7 +283,7 @@ const send = () => {
   width: 80rpx;
   height: 80rpx;
   border-radius: 22rpx;
-  background: linear-gradient(135deg, #7650c8 0%, #9b6fe0 100%);
+  background: #7650c8;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -307,12 +307,12 @@ const send = () => {
 .owner-name {
   font-size: 28rpx;
   font-weight: 800;
-  color: #222;
+  color: var(--color-text);
 }
 .pin-tag {
   padding: 2rpx 14rpx;
   border-radius: 999rpx;
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
 }
 .pin-text {
   font-size: 20rpx;
@@ -323,7 +323,7 @@ const send = () => {
   display: block;
   margin-top: 6rpx;
   font-size: 22rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .activity-tag {
@@ -342,7 +342,7 @@ const send = () => {
   display: block;
   font-size: 34rpx;
   font-weight: 800;
-  color: #222;
+  color: var(--color-text);
   line-height: 46rpx;
   margin-bottom: 12rpx;
 }
@@ -350,7 +350,7 @@ const send = () => {
 .thread-desc {
   display: block;
   font-size: 26rpx;
-  color: #5f646d;
+  color: var(--color-text-body);
   line-height: 42rpx;
   margin-bottom: 24rpx;
 }
@@ -368,7 +368,7 @@ const send = () => {
   align-items: center;
   padding: 18rpx 0;
   border-radius: 16rpx;
-  background: #f7f7f8;
+  background: var(--color-page);
 }
 .chip-orange {
   background: rgba(255, 112, 67, 0.1);
@@ -385,14 +385,14 @@ const send = () => {
   font-weight: 800;
   line-height: 1;
 }
-.chip-orange .chip-num { color: #ff5b35; }
+.chip-orange .chip-num { color: var(--color-primary); }
 .chip-blue .chip-num { color: #248cf5; }
 .chip-purple .chip-num { color: #7650c8; }
 
 .chip-label {
   margin-top: 8rpx;
   font-size: 22rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .thread-actions {
@@ -408,14 +408,14 @@ const send = () => {
   gap: 6rpx;
   height: 92rpx;
   border-radius: 18rpx;
-  background: #f7f7f8;
+  background: var(--color-page);
 }
 .thread-action.cta {
   flex: 1;
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
   flex-direction: row;
   gap: 8rpx;
-  box-shadow: 0 6rpx 16rpx rgba(255, 91, 53, 0.3);
+  box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.1);
 }
 .thread-action:not(.cta) {
   width: 140rpx;
@@ -431,7 +431,7 @@ const send = () => {
   height: 40rpx;
   border-radius: 12rpx;
   background: #ffffff;
-  color: #5f646d;
+  color: var(--color-text-body);
   font-size: 22rpx;
   font-weight: 800;
   display: flex;
@@ -440,7 +440,7 @@ const send = () => {
 }
 .action-text {
   font-size: 22rpx;
-  color: #5f646d;
+  color: var(--color-text-body);
 }
 
 /* 回复分隔 */
@@ -457,7 +457,7 @@ const send = () => {
 }
 .divider-text {
   font-size: 22rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 /* 聊天气泡区域 */
@@ -487,10 +487,10 @@ const send = () => {
   flex-shrink: 0;
 }
 .bubble-avatar.blue {
-  background: linear-gradient(135deg, #248cf5 0%, #4aa6ff 100%);
+  background: #248cf5;
 }
 .bubble-avatar.orange {
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
 }
 .bubble-avatar-text {
   color: #ffffff;
@@ -520,7 +520,7 @@ const send = () => {
 }
 .bubble-name {
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
   font-weight: 600;
 }
 .bubble-time {
@@ -532,14 +532,14 @@ const send = () => {
   padding: 20rpx 24rpx;
   border-radius: 22rpx;
   background: #ffffff;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 .bubble-row.self .bubble {
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
 }
 .bubble-text {
   font-size: 28rpx;
-  color: #222;
+  color: var(--color-text);
   line-height: 42rpx;
 }
 .bubble-row.self .bubble-text {
@@ -563,18 +563,18 @@ const send = () => {
   padding: 16rpx 24rpx;
   padding-bottom: calc(16rpx + env(safe-area-inset-bottom));
   background: #ffffff;
-  border-top: 1rpx solid #f0f1f3;
+  border-top: 1rpx solid var(--color-surface-muted);
 }
 
 .input-plus {
   width: 72rpx;
   height: 72rpx;
   border-radius: 50%;
-  background: #f0f1f3;
+  background: var(--color-surface-muted);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #5f646d;
+  color: var(--color-text-body);
   font-size: 44rpx;
   line-height: 1;
   flex-shrink: 0;
@@ -585,7 +585,7 @@ const send = () => {
   height: 72rpx;
   padding: 0 26rpx;
   border-radius: 999rpx;
-  background: #f0f1f3;
+  background: var(--color-surface-muted);
   display: flex;
   align-items: center;
 }
@@ -593,7 +593,7 @@ const send = () => {
   flex: 1;
   height: 72rpx;
   font-size: 28rpx;
-  color: #222;
+  color: var(--color-text);
 }
 
 .send-btn {
@@ -608,8 +608,8 @@ const send = () => {
   transition: all 0.2s;
 }
 .send-btn.active {
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
-  box-shadow: 0 4rpx 14rpx rgba(255, 91, 53, 0.32);
+  background: var(--color-primary);
+  box-shadow: 0 4rpx 14rpx rgba(0, 0, 0, 0.1);
 }
 .send-arrow {
   color: #ffffff;

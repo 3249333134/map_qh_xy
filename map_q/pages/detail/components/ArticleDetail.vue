@@ -9,7 +9,7 @@
         </view>
         <text class="nav-title">文章</text>
         <view class="nav-actions">
-          <text class="action-icon" @tap="shareContent">↗</text>
+          <view class="share-symbol" role="button" aria-label="分享文章" @tap="shareContent"><view></view></view>
         </view>
       </view>
     </view>
@@ -59,12 +59,12 @@
     <!-- 阅读统计 -->
     <view class="read-stats">
       <view class="stat-item">
-        <text class="stat-icon">👁</text>
+        <view class="eye-symbol" aria-hidden="true"><view></view></view>
         <text class="stat-value">{{ formattedReads }}</text>
         <text class="stat-label">阅读</text>
       </view>
       <view class="stat-item">
-        <text class="stat-icon">♥</text>
+        <view class="heart-symbol" aria-hidden="true"></view>
         <text class="stat-value">{{ articleData.likes }}</text>
         <text class="stat-label">点赞</text>
       </view>
@@ -385,6 +385,7 @@ export default {
   color: #fff;
   text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
+.share-symbol { width: 44px; height: 44px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.92); }.share-symbol>view { position: relative; width: 16px; height: 16px; border: 2px solid var(--color-text); border-radius: 4px; }.share-symbol>view::before { content: ''; position: absolute; width: 8px; height: 8px; right: -3px; top: -5px; border-top: 2px solid var(--color-text); border-right: 2px solid var(--color-text); }.share-symbol>view::after { content: ''; position: absolute; width: 9px; height: 2px; right: -1px; top: 2px; background: var(--color-text); transform: rotate(-45deg); }
 
 .article-header {
   padding: 20px 20px 16px;
@@ -421,12 +422,12 @@ export default {
 .author-name {
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text);
 }
 
 .publish-time {
   font-size: 12px;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .cover-image {
@@ -442,7 +443,7 @@ export default {
 .article-content {
   padding: 20px;
 }
-.toc-scroll { width: 100%; margin-bottom: 18px; white-space: nowrap; }.toc-list { display: inline-flex; gap: 8px; }.toc-chip { min-height: 40px; padding: 0 14px; border-radius: 13px; display: inline-flex; align-items: center; color: #1d4ed8; background: #eff6ff; font-size: 12px; font-weight: 650; }.paragraph { display: block; margin-bottom: 16px; }.expand-reading { min-height: 46px; margin-top: 8px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #c2410c; background: #fff7ed; font-size: 13px; font-weight: 700; }
+.toc-scroll { width: 100%; margin-bottom: 18px; white-space: nowrap; }.toc-list { display: inline-flex; gap: 8px; }.toc-chip { min-height: 40px; padding: 0 14px; border-radius: 13px; display: inline-flex; align-items: center; color: var(--color-primary); background: var(--color-primary-soft); font-size: 12px; font-weight: 650; }.paragraph { display: block; margin-bottom: 16px; }.expand-reading { min-height: 46px; margin-top: 8px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: var(--color-primary); background: var(--color-primary-soft); font-size: 13px; font-weight: 700; }
 
 .content-text {
   margin-bottom: 16px;
@@ -450,7 +451,7 @@ export default {
 
 .content-text text {
   font-size: 16px;
-  color: #333;
+  color: var(--color-text);
   line-height: 1.8;
 }
 
@@ -463,7 +464,7 @@ export default {
 
 .article-summary text {
   font-size: 15px;
-  color: #666;
+  color: var(--color-text-body);
   line-height: 1.6;
 }
 
@@ -490,8 +491,8 @@ export default {
   justify-content: center;
   gap: 40px;
   padding: 20px;
-  border-top: 1px solid #f1f5f9;
-  border-bottom: 1px solid #f1f5f9;
+  border-top: 1px solid var(--color-surface-muted);
+  border-bottom: 1px solid var(--color-surface-muted);
 }
 
 .stat-item {
@@ -503,16 +504,17 @@ export default {
 .stat-icon {
   font-size: 16px;
 }
+.eye-symbol { position: relative; width: 22px; height: 14px; border: 2px solid var(--color-text-body); border-radius: 50% 0 50% 0; transform: rotate(45deg); }.eye-symbol>view { position: absolute; left: 6px; top: 2px; width: 6px; height: 6px; border-radius: 50%; background: var(--color-text-body); }.heart-symbol { width: 16px; height: 16px; border-left: 2px solid var(--color-text-body); border-bottom: 2px solid var(--color-text-body); transform: rotate(-45deg); border-radius: 0 0 0 8px; }
 
 .stat-value {
   font-size: 15px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
 }
 
 .stat-label {
   font-size: 12px;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .author-card {
@@ -537,13 +539,13 @@ export default {
   display: block;
   font-size: 15px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
   margin-bottom: 2px;
 }
 
 .author-card-desc {
   font-size: 12px;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .follow-btn {
@@ -558,11 +560,11 @@ export default {
 }
 
 .follow-btn.followed {
-  background: #f0f0f0;
+  background: var(--color-surface-muted);
 }
 
 .follow-btn.followed text {
-  color: #666;
+  color: var(--color-text-body);
 }
 
 .section-divider {
@@ -582,7 +584,7 @@ export default {
 .comments-title {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
 }
 
 .comments-list {
@@ -617,18 +619,18 @@ export default {
 .comment-name {
   font-size: 13px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
 }
 
 .comment-time {
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .comment-text {
   display: block;
   font-size: 14px;
-  color: #333;
+  color: var(--color-text);
   line-height: 1.5;
   margin-bottom: 8px;
 }
@@ -643,7 +645,7 @@ export default {
   align-items: center;
   gap: 4px;
   font-size: 12px;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .comment-action .active {
@@ -669,14 +671,14 @@ export default {
   display: flex;
   align-items: center;
   padding: 0 16px;
-  background: #f5f5f5;
+  background: var(--color-page);
   border-radius: 19px;
   margin-right: 16px;
 }
 
 .input-area text {
   font-size: 14px;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .action-group {
@@ -693,7 +695,7 @@ export default {
 
 .action-btn text:first-child {
   font-size: 22px;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .action-btn text:first-child.active {
@@ -702,6 +704,6 @@ export default {
 
 .action-btn text:last-child {
   font-size: 10px;
-  color: #999;
+  color: var(--color-text-muted);
 }
 </style>

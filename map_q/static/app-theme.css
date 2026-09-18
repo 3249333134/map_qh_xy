@@ -1,50 +1,75 @@
-/*
- * Footprint light theme
- * A single visual contract shared by H5 and Weixin builds.
- */
+/* Map Q — frosted glass and soft widgets. Layout remains component-owned. */
 :root,
 page {
-  --color-primary: #ea580c;
-  --color-primary-strong: #c2410c;
-  --color-primary-soft: #fff7ed;
-  --color-info: #2563eb;
-  --color-info-soft: #eff6ff;
-  --color-success: #16a34a;
-  --color-success-soft: #f0fdf4;
-  --color-warning: #d97706;
-  --color-warning-soft: #fffbeb;
-  --color-danger: #dc2626;
-  --color-danger-soft: #fef2f2;
-  --color-page: #f8fafc;
-  --color-surface: #ffffff;
-  --color-surface-soft: #f1f5f9;
-  --color-text: #0f172a;
-  --color-text-body: #475569;
-  --color-text-muted: #94a3b8;
-  --color-border: #e2e8f0;
-  --color-scrim: rgba(15, 23, 42, 0.52);
+  --color-primary: #202020;
+  --color-primary-strong: #101010;
+  --color-primary-soft: #ededeb;
+  --color-explore: #202020;
+  --color-explore-strong: #101010;
+  --color-explore-soft: #ededeb;
+  --color-accent: #f56f64;
+  --color-accent-strong: #d9574f;
+  --color-accent-soft: #fff1ee;
+  --color-publish: #f56f64;
+  --color-publish-warm: #f58b62;
+  --color-publish-soft: #fff1ee;
+  --color-lavender: #897cff;
+  --color-lavender-soft: #f1efff;
+  --gradient-primary: #202020;
+  --gradient-publish: #f56f64;
+  --gradient-ambient: #f6f6f5;
+  --color-travel: #34a96b;
+  --color-travel-soft: #edf7f1;
+  --color-stay: #957166;
+  --color-stay-soft: #f4efed;
+  --color-route: #3182f6;
+  --color-route-soft: #edf4ff;
+  --color-info: #3182f6;
+  --color-info-soft: #edf4ff;
+  --color-success: #258b55;
+  --color-success-soft: #edf8f1;
+  --color-warning: #b66d17;
+  --color-warning-soft: #fff8e9;
+  --color-danger: #c94444;
+  --color-danger-soft: #fff1f1;
 
-  --space-unit: 8rpx;
+  --color-page: #eef3f4;
+  --color-surface: #ffffff;
+  --color-surface-glass: rgba(250, 253, 252, 0.86);
+  --color-surface-muted: #eaf0ef;
+  --color-surface-raised: #f5f8f7;
+  --color-text: #202020;
+  --color-text-body: #595959;
+  --color-text-muted: #62716e;
+  --color-border: #dce6e3;
+  --color-divider: rgba(76, 105, 99, 0.10);
+  --color-scrim: rgba(0, 0, 0, 0.38);
+
   --space-1: 8rpx;
   --space-2: 16rpx;
   --space-3: 24rpx;
   --space-4: 32rpx;
   --space-5: 40rpx;
   --space-6: 48rpx;
+  --page-gutter: 24rpx;
 
-  --radius-control: 16rpx;
-  --radius-card: 24rpx;
-  --radius-panel: 32rpx;
+  --radius-sm: 12rpx;
+  --radius-control: 16px;
+  --radius-card: 22px;
+  --radius-panel: 64rpx;
   --radius-pill: 999rpx;
 
-  --shadow-card: 0 8rpx 28rpx rgba(15, 23, 42, 0.075);
-  --shadow-float: 0 16rpx 40rpx rgba(15, 23, 42, 0.12);
-  --shadow-sheet: 0 -16rpx 48rpx rgba(15, 23, 42, 0.1);
-
-  --tap-size: 88rpx;
-  --motion-fast: 150ms;
-  --motion-standard: 180ms;
+  --shadow-card: 0 10rpx 28rpx rgba(48, 76, 69, 0.08), inset 0 1rpx 0 rgba(255, 255, 255, 0.95);
+  --shadow-float: 0 12rpx 36rpx rgba(40, 68, 63, 0.12), inset 0 1rpx 0 #fff;
+  --shadow-sheet: 0 -16rpx 60rpx rgba(45, 71, 64, 0.12), inset 0 1rpx 0 #fff;
+  --tap-size: 44px;
+  --motion-fast: 160ms;
+  --motion-standard: 220ms;
+  --motion-emphasized: 380ms;
+  --motion-entrance: 520ms;
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
 
   color: var(--color-text);
   background: var(--color-page);
@@ -72,296 +97,374 @@ button,
   touch-action: manipulation;
 }
 
-button::after {
-  border: 0;
-}
+button::after { border: 0; }
 
 input,
 textarea {
   color: var(--color-text);
-  caret-color: var(--color-primary);
+  caret-color: var(--color-explore);
 }
 
 input::placeholder,
-textarea::placeholder {
-  color: var(--color-text-muted);
-}
+textarea::placeholder { color: var(--color-text-muted); }
 
-/* Shared card shell. Component-specific media and information layouts remain intact. */
-.app-card {
-  overflow: hidden !important;
-  border: 1rpx solid rgba(226, 232, 240, 0.72) !important;
-  border-radius: var(--radius-card) !important;
-  background: var(--color-surface) !important;
-  box-shadow: 0 8rpx 28rpx rgba(15, 23, 42, 0.08) !important;
-  transform: translateZ(0);
-  transition:
-    transform var(--motion-standard) var(--ease-standard),
-    box-shadow var(--motion-standard) var(--ease-standard),
-    opacity var(--motion-fast) ease;
-}
-
-.app-card:active {
-  opacity: 0.94;
-  transform: translateZ(0) scale(0.99);
-  box-shadow: 0 4rpx 18rpx rgba(15, 23, 42, 0.07) !important;
-}
-
-.app-card .card-content,
-.app-card .journal-body,
-.app-card .coupon-content,
-.app-card .hotspot-info {
-  padding: var(--space-2) !important;
-  background: var(--color-surface) !important;
-}
-
-.app-card .card-title,
-.app-card .title-text,
-.app-card .hotspot-title,
-.app-card .service-title {
-  color: var(--color-text) !important;
-  font-size: 28rpx !important;
-  font-weight: 700 !important;
-  line-height: 1.4 !important;
-}
-
-.app-card .card-author,
-.app-card .card-address,
-.app-card .card-excerpt,
-.app-card .entry-loc,
-.app-card .hotspot-author,
-.app-card .service-address {
-  color: var(--color-text-body) !important;
-  line-height: 1.5 !important;
-}
-
-.app-card .card-footer,
-.app-card .journal-footer {
-  border-top-color: var(--color-surface-soft) !important;
-}
-
-.app-card .action-btn,
-.app-card .action-stamp,
-.app-card .quick-btn {
-  min-width: 64rpx;
-  min-height: 64rpx;
-  color: var(--color-text-body) !important;
-  transition:
-    color var(--motion-fast) ease,
-    background-color var(--motion-fast) ease,
-    opacity var(--motion-fast) ease;
-}
-
-.app-card .action-btn.active,
-.app-card .action-stamp.active {
-  color: var(--color-primary) !important;
-}
-
-.app-card .article-badge,
-.app-card .event-badge,
-.app-card .place-badge,
-.app-card .type-stamp,
-.app-card .event-time,
-.app-card .hotspot-status {
-  border-radius: var(--radius-pill) !important;
-}
-
-/* Normalize the page-level cards already used throughout the registered routes. */
-.card,
-.form-card,
-.summary-card,
-.note-card,
-.info-card,
-.list-card,
-.settings-card,
-.editor-card,
-.option-card,
-.preview-card,
-.channel-card,
-.location-card,
-.record-card,
-.coordinate-card,
-.result-card,
-.progress-card,
-.history-card,
-.map-link-card,
-.policy-card,
-.detail-card,
-.task-card,
-.income-card,
-.profile-card,
-.business-card,
-.identity-card,
-.copyright-card,
-.author-card,
-.participants-card,
-.time-card,
-.license-card,
-.activity-card,
-.behavior-card,
-.linked-card,
-.action-card,
-.review-card,
-.service-card,
-.share-card {
-  border: 1rpx solid var(--color-border) !important;
-  border-radius: var(--radius-card) !important;
-  background-color: var(--color-surface) !important;
-  box-shadow: var(--shadow-card) !important;
-}
-
-.error-card {
-  border-color: rgba(220, 38, 38, 0.24) !important;
-  background: var(--color-danger-soft) !important;
-  box-shadow: none !important;
-}
-
-.warning-card,
-.notice-card {
-  border-color: rgba(217, 119, 6, 0.22) !important;
-  background: var(--color-warning-soft) !important;
-  box-shadow: none !important;
-}
-
-/* Distill purely decorative card treatments without removing their data or actions. */
-.footprint-card .postmark,
-.footprint-card .wax-seal,
-.footprint-card .empty-corner,
-.footprint-card .title-underline,
-.coupon-card .brand-deco,
-.coupon-card .perforation {
-  display: none !important;
-}
-
-.footprint-card .photo-frame,
-.footprint-card .photo-paper,
-.coupon-card .coupon-body,
-.coupon-card .coupon-stage {
-  margin: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: var(--color-surface-soft) !important;
-  box-shadow: none !important;
-}
-
-.footprint-card .journal-body,
-.coupon-card .coupon-content {
-  border: 0 !important;
-  box-shadow: none !important;
-}
-
-.coupon-card .coupon-header {
-  padding: var(--space-2) !important;
-  border-bottom: 1rpx solid var(--color-border) !important;
-  color: var(--color-text-body) !important;
-  background: var(--color-primary-soft) !important;
-}
-
-.coupon-card .brand-text,
-.coupon-card .rating-value,
-.coupon-card .service-title {
-  color: var(--color-text) !important;
-}
-
-.coupon-card .rating-star,
-.coupon-card .business-status,
-.coupon-card .reserve-btn {
-  color: var(--color-primary-strong) !important;
-}
-
-/* Shared page primitives used by both legacy and newer screens. */
-.global-nav-bar,
+/* Shared chrome */
+.global-nav-bar:not(.is-transparent),
 .nav-bar,
 .top-bar,
 .page-header {
   color: var(--color-text);
+  border-color: var(--color-border);
+  background: var(--color-surface-glass);
+  box-shadow: 0 6rpx 22rpx rgba(0, 0, 0, 0.06);
+}
+
+.global-nav-bar .nav-title,
+.nav-bar .nav-title,
+.page-header .title,
+.top-bar .title {
+  color: var(--color-text);
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
 .search-box,
 .search-bar,
-.search,
-.input-field input,
-.input-field textarea {
-  border-color: var(--color-border) !important;
-  background: var(--color-surface) !important;
-  box-shadow: none !important;
+.search-input-wrapper,
+.input-field,
+.date-field {
+  min-height: var(--tap-size);
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-body);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 6rpx 18rpx rgba(0, 0, 0, 0.06);
 }
 
-.primary,
-.primary-btn,
+/* Content cards: visual properties only; components keep their layout. */
+.content-card,
+.app-card,
+.map-card,
+.article-card,
+.video-card,
+.place-card,
+.track-card,
+.event-card,
+.service-map-card,
+.service-card-item,
+.hotspot-card,
+.masonry-card {
+  overflow: hidden;
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: var(--shadow-card);
+  transform: translateZ(0);
+  transition: transform var(--motion-standard) var(--ease-standard),
+    box-shadow var(--motion-standard) var(--ease-standard),
+    opacity var(--motion-fast) ease;
+}
+
+.content-card:active,
+.app-card:active,
+.map-card:active,
+.hotspot-card:active,
+.masonry-card:active {
+  opacity: 0.94;
+  transform: translateZ(0) scale(0.988);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.06);
+}
+
+.mq-pressable {
+  transition: transform var(--motion-fast) var(--ease-standard), opacity var(--motion-fast) ease, box-shadow var(--motion-standard) var(--ease-standard);
+}
+
+.mq-pressable:active { opacity: 0.92; transform: scale(0.97); }
+
+@keyframes mq-sheet-enter {
+  from { opacity: 0.72; transform: translate3d(0, 28rpx, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes mq-focus-enter {
+  from { opacity: 0.78; transform: translate3d(0, 20rpx, 0) scale(0.975); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+.card-media,
+.masonry-media,
+.cover-placeholder,
+.media-placeholder {
+  color: var(--color-text-muted);
+  background: var(--color-surface-muted);
+}
+
+.media-heat,
+.type-badge,
+.card-type,
+.card-badge,
+.masonry-type-pill {
+  border: 1rpx solid rgba(255, 255, 255, 0.72);
+  border-radius: var(--radius-pill);
+  color: #ffffff;
+  background: rgba(37, 48, 72, 0.62);
+  box-shadow: none;
+}
+
+.card-title,
+.masonry-title,
+.entry-title {
+  color: var(--color-text);
+}
+
+.card-author,
+.card-address,
+.card-description,
+.card-excerpt,
+.card-meta,
+.masonry-address,
+.masonry-meta,
+.entry-duration,
+.meta-copy {
+  color: var(--color-text-muted);
+}
+
+/* Controls and semantic states */
 .primary-button,
 .btn-primary,
-.confirm-btn,
-.submit-btn,
-.nav-btn.primary,
-.nav-btn.done {
-  color: #ffffff !important;
-  background: var(--color-primary) !important;
-  box-shadow: none !important;
+.confirm-button,
+.submit-button {
+  min-height: var(--tap-size);
+  border: 0;
+  border-radius: var(--radius-control);
+  color: #ffffff;
+  background: var(--gradient-primary);
+  box-shadow: 0 10rpx 24rpx rgba(0, 0, 0, 0.06);
 }
 
-.publish-btn,
-.preview-btn,
-.reserve-btn,
-.save-btn,
-.submit,
-.done {
-  color: #ffffff !important;
-  background-color: var(--color-primary) !important;
-  box-shadow: none !important;
+.publish-button,
+.create-button,
+.primary-action-button {
+  color: #ffffff;
+  background: var(--gradient-primary);
+  box-shadow: 0 10rpx 24rpx rgba(0, 0, 0, 0.06);
 }
 
-.secondary,
-.secondary-btn,
-.secondary-button {
-  color: var(--color-text-body) !important;
-  background: var(--color-surface-soft) !important;
+.filter-chip,
+.category-tab,
+.segment-item,
+.type-chip {
+  min-height: 72rpx;
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-body);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: none;
 }
 
-.primary:active,
-.primary-btn:active,
-.primary-button:active,
-.btn-primary:active,
-.confirm-btn:active,
-.submit-btn:active {
-  opacity: 0.86;
+.filter-chip.active,
+.category-tab.active,
+.segment-item.active,
+.type-chip.active {
+  border-color: transparent;
+  color: #ffffff;
+  background: var(--color-primary);
+}
+
+.error-state,
+.error-card,
+.error-message {
+  border-color: rgba(201, 68, 68, 0.20);
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
 }
 
 .disabled,
-[disabled] {
-  opacity: 0.45;
+button[disabled] {
+  opacity: 0.42;
+  box-shadow: none;
 }
 
-.empty-state,
-.loading-state,
-.empty {
+/* Map controls and bottom sheets */
+.map-control,
+.location-btn,
+.control-button,
+.floating-control,
+.explore-control-button {
+  min-width: var(--tap-size);
+  min-height: var(--tap-size);
+  border: 1rpx solid var(--color-border);
+  border-radius: 50%;
   color: var(--color-text-body);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: var(--shadow-float);
 }
 
-.modal-mask,
-.overlay-mask,
-.publish-overlay {
-  background: var(--color-scrim);
+.bottom-sheet,
+.drawer-panel,
+.content-inner,
+.footprint-sheet {
+  border-color: rgba(255, 255, 255, 0.82);
+  color: var(--color-text);
+  background: var(--color-surface-glass);
+  box-shadow: var(--shadow-sheet);
+}
+
+.sheet-handle,
+.drag-indicator {
+  border-radius: var(--radius-pill);
+  background: #bdbdb8;
+}
+
+/* Explicit content-card contract. These selectors intentionally outrank the
+   legacy per-type skins without affecting form or settings panels. */
+.content-card {
+  margin-bottom: 12px !important;
+ border: 1rpx solid rgba(255,255,255,.92) !important; border-radius: var(--radius-card) !important; background: rgba(255,255,255,.94) !important; box-shadow: var(--shadow-card) !important; }
+
+.content-card .card-media {
+  height: var(--card-media-height, 128px) !important;
+  min-height: var(--card-media-height, 128px) !important;
+  background: var(--color-surface-muted) !important;
+}
+
+.content-card .cover-placeholder {
+  background: var(--color-surface-muted) !important;
+}
+
+.content-card .cover-placeholder-text {
+  color: var(--color-text-muted) !important;
+  font-size: 20rpx !important;
+  font-weight: 500 !important;
+}
+
+.content-card .placeholder-icon,
+.content-card .article-icon,
+.content-card .event-icon,
+.content-card .place-symbol {
+  display: none !important;
+}
+
+.content-card .card-content {
+  padding: 10px 12px 12px !important;  background: transparent !important; }
+
+.content-card .card-title {
+  margin-bottom: 6px !important;
+  color: var(--color-text) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+}
+
+.content-card .card-author,
+.content-card .card-address,
+.content-card .card-meta,
+.content-card .card-stats,
+.content-card .card-footer {
+  color: var(--color-text-muted) !important;
+  font-size: 11px !important;
+}
+
+.content-card .card-author::before {
+  width: 20rpx !important;
+  height: 20rpx !important;
+  border: 0 !important;
+  background: var(--color-surface-muted) !important;
+  box-shadow: none !important;
+}
+
+.content-card .media-heat,
+.content-card .type-badge,
+.content-card .card-type,
+.content-card .card-badge {
+  right: 10rpx !important;
+  bottom: 10rpx !important;
+  left: auto !important;
+  padding: 5rpx 10rpx !important;
+  color: #ffffff !important;
+  background: rgba(37, 48, 72, 0.62) !important;
+  box-shadow: none !important;
+}
+
+.content-card .action-btn {
+  min-width: 32px;
+  min-height: 36px;
+  color: var(--color-text-muted) !important;
+  background: transparent !important;
+}
+
+/* Blur is limited to floating surfaces; unsupported platforms retain a milky fallback. */
+/* #ifdef H5 */
+.global-nav-bar:not(.is-transparent),
+.nav-bar,
+.top-bar,
+.page-header,
+.content-inner,
+.footprint-sheet,
+.bottom-sheet,
+.drawer-panel {
+  backdrop-filter: blur(24px) saturate(135%);
+  -webkit-backdrop-filter: blur(24px) saturate(135%);
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .content-card,
   .app-card,
-  .primary,
-  .primary-btn,
-  .primary-button,
-  .btn-primary,
-  .confirm-btn,
-  .submit-btn,
-  .tabbar-item,
-  .plus-wrapper,
-  .search-box,
-  .search-bar,
-  .fade-in,
-  .slide-up,
-  .scale-in {
-    scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  .map-card,
+  .hotspot-card,
+  .masonry-card {
+    transition: none;
+  }
+  .mq-pressable:active { transform: none; }
+}
+/* #endif */
+
+@media screen and (orientation: landscape) {
+  .bottom-sheet,
+  .drawer-panel,
+  .content-inner,
+  .footprint-sheet {
+    border-radius: var(--radius-panel) 0 0 var(--radius-panel);
   }
 }
+
+/* Keyboard feedback is visual only; touch geometry remains component-owned. */
+/* #ifdef H5 */
+button:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* H5's system tab bar uses bitmap icons; keep its existing icon box and hit area. */
+.uni-tabbar > .uni-tabbar__item:nth-last-child(3) .uni-tabbar__icon {
+  position: relative;
+}
+.uni-tabbar > .uni-tabbar__item:nth-last-child(3) .uni-tabbar__icon img {
+  opacity: 0;
+}
+.uni-tabbar > .uni-tabbar__item:nth-last-child(3) .uni-tabbar__icon::after {
+  content: "+";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: var(--color-publish);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 18px;
+  text-align: center;
+  pointer-events: none;
+}
+/* #endif */
+
+/* Platform-independent fallback; translucency is enhanced only when blur is supported. */
+@supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+  page { --color-surface-glass: rgba(250, 253, 252, .76); }
+}
+/* #ifdef H5 */
+.uni-tabbar { background: rgba(250,253,252,.84) !important; border-radius: 24px 24px 0 0; box-shadow: var(--shadow-sheet); backdrop-filter: blur(24px) saturate(135%); -webkit-backdrop-filter: blur(24px) saturate(135%); }
+@media (prefers-reduced-transparency: reduce) { :root, page { --color-surface-glass: #f8fbfa; } }
+/* #endif */

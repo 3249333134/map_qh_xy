@@ -87,17 +87,17 @@ const onLogout = () => {
 
 <style scoped>
 .page {
-  --brand-blue: var(--color-info);
+  --brand-blue: var(--color-primary);
   --brand-orange: var(--color-primary);
-  --brand-purple: var(--color-info);
+  --brand-purple: var(--color-lavender);
   --success: #24d06c;
-  --text-primary: #222;
-  --text-body: #5f646d;
-  --text-secondary: #8a8f98;
-  --surface-app: #f7f7f8;
+  --text-primary: var(--color-text);
+  --text-body: var(--color-text-body);
+  --text-secondary: var(--color-text-muted);
+  --surface-app: var(--color-page);
   --surface-card: #fff;
-  --surface-muted: #f0f1f3;
-  --card-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  --surface-muted: var(--color-surface-muted);
+  --card-shadow: var(--shadow-card);
   min-height: 100vh;
   background: var(--surface-app);
   display: flex;
@@ -113,7 +113,7 @@ const onLogout = () => {
   justify-content: center;
   position: relative;
   background: var(--surface-card);
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .nav-back {
@@ -146,7 +146,8 @@ const onLogout = () => {
 .list-card {
   margin: 24rpx;
   background: var(--surface-card);
-  border-radius: 20rpx;
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-card);
   box-shadow: var(--card-shadow);
   overflow: hidden;
 }
@@ -199,7 +200,7 @@ const onLogout = () => {
   transition: background 0.2s;
 }
 
-.toggle.on { background: var(--success); }
+.toggle.on { background: var(--color-explore); }
 
 .toggle-knob {
   position: absolute;
@@ -209,7 +210,7 @@ const onLogout = () => {
   height: 44rpx;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
   transition: transform 0.2s;
 }
 
@@ -222,7 +223,8 @@ const onLogout = () => {
   align-items: center;
   justify-content: center;
   background: var(--surface-card);
-  border-radius: 20rpx;
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-card);
   box-shadow: var(--card-shadow);
   color: #f5333d;
   font-size: 30rpx;

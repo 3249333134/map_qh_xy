@@ -90,7 +90,7 @@ const openMerchantEvents = () => uni.navigateTo({ url: '/pages/merchant-events/i
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f7f7f8;
+  background: var(--color-page);
 }
 
 .status-spacer {
@@ -104,7 +104,7 @@ const openMerchantEvents = () => uni.navigateTo({ url: '/pages/merchant-events/i
   height: 88rpx;
   padding: 0 24rpx;
   background: #fff;
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .nav-back,
@@ -115,8 +115,8 @@ const openMerchantEvents = () => uni.navigateTo({ url: '/pages/merchant-events/i
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #f0f1f3;
-  color: #222;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
   font-size: 44rpx;
   line-height: 44rpx;
 }
@@ -129,7 +129,7 @@ const openMerchantEvents = () => uni.navigateTo({ url: '/pages/merchant-events/i
 .nav-title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .content {
@@ -141,8 +141,8 @@ const openMerchantEvents = () => uni.navigateTo({ url: '/pages/merchant-events/i
   align-items: center;
   padding: 28rpx 24rpx;
   border-radius: 14rpx;
-  background: linear-gradient(135deg, var(--color-info) 0%, var(--color-info) 100%);
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  background: var(--color-info);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .avatar {
@@ -182,7 +182,7 @@ const openMerchantEvents = () => uni.navigateTo({ url: '/pages/merchant-events/i
   grid-template-columns: 1fr 1fr 1fr;
   background: #fff;
   border-radius: 14rpx;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
 
@@ -191,7 +191,7 @@ const openMerchantEvents = () => uni.navigateTo({ url: '/pages/merchant-events/i
   display: flex;
   flex-direction: column;
   align-items: center;
-  border-right: 1rpx solid #f1f5f9;
+  border-right: 1rpx solid var(--color-surface-muted);
 }
 
 .metric-item:last-child {
@@ -201,13 +201,13 @@ const openMerchantEvents = () => uni.navigateTo({ url: '/pages/merchant-events/i
 .metric-value {
   font-size: 38rpx;
   font-weight: 800;
-  color: #222;
+  color: var(--color-text);
 }
 
 .metric-label {
   margin-top: 8rpx;
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .section-title {
@@ -215,14 +215,14 @@ const openMerchantEvents = () => uni.navigateTo({ url: '/pages/merchant-events/i
   margin: 36rpx 8rpx 16rpx;
   font-size: 28rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
-.business-card { min-height: 92rpx; padding: 22rpx; display: flex; align-items: center; gap: 18rpx; border: .03125rem solid #eef2f7; border-radius: 20rpx; background: #fff; box-shadow: 0 8rpx 28rpx rgba(15,23,42,.05); }.business-icon { flex: 0 0 76rpx; width: 76rpx; height: 76rpx; border-radius: 22rpx; display: flex; align-items: center; justify-content: center; background: #fff7ed; }.calendar-shape { position: relative; width: 34rpx; height: 30rpx; border: .125rem solid #ea580c; border-radius: 8rpx; }.calendar-shape::before { content: ''; position: absolute; left: -4rpx; right: -4rpx; top: 8rpx; height: 4rpx; background: #ea580c; }.calendar-shape view { position: absolute; top: -9rpx; width: 4rpx; height: 10rpx; border-radius: 4rpx; background: #ea580c; }.calendar-shape view:first-child { left: 6rpx; }.calendar-shape view:last-child { right: 6rpx; }.business-copy { flex: 1; min-width: 0; }.business-title,.business-desc { display: block; }.business-title { color: #0f172a; font-size: 28rpx; font-weight: 750; }.business-desc { margin-top: 6rpx; color: #64748b; font-size: 22rpx; line-height: 1.5; }.business-arrow { width: 14rpx; height: 14rpx; margin-right: 8rpx; border-top: 4rpx solid #94a3b8; border-right: 4rpx solid #94a3b8; transform: rotate(45deg); }
+.business-card { min-height: 92rpx; padding: 22rpx; display: flex; align-items: center; gap: 18rpx; border: .03125rem solid var(--color-border); border-radius: 20rpx; background: #fff; box-shadow: 0 8rpx 28rpx rgba(0, 0, 0, 0.05); }.business-icon { flex: 0 0 76rpx; width: 76rpx; height: 76rpx; border-radius: 22rpx; display: flex; align-items: center; justify-content: center; background: var(--color-primary-soft); }.calendar-shape { position: relative; width: 34rpx; height: 30rpx; border: .125rem solid var(--color-primary); border-radius: 8rpx; }.calendar-shape::before { content: ''; position: absolute; left: -4rpx; right: -4rpx; top: 8rpx; height: 4rpx; background: var(--color-primary); }.calendar-shape view { position: absolute; top: -9rpx; width: 4rpx; height: 10rpx; border-radius: 4rpx; background: var(--color-primary); }.calendar-shape view:first-child { left: 6rpx; }.calendar-shape view:last-child { right: 6rpx; }.business-copy { flex: 1; min-width: 0; }.business-title,.business-desc { display: block; }.business-title { color: var(--color-text); font-size: 28rpx; font-weight: 750; }.business-desc { margin-top: 6rpx; color: var(--color-text-body); font-size: 22rpx; line-height: 1.5; }.business-arrow { width: 14rpx; height: 14rpx; margin-right: 8rpx; border-top: 4rpx solid var(--color-text-muted); border-right: 4rpx solid var(--color-text-muted); transform: rotate(45deg); }
 
 .task-card {
   background: #fff;
   border-radius: 14rpx;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
   padding: 0 24rpx;
 }
 
@@ -231,7 +231,7 @@ const openMerchantEvents = () => uni.navigateTo({ url: '/pages/merchant-events/i
   align-items: center;
   justify-content: space-between;
   padding: 28rpx 0;
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .task-row.last {
@@ -246,7 +246,7 @@ const openMerchantEvents = () => uni.navigateTo({ url: '/pages/merchant-events/i
 .task-name {
   font-size: 28rpx;
   font-weight: 600;
-  color: #222;
+  color: var(--color-text);
 }
 
 .task-sub {
@@ -264,12 +264,12 @@ const openMerchantEvents = () => uni.navigateTo({ url: '/pages/merchant-events/i
 
 .task-action.todo {
   color: #fff;
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
 }
 
 .task-action.pending {
-  color: #5f646d;
-  background: #f0f1f3;
+  color: var(--color-text-body);
+  background: var(--color-surface-muted);
 }
 
 .income-card {
@@ -278,7 +278,7 @@ const openMerchantEvents = () => uni.navigateTo({ url: '/pages/merchant-events/i
   padding: 28rpx 24rpx;
   border-radius: 14rpx;
   background: #fff;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .income-icon {
@@ -306,19 +306,19 @@ const openMerchantEvents = () => uni.navigateTo({ url: '/pages/merchant-events/i
   display: block;
   font-size: 28rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .income-desc {
   display: block;
   margin-top: 8rpx;
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
   line-height: 1.6;
 }
 
 .income-arrow {
   font-size: 36rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 </style>

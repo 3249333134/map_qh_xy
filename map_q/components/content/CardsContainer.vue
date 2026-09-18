@@ -2,6 +2,7 @@
   <scroll-view 
     class="cards-container"
     scroll-y
+    :show-scrollbar="false"
     @scrolltolower="$emit('load-more')"
     @scroll="onScroll"
     :scroll-top="scrollTop"
@@ -43,22 +44,7 @@
 
     <view v-else class="cards-grid">
       <view class="cards-column">
-        <template v-if="useServiceCard">
-          <service-card-item
-            v-for="(item, index) in leftColumnData"
-            :key="'left-svc-' + (item._id || '') + '-' + index"
-            :index="index"
-            :card-data="item"
-            :height="getColumnItemHeight('left', index)"
-            column-type="left"
-            :class="{ 'card-highlight': isHighlighted(item._id) }"
-            @media-tap="$emit('media-tap', $event)"
-            @content-tap="$emit('content-tap', $event)"
-            @reserve="$emit('reserve', $event)"
-          />
-        </template>
-        <template v-else>
-          <template v-for="(item, index) in leftColumnData" :key="'left-base-' + (item._id || '') + '-' + index">
+        <template v-for="(item, index) in leftColumnData" :key="'left-base-' + (item._id || '') + '-' + index">
             <track-card
               v-if="item.type === 'track'"
               :index="index"
@@ -109,6 +95,27 @@
               @media-tap="$emit('media-tap', $event)"
               @content-tap="$emit('content-tap', $event)"
             />
+            <message-board-card-item
+              v-else-if="item.type === 'messageBoard'"
+              :index="index"
+              :card-data="item"
+              :height="getColumnItemHeight('left', index)"
+              column-type="left"
+              :class="{ 'card-highlight': isHighlighted(item._id) }"
+              @media-tap="$emit('media-tap', $event)"
+              @content-tap="$emit('content-tap', $event)"
+            />
+            <service-card-item
+              v-else-if="useServiceCard && item.type === 'service'"
+              :index="index"
+              :card-data="item"
+              :height="getColumnItemHeight('left', index)"
+              column-type="left"
+              :class="{ 'card-highlight': isHighlighted(item._id) }"
+              @media-tap="$emit('media-tap', $event)"
+              @content-tap="$emit('content-tap', $event)"
+              @reserve="$emit('reserve', $event)"
+            />
             <card-item
               v-else
               :index="index"
@@ -120,25 +127,9 @@
               @content-tap="$emit('content-tap', $event)"
             />
           </template>
-        </template>
       </view>
       <view class="cards-column">
-        <template v-if="useServiceCard">
-          <service-card-item
-            v-for="(item, index) in rightColumnData"
-            :key="'right-svc-' + (item._id || '') + '-' + index"
-            :index="leftColumnData.length + index"
-            :card-data="item"
-            :height="getColumnItemHeight('right', index)"
-            column-type="right"
-            :class="{ 'card-highlight': isHighlighted(item._id) }"
-            @media-tap="$emit('media-tap', $event)"
-            @content-tap="$emit('content-tap', $event)"
-            @reserve="$emit('reserve', $event)"
-          />
-        </template>
-        <template v-else>
-          <template v-for="(item, index) in rightColumnData" :key="'right-base-' + (item._id || '') + '-' + index">
+        <template v-for="(item, index) in rightColumnData" :key="'right-base-' + (item._id || '') + '-' + index">
             <track-card
               v-if="item.type === 'track'"
               :index="leftColumnData.length + index"
@@ -189,6 +180,27 @@
               @media-tap="$emit('media-tap', $event)"
               @content-tap="$emit('content-tap', $event)"
             />
+            <message-board-card-item
+              v-else-if="item.type === 'messageBoard'"
+              :index="leftColumnData.length + index"
+              :card-data="item"
+              :height="getColumnItemHeight('right', index)"
+              column-type="right"
+              :class="{ 'card-highlight': isHighlighted(item._id) }"
+              @media-tap="$emit('media-tap', $event)"
+              @content-tap="$emit('content-tap', $event)"
+            />
+            <service-card-item
+              v-else-if="useServiceCard && item.type === 'service'"
+              :index="leftColumnData.length + index"
+              :card-data="item"
+              :height="getColumnItemHeight('right', index)"
+              column-type="right"
+              :class="{ 'card-highlight': isHighlighted(item._id) }"
+              @media-tap="$emit('media-tap', $event)"
+              @content-tap="$emit('content-tap', $event)"
+              @reserve="$emit('reserve', $event)"
+            />
             <card-item
               v-else
               :index="leftColumnData.length + index"
@@ -200,7 +212,6 @@
               @content-tap="$emit('content-tap', $event)"
             />
           </template>
-        </template>
       </view>
     </view>
     <view class="loading-more" v-if="isLoading && totalCount > 0">
@@ -219,9 +230,10 @@ import VideoCard from '../card/VideoCard.vue'
 import ArticleCard from '../card/ArticleCard.vue'
 import PlaceCard from '../card/PlaceCard.vue'
 import EventCard from '../card/EventCard.vue'
+import MessageBoardCardItem from '../card/MessageBoardCardItem.vue'
 
 export default {
-  components: { CardItem, ServiceCardItem, TrackCard, VideoCard, ArticleCard, PlaceCard, EventCard },
+  components: { CardItem, ServiceCardItem, TrackCard, VideoCard, ArticleCard, PlaceCard, EventCard, MessageBoardCardItem },
   props: {
     scrollTop: { type: Number, default: 0 },
     scrollWithAnimation: { type: Boolean, default: true },
@@ -279,27 +291,17 @@ export default {
 </script>
 
 <style scoped>
-.cards-container { overflow: hidden; background: linear-gradient(180deg,rgba(248,250,252,.72),var(--color-page) 72px); }
-.cards-grid { display: flex; padding: 8px 8px 28px; width: 100%; box-sizing: border-box; }
-.cards-column { flex: 0 0 50%; padding: 0 5px; width: 50%; box-sizing: border-box; }
+.cards-container { overflow: hidden; background: rgba(247,250,249,.72); }
+.cards-grid { display: flex; padding: 4px 8px 28px; width: 100%; box-sizing: border-box; }
+.cards-column { flex: 0 0 50%; padding: 0 6px; width: 50%; box-sizing: border-box; }
 
 .card-highlight {
-  box-shadow: 0 4rpx 20rpx rgba(255, 138, 101, 0.25) !important;
+  box-shadow: 0 0 0 3rpx rgba(0, 0, 0, 0.1), 0 5rpx 18rpx rgba(0, 0, 0, 0.06) !important;
   transform: scale(1.01);
   transition: all 0.3s ease;
 }
 
-.card-highlight::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4rpx;
-  background: var(--primary-color);
-  border-top-left-radius: 12rpx;
-  border-top-right-radius: 12rpx;
-}
+.card-highlight::before { display: none; }
 
 .skeleton-container {
   display: flex;
@@ -314,12 +316,12 @@ export default {
   border-radius: 24rpx;
   overflow: hidden;
   border: 1rpx solid rgba(148,163,184,.18);
-  box-shadow: 0 8rpx 28rpx rgba(15,23,42,.07);
+  box-shadow: 0 8rpx 28rpx rgba(0, 0, 0, 0.07);
 }
 
 .skeleton-cover {
   height: 200rpx;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--color-surface-muted) 25%, #e0e0e0 50%, var(--color-surface-muted) 75%);
   background-size: 200% 100%;
   animation: skeletonWave 1.5s infinite;
 }
@@ -329,7 +331,7 @@ export default {
 }
 
 .skeleton-line {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--color-surface-muted) 25%, #e0e0e0 50%, var(--color-surface-muted) 75%);
   background-size: 200% 100%;
   animation: skeletonWave 1.5s infinite;
   border-radius: 4rpx;
@@ -371,7 +373,7 @@ export default {
 .skeleton-btn {
   width: 36rpx;
   height: 36rpx;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--color-surface-muted) 25%, #e0e0e0 50%, var(--color-surface-muted) 75%);
   background-size: 200% 100%;
   animation: skeletonWave 1.5s infinite;
   border-radius: 8rpx;
@@ -390,28 +392,28 @@ export default {
   padding: 100rpx 40rpx;
 }
 
-.empty-icon { position: relative; width: 96rpx; height: 96rpx; margin-bottom: 30rpx; border: 2rpx solid #fed7aa; border-radius: 50%; background: #fff7ed; font-size: 0; }
-.empty-icon::before { content: ''; position: absolute; left: 31rpx; top: 22rpx; width: 30rpx; height: 42rpx; border: .0625rem solid #fed7aa; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-sizing: border-box; }
-.empty-icon::after { content: ''; position: absolute; left: 42rpx; top: 35rpx; width: 10rpx; height: 10rpx; border-radius: 50%; background: #ea580c; }
+.empty-icon { position: relative; width: 96rpx; height: 96rpx; margin-bottom: 30rpx; border: 2rpx solid rgba(32,32,32,.22); border-radius: 50%; background: var(--color-primary-soft); font-size: 0; }
+.empty-icon::before { content: ''; position: absolute; left: 31rpx; top: 22rpx; width: 30rpx; height: 42rpx; border: .0625rem solid rgba(32,32,32,.35); border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-sizing: border-box; }
+.empty-icon::after { content: ''; position: absolute; left: 42rpx; top: 35rpx; width: 10rpx; height: 10rpx; border-radius: 50%; background: var(--color-primary); }
 
 .empty-title {
   font-size: 32rpx;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--color-text);
   margin-bottom: 16rpx;
 }
 
 .empty-desc {
   font-size: 26rpx;
-  color: #64748b;
+  color: var(--color-text-body);
   margin-bottom: 40rpx;
 }
 
 .empty-btn {
   padding: 16rpx 48rpx;
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary) 100%);
+  background: var(--color-primary);
   border-radius: 32rpx;
-  box-shadow: 0 4rpx 16rpx rgba(255, 122, 69, 0.3);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
 }
 
 .empty-btn text {
@@ -420,8 +422,8 @@ export default {
   font-weight: 600;
 }
 .empty-recovery { margin-top: 18rpx; display: flex; flex-wrap: wrap; justify-content: center; gap: 12rpx; }
-.recovery-chip { min-height: 72rpx; padding: 0 24rpx; border: .03125rem solid #e2e8f0; border-radius: 36rpx; display: flex; align-items: center; justify-content: center; background: #fff; color: #475569; font-size: 24rpx; font-weight: 700; }
-.recovery-chip.primary { border-color: #f97316; background: #fff7ed; color: #c2410c; }
+.recovery-chip { min-height: 72rpx; padding: 0 24rpx; border: .03125rem solid var(--color-border); border-radius: 36rpx; display: flex; align-items: center; justify-content: center; background: #fff; color: var(--color-text-body); font-size: 24rpx; font-weight: 700; }
+.recovery-chip.primary { border-color: rgba(32,32,32,.28); background: var(--color-primary-soft); color: var(--color-primary); }
 
 .loading-more {
   display: flex;
@@ -429,13 +431,13 @@ export default {
   justify-content: center;
   gap: 12rpx;
   padding: 20px 0;
-  color: #666;
+  color: var(--color-text-body);
 }
 
 .loading-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid #f1f5f9;
+  border: 2px solid var(--color-surface-muted);
   border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -445,5 +447,5 @@ export default {
   to { transform: rotate(360deg); }
 }
 
-.loading-done { text-align: center; padding: 15px 0; color: #999; font-size: 12px; }
+.loading-done { text-align: center; padding: 15px 0; color: var(--color-text-muted); font-size: 12px; }
 </style>

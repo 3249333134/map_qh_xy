@@ -209,7 +209,7 @@ export default {
 .channel-page {
   height: 100vh;
   background: #F5F6F8;
-  color: #172033;
+  color: var(--color-text);
   overflow: hidden;
 }
 
@@ -224,7 +224,7 @@ export default {
   align-items: center;
   justify-content: space-between;
   padding: 0 18rpx;
-  border-bottom: .03125rem solid #ECEEF2;
+  border-bottom: .03125rem solid var(--color-surface-muted);
 }
 
 .nav-button {
@@ -251,8 +251,8 @@ export default {
 .back-icon {
   width: 20rpx;
   height: 20rpx;
-  border-left: 4rpx solid #172033;
-  border-bottom: 4rpx solid #172033;
+  border-left: 4rpx solid var(--color-text);
+  border-bottom: 4rpx solid var(--color-text);
   transform: rotate(45deg);
 }
 
@@ -265,7 +265,7 @@ export default {
   width: 7rpx;
   height: 7rpx;
   border-radius: 50%;
-  background: #172033;
+  background: var(--color-text);
 }
 
 .nav-title {
@@ -290,7 +290,7 @@ export default {
   padding: 24rpx;
   border-radius: 22rpx;
   background: #fff;
-  box-shadow: 0 6rpx 20rpx rgba(21, 35, 58, 0.05);
+  box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.05);
 }
 
 .identity {
@@ -331,15 +331,15 @@ export default {
 .archive-tag {
   padding: 4rpx 10rpx;
   border-radius: 10rpx;
-  background: #F0F1F3;
-  color: #697386;
+  background: var(--color-surface-muted);
+  color: var(--color-text-body);
   font-size: 19rpx;
 }
 
 .channel-desc {
   display: block;
   margin-top: 8rpx;
-  color: #697386;
+  color: var(--color-text-body);
   font-size: 24rpx;
   line-height: 1.55;
 }
@@ -348,7 +348,7 @@ export default {
   margin-top: 24rpx;
   padding: 20rpx 0;
   display: flex;
-  border-top: 1rpx solid #EEF0F3;
+  border-top: 1rpx solid var(--color-surface-muted);
 }
 
 .stats view {
@@ -424,7 +424,7 @@ export default {
   min-height: 88rpx;
   display: flex;
   align-items: center;
-  border-bottom: 1rpx solid #EEF0F3;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .row:last-child,
@@ -487,7 +487,7 @@ export default {
 }
 
 .info-row text:first-child {
-  color: #697386;
+  color: var(--color-text-body);
 }
 
 .rule-row {

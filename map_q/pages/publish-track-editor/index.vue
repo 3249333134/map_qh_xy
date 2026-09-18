@@ -89,7 +89,7 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f7f7f8;
+  background: var(--color-page);
   padding-bottom: 140rpx;
 }
 
@@ -104,7 +104,7 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
   height: 88rpx;
   padding: 0 24rpx;
   background: #fff;
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .nav-back {
@@ -114,8 +114,8 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #f0f1f3;
-  color: #222;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
   font-size: 44rpx;
   line-height: 44rpx;
 }
@@ -123,7 +123,7 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
 .nav-title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .nav-right {
@@ -139,7 +139,7 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
   padding: 0 28rpx;
   height: 56rpx;
   border-radius: 999rpx;
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
   color: #fff;
   font-size: 26rpx;
   font-weight: 700;
@@ -153,14 +153,14 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
   padding: 28rpx 24rpx;
   border-radius: 14rpx;
   background: #fff;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .route-name {
   display: block;
   font-size: 28rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .route-preview {
@@ -204,7 +204,7 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
 
 .route-label {
   font-size: 22rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .route-label:first-child {
@@ -219,21 +219,21 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
   margin-top: 20rpx;
   padding: 28rpx 24rpx;
   border-radius: 14rpx;
-  background: #f0f1f3;
+  background: var(--color-surface-muted);
 }
 
 .note-title {
   display: block;
   font-size: 28rpx;
   font-weight: 700;
-  color: #5f646d;
+  color: var(--color-text-body);
 }
 
 .note-desc {
   display: block;
   margin-top: 10rpx;
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
   line-height: 1.6;
 }
 
@@ -242,7 +242,7 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
   margin: 36rpx 8rpx 16rpx;
   font-size: 28rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .timeline {
@@ -285,7 +285,7 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
 .timeline-line {
   flex: 1;
   width: 4rpx;
-  background: #f0f1f3;
+  background: var(--color-surface-muted);
   margin: 8rpx 0;
 }
 
@@ -295,7 +295,7 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
   padding-bottom: 32rpx;
   background: #fff;
   border-radius: 14rpx;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
   padding: 24rpx;
 }
 
@@ -317,14 +317,14 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
   margin-left: 12rpx;
   font-size: 28rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .timeline-desc {
   display: block;
   margin-top: 12rpx;
   font-size: 24rpx;
-  color: #5f646d;
+  color: var(--color-text-body);
   line-height: 1.6;
 }
 
@@ -332,8 +332,8 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
   margin-top: 16rpx;
   padding: 16rpx 20rpx;
   border-radius: 12rpx;
-  border: 2rpx dashed #f1f5f9;
-  background: #f7f7f8;
+  border: 2rpx dashed var(--color-surface-muted);
+  background: var(--color-page);
 }
 
 .media-action {
@@ -351,7 +351,7 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
   gap: 16rpx;
   padding: 16rpx 24rpx calc(env(safe-area-inset-bottom) + 16rpx);
   background: rgba(255, 255, 255, 0.98);
-  border-top: 1rpx solid #f1f5f9;
+  border-top: 1rpx solid var(--color-surface-muted);
 }
 
 .footer-btn {
@@ -361,14 +361,14 @@ const onPublish = () => uni.navigateTo({ url: '/pages/publish-preview/index' })
   align-items: center;
   justify-content: center;
   border-radius: 999rpx;
-  background: #f0f1f3;
-  color: #5f646d;
+  background: var(--color-surface-muted);
+  color: var(--color-text-body);
   font-size: 28rpx;
   font-weight: 600;
 }
 
 .footer-btn.primary {
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
   color: #fff;
 }
 </style>

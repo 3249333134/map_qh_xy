@@ -1,0 +1,13 @@
+{
+  "miniprogramRoot": "map_q/unpackage/dist/dev/mp-weixin/",
+  "compileType": "miniprogram",
+  "appid": "wx50620cbb41dfd21b",
+  "projectname": "map_q",
+  "libVersion": "3.17.0",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "postcss": true,
+    "minified": true
+  }
+}

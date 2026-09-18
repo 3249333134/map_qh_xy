@@ -109,7 +109,7 @@ export default {
           time: '5小时前',
           unread: true,
           icon: ICONS.heart,
-          iconBg: '#FFF0F3',
+          iconBg: '#fff1ee',
           iconColor: '#FF3B60',
           targetType: 'comment',
           targetId: 'comment-1'
@@ -310,7 +310,7 @@ export default {
   align-items: flex-start;
   gap: 20rpx;
   padding: 24rpx 28rpx 24rpx 36rpx;
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
   position: relative;
   background: #fff;
 }
@@ -368,7 +368,7 @@ export default {
 }
 
 .notice-time {
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 24rpx;
   flex-shrink: 0;
 }
@@ -385,7 +385,7 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 10rpx;
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 28rpx;
 }
 
@@ -425,8 +425,8 @@ export default {
   line-height: 92rpx;
   text-align: center;
   font-size: 30rpx;
-  color: #333;
-  border-top: 1rpx solid #f1f5f9;
+  color: var(--color-text);
+  border-top: 1rpx solid var(--color-surface-muted);
 }
 
 .sheet-item.danger {
@@ -436,6 +436,6 @@ export default {
 .sheet-cancel {
   margin-top: 12rpx;
   border-top: 10rpx solid #F5F5F7;
-  color: #333;
+  color: var(--color-text);
 }
 </style>

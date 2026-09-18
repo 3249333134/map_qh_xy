@@ -1,8 +1,9 @@
-<view class="tabbar">
+<view class="tabbar {{publishOpen ? 'overlay-open' : ''}}">
   <block wx:for="{{list}}" wx:key="index">
     <view
       class="tabbar-item {{selected === index ? 'active' : ''}} {{item.type === 'publish' ? 'publish-item' : ''}}"
       data-index="{{index}}"
+      style="{{publishOpen ? itemStyles[index] : ''}}"
       catchtap="onTap"
     >
       <block wx:if="{{item.type === 'publish'}}">

@@ -96,12 +96,12 @@ const onEnter = () => uni.showToast({ title: '进入频道', icon: 'none' })
   --brand-orange: var(--color-primary);
   --brand-purple: var(--color-info);
   --success: #24d06c;
-  --text-primary: #222;
-  --text-body: #5f646d;
-  --text-secondary: #8a8f98;
-  --surface-app: #f7f7f8;
+  --text-primary: var(--color-text);
+  --text-body: var(--color-text-body);
+  --text-secondary: var(--color-text-muted);
+  --surface-app: var(--color-page);
   --surface-card: #fff;
-  --surface-muted: #f0f1f3;
+  --surface-muted: var(--color-surface-muted);
   --card-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   min-height: 100vh;
   background: var(--surface-app);
@@ -118,7 +118,7 @@ const onEnter = () => uni.showToast({ title: '进入频道', icon: 'none' })
   justify-content: center;
   position: relative;
   background: var(--surface-card);
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .nav-back {

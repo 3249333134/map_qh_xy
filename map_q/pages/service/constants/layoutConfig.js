@@ -28,22 +28,17 @@ export const SERVICE_LAYOUT_CONFIG = {
 // 服务分类配置
 export const SERVICE_CATEGORIES = [
   { id: 'all', name: '全部服务', active: true },
-  { id: 'personal', name: '个人服务', active: false },
-  { id: 'merchant', name: '商家服务', active: false },
-  { id: 'event', name: '活动服务', active: false },
-  { id: 'repair', name: '维修服务', active: false },
-  { id: 'clean', name: '清洁服务', active: false },
-  { id: 'travel', name: '旅拍向导', active: false }
+  { id: 'ticket', name: '演出票务', active: false },
+  { id: 'food', name: '餐饮美食', active: false },
+  { id: 'leisure', name: '休闲门店', active: false },
+  { id: 'beauty', name: '丽人服务', active: false },
+  { id: 'fitness', name: '健身运动', active: false },
+  { id: 'visit', name: '探店预约', active: false }
 ]
 
 // 分类映射配置
 export const CATEGORY_MAP = {
-  'personal': '个人服务',
-  'merchant': '商家服务',
-  'event': '活动服务',
-  'repair': '维修服务',
-  'clean': '清洁服务',
-  'travel': '旅拍向导'
+  ticket: '演出票务', food: '餐饮美食', leisure: '休闲门店', beauty: '丽人服务', fitness: '健身运动', visit: '探店预约'
 }
 
 // 地图标记配置
@@ -55,11 +50,6 @@ export const MARKER_CONFIG = {
   },
   CATEGORY_ICONS: {
     'all': '/static/marker.png',
-    'personal': '/static/marker.png',
-    'merchant': '/static/marker.png',
-    'event': '/static/marker.png',
-    'repair': '/static/marker.png',
-    'clean': '/static/marker.png',
-    'travel': '/static/marker.png'
+    ticket: '/static/marker-red.png', food: '/static/marker-green.png', leisure: '/static/marker-purple.png', beauty: '/static/marker-orange.png', fitness: '/static/marker-blue.png', visit: '/static/marker.png'
   }
 }

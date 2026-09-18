@@ -254,7 +254,7 @@ export default {
         type: location.type || 'content',
         clusterCount: location.clusterCount || 0,
         selected,
-        iconPath: selected ? '/static/marker-orange.png' : '/static/marker-blue.png',
+        iconPath: selected ? '/static/marker-green.png' : '/static/marker-blue.png',
         width: selected ? 32 : 26,
         height: selected ? 32 : 26,
         callout: {
@@ -647,7 +647,7 @@ export default {
   border-radius: 6px;
   background-color: #fff;
   overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   width: auto;
   display: flex;
   flex-direction: column;
@@ -670,14 +670,14 @@ export default {
   font-size: 14px; /* 原 28rpx ~ 14px */
   font-weight: 600;
   margin-bottom: 4px;
-  color: #333;
+  color: var(--color-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .card-author {
   font-size: 12px; /* 原 24rpx ~ 12px */
-  color: #666;
+  color: var(--color-text-body);
   margin-bottom: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -692,7 +692,7 @@ export default {
 .card-location,
 .card-stats {
   font-size: 12px; /* 原 24rpx ~ 12px */
-  color: #999;
+  color: var(--color-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -735,7 +735,7 @@ export default {
   background: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(0,0,0,0.08);
   border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
   padding: 6px 8px;
 }
 .card-img {
@@ -746,7 +746,7 @@ export default {
 }
 .card-title {
   font-size: 12px;
-  color: #333;
+  color: var(--color-text);
   font-weight: 600;
   line-height: 1.2;
 }
@@ -779,14 +779,14 @@ export default {
 .map-title {
   font-size: 15px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
   display: block;
   margin-bottom: 2px;
 }
 
 .map-desc {
   font-size: 13px;
-  color: #666;
+  color: var(--color-text-body);
   display: block;
 }
 
@@ -814,8 +814,8 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f5f5;
-  color: #999;
+  background: var(--color-page);
+  color: var(--color-text-muted);
 }
 .cta-float {
   position: absolute;
@@ -832,13 +832,13 @@ export default {
   height: 27px;
   background: #FFC400;
   border-radius: 6px;
-  color: #333;
+  color: var(--color-text);
   font-size: 15px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* 新增：聚合数量徽标样式 */
@@ -861,7 +861,7 @@ export default {
   height: 48px;
   border-radius: 999px;
   background: #fff;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -872,4 +872,14 @@ export default {
   font-weight: 800;
   font-size: 14px;
 }
+/* Reference-style map callouts: retain the existing marker tap targets, but reduce
+   every custom callout to a lightweight place label instead of a content card. */
+.card { margin-bottom: 4px; border-radius: 999px; background-color: rgba(255,255,255,.9); box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1); }
+.card-media { display: none; }
+.card-content { padding: 4px 8px; }
+.card-title { margin-bottom: 0; color: #24332f; font-size: 11px; }
+.card-author { display: none; }
+.cluster-count-badge { background: #20ad63; }
+.cluster-bubble { border-color: #20ad63; }
+.cluster-bubble-count { color: #159754; }
 </style>

@@ -37,7 +37,7 @@ export default {
 .search-input-wrapper {
   display: flex;
   align-items: center;
-  background: #f5f5f5;
+  background: var(--color-page);
   border-radius: 50rpx;
   padding: 0 30rpx;
   height: 80rpx;
@@ -46,7 +46,7 @@ export default {
 .search-icon {
   width: 24rpx;
   height: 24rpx;
-  border: 3rpx solid #999;
+  border: 3rpx solid var(--color-text-muted);
   border-radius: 50%;
   margin-right: 20rpx;
   position: relative;
@@ -60,7 +60,7 @@ export default {
   right: -8rpx;
   bottom: -4rpx;
   border-radius: 3rpx;
-  background: #999;
+  background: var(--color-text-muted);
   transform: rotate(45deg);
 }
 

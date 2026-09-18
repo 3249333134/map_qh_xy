@@ -48,7 +48,7 @@ export default {
 .profile-section {
   width: 100%;
   height: 350px;
-  background: linear-gradient(180deg, #e8e8e8 0%, #d0d0d0 100%);
+  background: #e8e8e8;
   position: fixed;
   top: 0;
   left: 0;
@@ -60,7 +60,7 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: #333;
+  color: var(--color-text);
   height: 100%;
 }
 
@@ -83,14 +83,14 @@ export default {
 .username {
   font-size: 24px;
   font-weight: bold;
-  color: #333;
+  color: var(--color-text);
   display: block;
   margin-bottom: 8px;
 }
 
 .user-desc {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-body);
   display: block;
 }
 
@@ -110,29 +110,29 @@ export default {
 .stat-number {
   font-size: 20px;
   font-weight: bold;
-  color: #333;
+  color: var(--color-text);
   margin-bottom: 4px;
 }
 
 .stat-label {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-body);
 }
 
 /* Clean profile surface; dimensions and interaction layout stay unchanged. */
 .profile-section {
-  background: linear-gradient(180deg,#e8e8e8,#d0d0d0);
+  background: #e8e8e8;
 }
 
 .profile-content {
-  color: var(--color-text, #0f172a);
+  color: var(--color-text, var(--color-text));
 }
 
 .avatar-container {
   padding: 4px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .avatar {
@@ -142,7 +142,7 @@ export default {
 
 .username,
 .stat-number {
-  color: var(--color-text, #0f172a);
+  color: var(--color-text, var(--color-text));
 }
 
 .username {
@@ -152,7 +152,7 @@ export default {
 
 .user-desc,
 .stat-label {
-  color: var(--color-text-body, #64748b);
+  color: var(--color-text-body, var(--color-text-body));
 }
 
 .profile-stats {

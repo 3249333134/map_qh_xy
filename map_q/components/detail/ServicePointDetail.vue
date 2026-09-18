@@ -101,7 +101,7 @@ export default {
 </script>
 
 <style scoped>
-.detail-wrap { background: var(--color-surface); border-radius:12px; box-shadow:0 6px 20px rgba(0,0,0,0.12); padding:12px; }
+.detail-wrap { background: var(--color-surface); border-radius:12px; box-shadow:0 6px 20px rgba(0, 0, 0, 0.1); padding:12px; }
 .detail-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
 .detail-title { font-size:16px; font-weight:600; color: var(--color-text); }
 .detail-actions { display:flex; gap:8px; }
@@ -113,11 +113,11 @@ export default {
 
 .services-section { margin-bottom:12px; }
 .section-header { margin-bottom:8px; }
-.section-title { font-size:14px; font-weight:600; color: #333; }
+.section-title { font-size:14px; font-weight:600; color: var(--color-text); }
 
 .services-list { display:flex; flex-direction:column; gap:8px; }
 .service-item { display:flex; align-items:center; padding:10px; background: var(--color-page); border-radius:8px; }
-.service-item:active { background: #f0f0f0; }
+.service-item:active { background: var(--color-surface-muted); }
 .service-icon { width:40px; height:40px; display:flex; align-items:center; justify-content:center; font-size:20px; }
 .service-info { flex:1; margin-left:10px; }
 .service-name { display:block; font-size:14px; font-weight:500; color: var(--color-text); }
@@ -129,6 +129,6 @@ export default {
 .no-services { text-align:center; padding:20px; background: var(--color-page); border-radius:8px; }
 .empty-text { color: var(--color-text-muted); font-size:13px; }
 
-.detail-footer { padding-top:12px; border-top: 1px solid #eee; }
+.detail-footer { padding-top:12px; border-top: 1px solid var(--color-border); }
 .detail-desc { color: var(--color-text-body); font-size:13px; line-height:1.5; }
 </style>

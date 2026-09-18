@@ -1,469 +1,68 @@
 <template>
-  <view
-    class="card video-card app-card"
-    :style="{ '--card-height': height + 'rpx' }">
-    <view
-      class="card-media"
-      @tap="handleMediaTap"
-      @click="handleMediaTap">
-      <image
-        v-if="coverImage && !isPlaying"
-        class="card-cover"
-        :src="coverImage"
-        mode="aspectFill"
-      />
-      <video
-        v-if="isPlaying"
-        class="video-player"
-        :src="videoUrl"
-        autoplay
-        loop
-        muted
-        controls
-        object-fit="cover"
-        @play="onVideoPlay"
-        @pause="onVideoPause"
-        @ended="onVideoEnded"
-      />
-      <view v-else class="cover-placeholder">
-        <text class="cover-placeholder-text">暂无封面</text>
-      </view>
-      <view v-if="!isPlaying" class="play-btn" @tap.stop="togglePlay">
-        <view class="play-icon"></view>
-      </view>
-      <view v-if="!isPlaying && durationText" class="video-duration">{{ durationText }}</view>
-      <view v-if="isPlaying" class="video-overlay">
-        <view class="pause-btn" @tap.stop="togglePlay">
-          <view class="pause-icon"></view>
-        </view>
-      </view>
-    </view>
-
-    <view
-      class="card-content"
-      @tap="handleContentTap"
-      @click="handleContentTap">
-      <view class="card-title">{{ cardTitle }}</view>
-      <view class="card-footer">
-        <view class="card-author">
-          <text class="author-name">{{ cardAuthor }}</text>
-        </view>
-        <view class="card-stats">
-          <text class="stat-icon">▶</text>
-          <text class="stat-text">{{ playCountText }}</text>
-        </view>
-        <view class="card-actions" @tap.stop="preventBubble" @click.stop="preventBubble">
-          <view class="action-btn" :class="{ active: isLiked }" @tap.stop="handleLike" @click.stop="handleLike">
-            <text class="action-icon">{{ isLiked ? '♥' : '♡' }}</text>
-            <text class="action-text">{{ likesCount }}</text>
-          </view>
-          <view class="action-btn" :class="{ active: isFavorited }" @tap.stop="handleFavorite" @click.stop="handleFavorite">
-            <text class="action-icon">{{ isFavorited ? '★' : '☆' }}</text>
-            <text class="action-text">{{ favoritesCount }}</text>
-          </view>
-        </view>
+  <view class="video-card app-card content-card" :class="{ 'is-placeholder': !coverImage && !isPlaying }" role="button" :aria-label="`播放视频：${cardTitle}`" :style="{ '--card-height': Math.max(height, 300) + 'rpx' }" @tap="openDetail">
+    <view class="media-shell">
+      <image v-if="coverImage && !isPlaying" class="cover" :src="coverImage" mode="aspectFill" @error="mediaFailed = true" />
+      <video v-else-if="isPlaying && videoUrl" class="player" :src="videoUrl" autoplay controls object-fit="cover" @ended="isPlaying = false" />
+      <view v-else class="fallback"><view class="fallback-mark"></view><text>{{ mediaFailed ? '封面加载失败' : '暂时没有视频封面' }}</text></view>
+      <view class="shade"></view>
+      <view v-if="!isPlaying" class="play" role="button" aria-label="播放视频" @tap.stop="play"><view></view></view>
+      <text v-if="durationText && !isPlaying" class="duration">{{ durationText }}</text>
+      <view class="caption">
+        <text class="title">{{ cardTitle }}</text>
+        <view class="meta"><text>{{ authorName }}</text><text v-if="likesText">{{ likesText }} 人喜欢</text></view>
       </view>
     </view>
   </view>
 </template>
 
 <script>
-import { ref } from 'vue'
-import { useInteraction } from '../../utils/interaction.js'
-
 export default {
   name: 'VideoCard',
   props: {
-    height: {
-      type: Number,
-      default: 240
-    },
-    columnType: {
-      type: String,
-      default: 'left'
-    },
-    index: {
-      type: Number,
-      required: true
-    },
-    cardData: {
-      type: Object,
-      default: () => ({})
-    }
+    height: { type: Number, default: 360 },
+    columnType: { type: String, default: 'right' },
+    index: { type: Number, required: true },
+    cardData: { type: Object, default: () => ({}) }
   },
-  data() {
-    return {
-      isLiked: false,
-      isFavorited: false,
-      isPlaying: false
-    }
-  },
+  data() { return { isPlaying: false, mediaFailed: false } },
   computed: {
-    cardId() {
-      return this.cardData && (this.cardData._id || this.cardData.id || this.index)
-    },
-    cardTitle() {
-      return this.cardData && (this.cardData.name || this.cardData.title) ?
-        (this.cardData.name || this.cardData.title) : '视频标题'
-    },
-    cardAuthor() {
-      return this.cardData && this.cardData.author ? this.cardData.author : '作者'
-    },
+    cardTitle() { return this.cardData?.title || this.cardData?.name || '城市影像' },
+    authorName() { const a = this.cardData?.author; return typeof a === 'string' ? a : a?.name || '地图创作者' },
     coverImage() {
-      const data = this.cardData || {}
-      const candidates = [
-        data.cover,
-        data.coverUrl,
-        data.thumbnail,
-        data.thumb,
-        data.poster
-      ]
-      if (Array.isArray(data.images)) candidates.push(data.images[0])
-      if (Array.isArray(data.media)) {
-        const first = data.media[0]
-        candidates.push(typeof first === 'string' ? first : first && (first.url || first.src))
-      }
-      const found = candidates.find(item => typeof item === 'string' && item.trim())
-      return found || ''
+      const d = this.cardData || {}; const media = Array.isArray(d.media) ? d.media[0] : null
+      return [d.cover, d.coverUrl, d.thumbnail, d.poster, ...(Array.isArray(d.images) ? d.images : []), typeof media === 'string' ? media : media?.cover || media?.url].find(v => typeof v === 'string' && v.trim() && !/static\/logo\.png/i.test(v)) || ''
     },
     videoUrl() {
-      const data = this.cardData || {}
-      const candidates = [
-        data.videoUrl,
-        data.video,
-        data.src,
-        data.url
-      ]
-      if (Array.isArray(data.media)) {
-        const video = data.media.find(m => m && m.type === 'video')
-        if (video) candidates.push(typeof video === 'string' ? video : video.url || video.src)
-      }
-      return candidates.find(item => typeof item === 'string' && item.trim()) || ''
+      const d = this.cardData || {}; const media = Array.isArray(d.media) ? d.media.find(v => v?.type === 'video') : null
+      return [d.videoUrl, d.video, d.src, typeof media === 'string' ? media : media?.url].find(v => typeof v === 'string' && v.trim()) || ''
     },
-    durationText() {
-      const duration = this.cardData && this.cardData.duration
-      if (duration) {
-        if (typeof duration === 'number') {
-          const mins = Math.floor(duration / 60)
-          const secs = duration % 60
-          return `${mins}:${String(secs).padStart(2, '0')}`
-        }
-        return String(duration)
-      }
-      return ''
-    },
-    playCountText() {
-      const count = Number(this.cardData && this.cardData.plays || this.cardData && this.cardData.views || 0)
-      if (count >= 10000) {
-        return (count / 10000).toFixed(1) + '万'
-      }
-      return count.toString()
-    },
-    likesCount() {
-      const likes = Number(this.cardData && this.cardData.likes)
-      return Number.isFinite(likes) && likes > 0 ? likes : ''
-    },
-    favoritesCount() {
-      const favorites = Number(this.cardData && this.cardData.favorites) || Number(this.cardData && this.cardData.collects)
-      return Number.isFinite(favorites) && favorites > 0 ? favorites : ''
-    }
-  },
-  created() {
-    this.checkInteractionStatus()
-  },
-  beforeDestroy() {
-    this.isPlaying = false
+    durationText() { const d = this.cardData?.duration; if (!d) return ''; if (typeof d !== 'number') return String(d); return `${Math.floor(d / 60)}:${String(d % 60).padStart(2, '0')}` },
+    likesText() { const n = Number(this.cardData?.likes || 0); return n > 999 ? `${(n / 1000).toFixed(1)}k` : n ? String(n) : '' }
   },
   methods: {
-    checkInteractionStatus() {
-      const interaction = useInteraction()
-      this.isLiked = interaction.isLiked(this.cardId)
-      this.isFavorited = interaction.isFavorited(this.cardId)
-    },
-    handleLike() {
-      const interaction = useInteraction()
-      this.isLiked = interaction.toggleLike(this.cardId, this.cardData)
-    },
-    handleFavorite() {
-      const interaction = useInteraction()
-      this.isFavorited = interaction.toggleFavorite(this.cardId, this.cardData)
-    },
-    preventBubble() {},
-    togglePlay() {
-      this.isPlaying = !this.isPlaying
-      if (this.isPlaying) {
-        this.$emit('video-play', { cardData: this.cardData, index: this.index })
-      }
-    },
-    onVideoPlay() {
-      this.isPlaying = true
-    },
-    onVideoPause() {
-      this.isPlaying = false
-    },
-    onVideoEnded() {
-      this.isPlaying = false
-    },
-    handleMediaTap() {
-      if (!this.isPlaying) {
-        this.togglePlay()
-      } else {
-        this.$emit('media-tap', {
-          cardData: this.cardData,
-          index: this.index
-        })
-      }
-    },
-    handleContentTap() {
-      this.$emit('content-tap', {
-        cardData: this.cardData,
-        index: this.index
-      })
-    }
+    play() { this.openDetail() },
+    openDetail() { this.$emit('media-tap', { cardData: this.cardData, index: this.index }) }
   }
 }
 </script>
 
-<style>
-.video-card {
-  margin-bottom: 12rpx;
-  border-radius: 12rpx;
-  background-color: #fff;
-  overflow: hidden;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.video-card .card-media {
-  position: relative;
-  height: var(--card-height, 280rpx);
-  width: 100%;
-  cursor: pointer;
-  overflow: hidden;
-  background: #000;
-}
-
-.video-card .card-cover {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.video-player {
-  width: 100%;
-  height: 100%;
-}
-
-.cover-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #111;
-}
-
-.cover-placeholder-text {
-  color: #666;
-  font-size: 22rpx;
-}
-
-.play-btn {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 64rpx;
-  height: 64rpx;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2rpx solid rgba(255, 255, 255, 0.5);
-  transition: all 0.2s ease;
-}
-
-.play-btn:active {
-  transform: translate(-50%, -50%) scale(0.9);
-  background: rgba(0, 0, 0, 0.7);
-}
-
-.play-icon {
-  width: 0;
-  height: 0;
-  margin-left: 6rpx;
-  border-style: solid;
-  border-width: 12rpx 0 12rpx 20rpx;
-  border-color: transparent transparent transparent #ffffff;
-}
-
-.video-duration {
-  position: absolute;
-  right: 10rpx;
-  bottom: 10rpx;
-  padding: 4rpx 10rpx;
-  border-radius: 6rpx;
-  background: rgba(0, 0, 0, 0.7);
-  color: #fff;
-  font-size: 18rpx;
-  font-weight: 500;
-}
-
-.video-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.2);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.video-card .card-media:active .video-overlay {
-  opacity: 1;
-}
-
-.pause-btn {
-  width: 52rpx;
-  height: 52rpx;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2rpx solid rgba(255, 255, 255, 0.5);
-}
-
-.pause-icon {
-  width: 18rpx;
-  height: 18rpx;
-  display: flex;
-  gap: 4rpx;
-}
-
-.pause-icon::before,
-.pause-icon::after {
-  content: '';
-  width: 5rpx;
-  height: 100%;
-  background: #fff;
-  border-radius: 2rpx;
-}
-
-.video-card .card-content {
-  padding: 10rpx;
-  width: 100%;
-  box-sizing: border-box;
-  cursor: pointer;
-}
-
-.video-card .card-title {
-  width: 100%;
-  color: #000;
-  font-size: 26rpx;
-  font-weight: 400;
-  line-height: 32rpx;
-  margin-bottom: 6rpx;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.video-card .card-footer {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.video-card .card-author {
-  display: flex;
-  align-items: center;
-  flex: 1;
-  min-width: 0;
-}
-
-.video-card .card-author::before {
-  content: '';
-  width: 32rpx;
-  height: 32rpx;
-  border-radius: 50%;
-  background: #eee;
-  margin-right: 6rpx;
-  flex-shrink: 0;
-}
-
-.author-name {
-  color: #999;
-  font-size: 20rpx;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.video-card .card-stats {
-  display: flex;
-  align-items: center;
-  gap: 4rpx;
-  flex-shrink: 0;
-}
-
-.stat-icon {
-  font-size: 18rpx;
-  color: #999;
-}
-
-.stat-text {
-  font-size: 20rpx;
-  color: #999;
-}
-
-.video-card .card-actions {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-  flex-shrink: 0;
-}
-
-.video-card .action-btn {
-  display: flex;
-  align-items: center;
-  gap: 4rpx;
-  transition: all 0.2s;
-}
-
-.video-card .action-btn:active {
-  opacity: 0.7;
-}
-
-.video-card .action-icon {
-  font-size: 24rpx;
-  color: #999;
-  line-height: 1;
-}
-
-.video-card .action-text {
-  font-size: 20rpx;
-  color: #999;
-}
-
-.video-card .action-btn.active .action-icon {
-  color: var(--color-primary);
-}
-
-.video-card .action-btn.active .action-text {
-  color: var(--color-primary);
-}
-
-.video-card .action-btn.active {
-  animation: popIn 0.3s ease;
-}
-
-@keyframes popIn {
-  0% { transform: scale(0.8); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
-}
+<style scoped>
+.video-card{width:100%;margin-bottom:24rpx;overflow:hidden;border-radius:30rpx;background:#111318;box-shadow:0 14rpx 34rpx rgba(0, 0, 0, 0.1)}
+.media-shell{position:relative;width:100%;overflow:hidden;background:#15191f;height:230px;min-height:230px}
+.cover,.player{display:block;width:100%;height:100%}.shade{position:absolute;inset:36% 0 0;background:linear-gradient(180deg,transparent,rgba(5,7,9,.8));pointer-events:none}
+.fallback{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14rpx;color:#9ba2ad;font-size:11px;background:#262b33;padding:36px 12px 18px;text-align:center}
+.fallback-mark{width:52rpx;height:38rpx;border:3rpx solid currentColor;border-radius:10rpx;position:relative;display:none}.fallback-mark:after{content:'';position:absolute;left:14rpx;top:9rpx;width:0;height:0;border-top:8rpx solid transparent;border-bottom:8rpx solid transparent;border-left:13rpx solid currentColor}
+.play{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.06);width:48px;height:48px;background:rgba(255,255,255,.9)}
+.play:active{transform:translate(-50%,-50%) scale(.94)}.play view{margin-left:3px;width:0;height:0;border-top:9px solid transparent;border-bottom:9px solid transparent;border-left:14px solid #202020}
+.duration{position:absolute;right:8px;top:8px;padding:3px 6px;border-radius:5px;background:rgba(12,15,18,.7);color:#fff;font-size:10px;font-variant-numeric:tabular-nums}
+.caption{position:absolute;color:#fff;border-radius:14px;padding:10px;left:8px;right:8px;bottom:8px;background:rgba(18,27,24,.5);backdrop-filter:blur(12px)}.title{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:14px;font-weight:600;line-height:1.4}.meta{margin-top:6px;display:flex;align-items:center;justify-content:space-between;color:rgba(255,255,255,.72);font-size:11px;gap:8px;flex-wrap:wrap}
+@media (prefers-reduced-motion:reduce){.play:active{transform:translate(-50%,-50%)}}
+.play{transition:transform var(--motion-fast) var(--ease-standard),box-shadow var(--motion-fast) ease;top:42%;box-shadow:0 2px 8px rgba(0,0,0,.06);width:48px;height:48px;background:rgba(255,255,255,.9)}.play:active{transform:translate(-50%,-50%) scale(.92);box-shadow:0 5rpx 14rpx rgba(0, 0, 0, 0.1)}
+.is-placeholder .media-shell,.is-placeholder .fallback { background: var(--color-surface-muted); }
+.is-placeholder .fallback { color: var(--color-text-muted); }
+.is-placeholder .shade { background: linear-gradient(180deg,transparent,#fff 80%); }
+.is-placeholder .caption { color: var(--color-text); background:rgba(255,255,255,.86); }
+.is-placeholder .meta { color: var(--color-text-body); }
+.meta text:first-child { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.meta text,.fallback text { font-size: 11px; line-height: 1.4; }
 </style>

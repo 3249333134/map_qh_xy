@@ -245,10 +245,10 @@ export default {
       ],
       tools: [
         { key: 'image', label: '照片', color: '#34C759', icon: ICONS.image },
-        { key: 'camera', label: '拍摄', color: '#4A90D9', icon: ICONS.camera },
-        { key: 'location', label: '位置', color: '#FF9500', icon: ICONS.location },
-        { key: 'event', label: '活动', color: '#FF6B35', icon: ICONS.calendar },
-        { key: 'file', label: '文件', color: '#AF52DE', icon: ICONS.file },
+        { key: 'camera', label: '拍摄', color: '#16b8a7', icon: ICONS.camera },
+        { key: 'location', label: '位置', color: '#20C7B7', icon: ICONS.location },
+        { key: 'event', label: '活动', color: '#f56f64', icon: ICONS.calendar },
+        { key: 'file', label: '文件', color: '#897CFF', icon: ICONS.file },
         { key: 'voice', label: '语音', color: '#5AC8FA', icon: ICONS.mic }
       ]
     }
@@ -660,7 +660,7 @@ export default {
 
 .chat-header {
   background: #fff;
-  border-bottom: 1rpx solid #EEEEEE;
+  border-bottom: 1rpx solid var(--color-border);
   flex-shrink: 0;
   z-index: 20;
 }
@@ -720,7 +720,7 @@ export default {
   align-items: center;
   gap: 8rpx;
   margin-top: 4rpx;
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 22rpx;
 }
 
@@ -748,7 +748,7 @@ export default {
   width: 300rpx;
   background: #fff;
   border-radius: 18rpx;
-  box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.16);
+  box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
@@ -758,7 +758,7 @@ export default {
   align-items: center;
   gap: 18rpx;
   padding: 0 24rpx;
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .more-item:last-child {
@@ -771,7 +771,7 @@ export default {
 }
 
 .more-item text {
-  color: #333;
+  color: var(--color-text);
   font-size: 27rpx;
 }
 
@@ -792,7 +792,7 @@ export default {
   margin: 0 auto 24rpx;
   border-radius: 24rpx;
   background: #e8e8eb;
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 23rpx;
   text-align: center;
 }
@@ -857,7 +857,7 @@ export default {
 }
 
 .bubble.mine {
-  background: #FF7540;
+  background: var(--color-primary);
   border-top-left-radius: 20rpx;
   border-top-right-radius: 6rpx;
 }
@@ -886,7 +886,7 @@ export default {
 }
 
 .voice-bubble.mine {
-  background: #FF7540;
+  background: var(--color-primary);
 }
 
 .wave-bars {
@@ -898,7 +898,7 @@ export default {
 .wave-bars view {
   width: 5rpx;
   border-radius: 3rpx;
-  background: #999;
+  background: var(--color-text-muted);
 }
 
 .voice-bubble.mine .wave-bars view {
@@ -918,7 +918,7 @@ export default {
 }
 
 .image-card.mine {
-  background: #FF7540;
+  background: var(--color-primary);
 }
 
 .image-card svg {
@@ -927,7 +927,7 @@ export default {
 }
 
 .image-card text {
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 24rpx;
 }
 
@@ -963,13 +963,13 @@ export default {
 }
 
 .location-title {
-  color: #222;
+  color: var(--color-text);
   font-size: 28rpx;
   font-weight: 800;
 }
 
 .location-desc {
-  color: #777;
+  color: var(--color-text-muted);
   font-size: 23rpx;
 }
 
@@ -990,7 +990,7 @@ export default {
 
 .card-head {
   min-height: 82rpx;
-  background: #FF7540;
+  background: var(--color-primary);
   display: flex;
   align-items: center;
   padding: 0 24rpx;
@@ -1013,13 +1013,13 @@ export default {
 }
 
 .card-label {
-  color: #777;
+  color: var(--color-text-muted);
   font-size: 25rpx;
   flex-shrink: 0;
 }
 
 .card-value {
-  color: #222;
+  color: var(--color-text);
   font-size: 25rpx;
 }
 
@@ -1027,7 +1027,7 @@ export default {
   height: 58rpx;
   line-height: 58rpx;
   border-radius: 14rpx;
-  background: #FF7540;
+  background: var(--color-primary);
   text-align: center;
   color: #fff;
   font-size: 25rpx;
@@ -1092,10 +1092,10 @@ export default {
   flex: 1;
   height: 58rpx;
   border-radius: 30rpx;
-  background: #f3f3f5;
+  background: var(--color-surface-muted);
   padding: 0 26rpx;
   box-sizing: border-box;
-  color: #222;
+  color: var(--color-text);
   font-size: 28rpx;
 }
 
@@ -1103,11 +1103,11 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #222;
+  color: var(--color-text);
 }
 
 .voice-input.recording {
-  background: #FF7540;
+  background: var(--color-primary);
   color: #fff;
 }
 
@@ -1115,7 +1115,7 @@ export default {
   width: 90rpx;
   height: 58rpx;
   border-radius: 28rpx;
-  background: #FF7540;
+  background: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1137,7 +1137,7 @@ export default {
   grid-template-columns: repeat(4, 1fr);
   row-gap: 24rpx;
   padding: 20rpx 20rpx 26rpx;
-  border-top: 1rpx solid #f1f5f9;
+  border-top: 1rpx solid var(--color-surface-muted);
 }
 
 .tool-item {
@@ -1162,7 +1162,7 @@ export default {
 }
 
 .tool-item text {
-  color: #666;
+  color: var(--color-text-body);
   font-size: 23rpx;
 }
 
@@ -1211,7 +1211,7 @@ export default {
 }
 
 .linked-title {
-  color: #202633;
+  color: var(--color-text);
   font-size: 26rpx;
   font-weight: 700;
 }
@@ -1236,7 +1236,7 @@ export default {
 .poll-title {
   display: block;
   margin-bottom: 14rpx;
-  color: #202633;
+  color: var(--color-text);
   font-size: 26rpx;
   font-weight: 700;
 }
@@ -1246,7 +1246,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  border-top: 1rpx solid #EEF0F3;
+  border-top: 1rpx solid var(--color-surface-muted);
   color: #4E5868;
   font-size: 23rpx;
 }
@@ -1273,5 +1273,23 @@ export default {
   color: #929BAA;
   font-size: 20rpx;
 }
+
+/* Light future chat skin. Message content and sending logic stay unchanged. */
+.chat-page { color: var(--color-text); background: var(--color-page); }
+.chat-header,.input-panel { border-color: var(--color-border); background: rgba(255,255,255,.97); }
+.header-btn,.plus-btn { border: 1rpx solid var(--color-border); background: #fff; box-shadow: var(--shadow-card); }
+.order-strip { color: var(--color-primary-strong); background: linear-gradient(135deg,var(--color-primary-soft),var(--color-explore-soft)); }
+.order-strip-action { color: #fff; background: var(--gradient-primary); }
+.message-input,.voice-input { color: var(--color-text); background: var(--color-surface-muted); }
+.voice-input.recording,.send-btn { color: #fff; background: var(--gradient-primary); }
+.bubble.mine { color: #fff; background: var(--gradient-primary); box-shadow: 0 8rpx 22rpx rgba(0, 0, 0, 0.1); }
+.bubble.other,.linked-card,.poll-card { border-color: var(--color-border); background: #fff; box-shadow: var(--shadow-card); }
+.card-action { color: #fff; background: var(--gradient-primary); }
+.linked-mark { color: var(--color-primary-strong); background: var(--color-primary-soft); }
+.linked-mark.service { color: var(--color-explore-strong); background: var(--color-explore-soft); }
+.linked-mark.route { color: var(--color-route); background: var(--color-route-soft); }
+.linked-mark.order { color: #6f63e6; background: var(--color-lavender-soft); }
+.poll-option.selected { color: var(--color-primary); }
+.poll-option.selected .poll-radio { border-color: var(--color-primary); }
 
 </style>

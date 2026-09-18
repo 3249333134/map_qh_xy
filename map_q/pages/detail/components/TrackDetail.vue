@@ -1,349 +1,275 @@
 <template>
-  <view class="detail-page track-detail">
-    <!-- 顶部导航（沉浸式） -->
-    <view class="detail-nav immersive">
-      <view class="status-spacer" :style="{ height: statusBarHeight + 'px' }"></view>
-      <view class="nav-row">
-        <view class="nav-back" @tap="back">
-          <text class="back-icon">‹</text>
+  <view class="store-nav-detail" :style="themeStyle">
+    <!-- 全屏实景地图背景 -->
+    <view class="nav-map-bg">
+      <!-- 顶部导航 -->
+      <view class="detail-nav overlay-nav">
+        <view class="status-spacer" :style="{ height: statusBarHeight + 'px' }"></view>
+        <view class="nav-row">
+          <view class="nav-back" @tap="back">
+            <text class="back-icon">‹</text>
+          </view>
+          <text class="nav-title">门店详情导航</text>
+          <view class="nav-setting" @tap="openSetting">
+            <text class="setting-icon">⚙</text>
+          </view>
         </view>
-        <text class="nav-title">路线详情</text>
-        <view class="nav-actions">
-          <text class="action-icon" @tap="shareContent">↗</text>
+      </view>
+
+      <!-- 门店点位标记 -->
+      <view class="store-marker">
+        <view class="marker-pulse"></view>
+        <view class="marker-avatar">
+          <view class="avatar-inner">
+            <text class="avatar-icon">{{ themeIcon }}</text>
+          </view>
+          <view class="marker-direction"></view>
         </view>
+        <view class="distance-bubble">
+          <text class="distance-value">{{ distanceKm }}Km</text>
+        </view>
+      </view>
+
+      <!-- 绿色虚线定位引导 -->
+      <view class="guide-line">
+        <view class="guide-path"></view>
+        <view class="guide-endpoint start"></view>
+        <view class="guide-endpoint end"></view>
+      </view>
+
+      <!-- 底部门店名标签 -->
+      <view class="store-name-chip">
+        <text class="chip-text">{{ storeName }}</text>
+        <text class="chip-addr">{{ storeAddress }}</text>
       </view>
     </view>
 
-    <!-- 地图区域（顶到状态栏） -->
-    <view class="track-map" :style="{ paddingTop: statusBarHeight + 'px' }">
-      <map
-        id="trackMap"
-        class="map-view"
-        :latitude="mapCenter.latitude"
-        :longitude="mapCenter.longitude"
-        :markers="markers"
-        :polyline="polyline"
-        :scale="14"
-        show-location
-      ></map>
-      <view class="map-controls">
-        <view class="control-btn" @tap="resetMapView">
-          <text>重置</text>
+    <!-- 底部磨砂调节面板 -->
+    <view class="glass-panel" :class="{ collapsed: isCollapsed }">
+      <!-- 面板头部：门店名 + 收起 -->
+      <view class="panel-head" @tap="togglePanel">
+        <view class="head-left">
+          <text class="head-name">{{ storeName }}</text>
+          <text class="head-status">● 营业中</text>
+        </view>
+        <view class="head-collapse">
+          <text class="collapse-icon">{{ isCollapsed ? '▲' : '▼' }}</text>
         </view>
       </view>
-    </view>
 
-    <!-- 路线信息卡片 -->
-    <view class="route-info-card">
-      <view class="route-header">
-        <text class="route-title">{{ trackData.name }}</text>
-        <text class="route-author">by {{ trackData.author }}</text>
-      </view>
-
-      <view class="route-stats">
-        <view class="stat-item">
-          <text class="stat-icon">📏</text>
-          <text class="stat-value">{{ trackData.distance || 0 }}km</text>
-          <text class="stat-label">距离</text>
+      <!-- Speed/Height 参数切换 Tab -->
+      <view class="metric-tabs">
+        <view class="metric-tab" :class="{ active: activeMetric === 'time' }" @tap="activeMetric = 'time'">
+          <text>用餐时长</text>
         </view>
-        <view class="stat-divider"></view>
-        <view class="stat-item">
-          <text class="stat-icon">⏱</text>
-          <text class="stat-value">{{ formattedDuration }}</text>
-          <text class="stat-label">时长</text>
-        </view>
-        <view class="stat-divider"></view>
-        <view class="stat-item">
-          <text class="stat-icon">📍</text>
-          <text class="stat-value">{{ waypointCount }}</text>
-          <text class="stat-label">途经点</text>
+        <view class="metric-tab" :class="{ active: activeMetric === 'people' }" @tap="activeMetric = 'people'">
+          <text>桌位人数</text>
         </view>
       </view>
-    </view>
 
-    <!-- 途经点列表 -->
-    <view class="waypoints-section">
-      <text class="section-title">途经地点</text>
-      <view class="waypoints-list">
-        <!-- 起点 -->
-        <view class="waypoint-item start">
-          <view class="waypoint-marker">
-            <view class="marker-circle start-color"></view>
-            <view class="marker-line"></view>
-          </view>
-          <view class="waypoint-info">
-            <text class="waypoint-name">起点</text>
-            <text class="waypoint-coord">{{ formattedStartCoord }}</text>
-          </view>
+      <!-- 大数字参数显示 -->
+      <view class="metric-display">
+        <text class="metric-number">{{ activeMetric === 'time' ? timeValue : peopleValue }}</text>
+        <text class="metric-unit">{{ activeMetric === 'time' ? '小时' : '人' }}</text>
+      </view>
+
+      <!-- 刻度滑块 -->
+      <view class="scale-ruler">
+        <view class="scale-ticks">
+          <view class="tick" v-for="i in 11" :key="i" :class="{ big: i === 1 || i === 6 || i === 11, active: i === currentTickIndex }"></view>
         </view>
-
-        <!-- 途经点 -->
-        <view class="waypoint-item" v-for="(point, index) in middleWaypoints" :key="index">
-          <view class="waypoint-marker">
-            <view class="marker-circle middle-color"></view>
-            <view class="marker-line"></view>
+        <view class="scale-nav">
+          <view class="scale-btn prev" @tap="stepMetric(-1)">
+            <text>‹</text>
           </view>
-          <view class="waypoint-info">
-            <text class="waypoint-name">{{ point.label || `途经点 ${index + 1}` }}</text>
-            <text class="waypoint-coord">{{ formatCoord(point.coordinate) }}</text>
-          </view>
-        </view>
-
-        <!-- 终点 -->
-        <view class="waypoint-item end">
-          <view class="waypoint-marker">
-            <view class="marker-circle end-color"></view>
-          </view>
-          <view class="waypoint-info">
-            <text class="waypoint-name">终点</text>
-            <text class="waypoint-coord">{{ formattedEndCoord }}</text>
+          <view class="scale-btn next" @tap="stepMetric(1)">
+            <text>›</text>
           </view>
         </view>
       </view>
-    </view>
 
-    <!-- 路线描述 -->
-    <view class="route-desc" v-if="trackData.description">
-      <text class="section-title">路线描述</text>
-      <text class="desc-text">{{ trackData.description }}</text>
+      <!-- 价格联动 -->
+      <view class="price-row">
+        <view class="price-block">
+          <text class="price-label">套餐价</text>
+          <text class="price-value">¥{{ dealPrice }}</text>
+        </view>
+        <view class="price-arrow">→</view>
+        <view class="price-block">
+          <text class="price-label">实时总价</text>
+          <text class="price-value total">¥{{ totalPrice }}</text>
+        </view>
+      </view>
+
+      <!-- 确认预约按钮 -->
+      <view class="confirm-btn" @tap="confirmBooking">
+        <text class="confirm-text">确认预约 · {{ peopleValue }}人 · {{ timeValue }}小时</text>
+        <text class="confirm-arrow">››</text>
+      </view>
+
+      <!-- 关闭面板 X -->
+      <view class="panel-close-btn" @tap="togglePanel">
+        <text>×</text>
+      </view>
     </view>
 
     <!-- 底部占位 -->
-    <view :style="{ height: bottomHeight + 'px' }"></view>
-
-    <!-- 底部操作栏 -->
-    <view class="bottom-bar">
-      <view class="bar-left">
-        <view class="bar-action" @tap="toggleLike">
-          <text :class="{ active: isLiked }">{{ isLiked ? '♥' : '♡' }}</text>
-          <text>{{ trackData.likes || 0 }}</text>
-        </view>
-        <view class="bar-action" @tap="toggleCollect">
-          <text :class="{ active: isCollected }">{{ isCollected ? '★' : '☆' }}</text>
-          <text>收藏</text>
-        </view>
-      </view>
-      <view class="bar-right" @tap="startNavigation">
-        <text class="nav-icon">🧭</text>
-        <text>开始导航</text>
-      </view>
-    </view>
+    <view :style="{ height: (bottomHeight + 40) + 'px' }"></view>
   </view>
 </template>
 
 <script>
 import { ref, computed, onMounted } from 'vue'
-import { contentInteractionApi } from '../../../utils/api/contentInteraction.js'
-import { shareActiveContent } from '../../../utils/contentShare.js'
-import { ROUTE_PLANNER } from '../../../utils/routePlanner.js'
+
+const THEMES = {
+  cateen:  { name: '餐饮', icon: '🍲', color: '#10b981', deep: '#059669', glow: 'rgba(16,185,129,0.35)', bg: 'rgba(16,185,129,0.16)' },
+  beauty:  { name: '丽人', icon: '💅', color: '#ec4899', deep: '#db2777', glow: 'rgba(236,72,153,0.35)', bg: 'rgba(236,72,153,0.16)' },
+  fitness: { name: '健身', icon: '🏋', color: '#f97316', deep: '#ea580c', glow: 'rgba(249,115,22,0.35)', bg: 'rgba(249,115,22,0.16)' },
+  game:    { name: '娱乐', icon: '🎮', color: '#8b5cf6', deep: '#7c3aed', glow: 'rgba(139,92,246,0.35)', bg: 'rgba(139,92,246,0.16)' },
+  massage: { name: '养生', icon: '💆', color: '#3b82f6', deep: '#2563eb', glow: 'rgba(59,130,246,0.35)', bg: 'rgba(59,130,246,0.16)' }
+}
+
+const CATEGORY_RULES = [
+  { keys: ['美甲', '美容', '丽人', 'spa', 'hair', '美发'], theme: 'beauty' },
+  { keys: ['健身', '游泳', '瑜伽', '私教'], theme: 'fitness' },
+  { keys: ['密室', '桌游', '剧本', 'ktv', '网咖', '娱乐'], theme: 'game' },
+  { keys: ['按摩', '足浴', '养生', 'spa会所', '推拿'], theme: 'massage' },
+  { keys: ['火锅', '西餐', '奶茶', '咖啡', '烧烤', '日料', '餐'], theme: 'cateen' }
+]
 
 export default {
   name: 'TrackDetail',
   setup() {
-    const trackData = ref({
-      name: '路线名称',
-      author: '用户',
+    const storeData = ref({
+      name: '渝椒·老火锅',
+      author: '',
       description: '',
-      distance: 0,
-      duration: 0,
-      likes: 0,
-      location: null,
-      highEnergyPoints: []
+      address: '四川省成都市锦江区春熙路 88 号',
+      distance: 2.1,
+      category: '火锅',
+      bookDeal: null,
+      bookPrice: 168,
+      people: 2
     })
 
-    const isLiked = ref(false)
-    const isCollected = ref(false)
     const bottomHeight = ref(80)
     const statusBarHeight = ref(20)
-    const mapCenter = ref({ latitude: 30.518937, longitude: 114.402672 })
-    const markers = ref([])
-    const polyline = ref([])
-    const trackPoints = ref([])
-    const contentId = ref('')
+    const distanceKm = ref('2.1')
+    const activeMetric = ref('people')
+    const isCollapsed = ref(false)
+    const timeValue = ref(2)   // 用餐时长（小时）
+    const peopleValue = ref(4) // 桌位人数
+    const dealPrice = ref(168)
+    const basePeople = ref(2)
 
-    const formattedDuration = computed(() => {
-      const mins = Math.round(trackData.value.duration || 0)
-      if (mins >= 60) {
-        const hours = Math.floor(mins / 60)
-        const remainingMins = mins % 60
-        return `${hours}h ${remainingMins}m`
-      }
-      return `${mins}分钟`
-    })
-
-    const waypointCount = computed(() => {
-      return trackData.value.highEnergyPoints?.length || 0
-    })
-
-    const formattedStartCoord = computed(() => {
-      if (!trackPoints.value || trackPoints.value.length === 0) return ''
-      return formatCoord(trackPoints.value[0])
-    })
-
-    const formattedEndCoord = computed(() => {
-      if (!trackPoints.value || trackPoints.value.length === 0) return ''
-      return formatCoord(trackPoints.value[trackPoints.value.length - 1])
-    })
-
-    const middleWaypoints = computed(() => {
-      return trackData.value.highEnergyPoints || []
-    })
-
-    const formatCoord = (coord) => {
-      if (!coord || !Array.isArray(coord)) return ''
-      return `${coord[1].toFixed(4)}, ${coord[0].toFixed(4)}`
-    }
-
-    const toggleLike = () => {
-      isLiked.value = contentInteractionApi.toggle(contentId.value, 'liked').liked
-      trackData.value.likes = (trackData.value.likes || 0) + (isLiked.value ? 1 : -1)
-    }
-
-    const toggleCollect = () => {
-      isCollected.value = contentInteractionApi.toggle(contentId.value, 'collected').collected
-      uni.showToast({
-        title: isCollected.value ? '已收藏' : '取消收藏',
-        icon: 'none'
-      })
-    }
-
-    const resetMapView = () => {
-      if (trackPoints.value && trackPoints.value.length > 0) {
-        const lats = trackPoints.value.map(p => parseFloat(p[1]))
-        const lngs = trackPoints.value.map(p => parseFloat(p[0]))
-        mapCenter.value = {
-          latitude: (Math.max(...lats) + Math.min(...lats)) / 2,
-          longitude: (Math.max(...lngs) + Math.min(...lngs)) / 2
+    // 品类主题
+    const themeKey = computed(() => {
+      const raw = (storeData.value.category || storeData.value.name || '').toLowerCase()
+      for (let i = 0; i < CATEGORY_RULES.length; i++) {
+        const rule = CATEGORY_RULES[i]
+        for (let k = 0; k < rule.keys.length; k++) {
+          if (raw.indexOf(rule.keys[k]) !== -1) return rule.theme
         }
       }
-    }
+      return 'cateen'
+    })
+    const theme = computed(() => THEMES[themeKey.value] || THEMES.cateen)
+    const themeStyle = computed(() => ({
+      '--tc': theme.value.color,
+      '--tc-deep': theme.value.deep,
+      '--tc-glow': theme.value.glow,
+      '--tc-bg': theme.value.bg
+    }))
+    const themeIcon = computed(() => theme.value.icon)
 
-    const startNavigation = () => {
-      if (trackPoints.value && trackPoints.value.length > 0) {
-        const end = trackPoints.value[trackPoints.value.length - 1]
-        uni.openLocation({
-          latitude: end[1],
-          longitude: end[0],
-          name: '目的地',
-          fail: () => {
-            uni.showToast({
-              title: '导航功能暂不可用',
-              icon: 'none'
-            })
-          }
-        })
+    const storeName = computed(() => storeData.value.name || '门店名称')
+    const storeAddress = computed(() => storeData.value.address || '四川省成都市锦江区')
+
+    // 价格联动：按人数缩放套餐价
+    const perPerson = computed(() => {
+      if (basePeople.value <= 0) return dealPrice.value
+      return Math.round(dealPrice.value / basePeople.value)
+    })
+    const totalPrice = computed(() => perPerson.value * peopleValue.value)
+
+    const currentTickIndex = computed(() => {
+      if (activeMetric.value === 'time') {
+        return Math.min(10, Math.max(1, timeValue.value))
+      }
+      return Math.min(10, Math.max(1, peopleValue.value))
+    })
+
+    const stepMetric = (dir) => {
+      if (activeMetric.value === 'time') {
+        let v = timeValue.value + dir
+        v = Math.max(1, Math.min(10, v))
+        timeValue.value = v
+      } else {
+        let v = peopleValue.value + dir
+        v = Math.max(1, Math.min(10, v))
+        peopleValue.value = v
       }
     }
 
-    const shareContent = () => {
-      shareActiveContent()
+    const togglePanel = () => {
+      isCollapsed.value = !isCollapsed.value
+    }
+
+    const openSetting = () => {
+      uni.showToast({ title: '设置功能待实现', icon: 'none' })
+    }
+
+    // 确认预约 → 提交订单
+    const confirmBooking = () => {
+      uni.showModal({
+        title: '确认预约',
+        content: `${storeName.value}\n${peopleValue.value}人 · ${timeValue.value}小时 · 合计 ¥${totalPrice.value}`,
+        confirmText: '提交订单',
+        success: (res) => {
+          if (res.confirm) {
+            const orders = uni.getStorageSync('ACTIVE_BOOKINGS') || []
+            const order = {
+              id: `bk_${Date.now()}`,
+              name: storeName.value,
+              address: storeAddress.value,
+              category: theme.value.name,
+              people: peopleValue.value,
+              duration: timeValue.value,
+              price: totalPrice.value,
+              time: new Date().toISOString(),
+              status: 'pending'
+            }
+            uni.setStorageSync('ACTIVE_BOOKINGS', [order, ...orders])
+            uni.showToast({ title: '预约成功，已加入待服务', icon: 'success' })
+            setTimeout(() => uni.navigateBack(), 600)
+          }
+        }
+      })
     }
 
     const back = () => {
       uni.navigateBack()
     }
 
-    const loadData = async () => {
+    const loadData = () => {
       try {
-      const item = uni.getStorageSync('CONTENT_DETAIL_ACTIVE_V1') || uni.getStorageSync('INDEX_LAST_ITEM')
-        if (item && item._id) {
-          contentId.value = item.id || item._id
-          trackData.value.name = item.name || item.title || '路线名称'
-          trackData.value.author = item.author?.name || item.author || '用户'
-          trackData.value.description = item.description || ''
-          trackData.value.likes = item.likes || 0
-          trackData.value.highEnergyPoints = item.highEnergyPoints || []
-          const state = contentInteractionApi.getState(contentId.value)
-          isLiked.value = state.liked
-          isCollected.value = state.collected
-
-          // 从location提取轨迹点
-          if (item.location && item.location.type === 'LineString' && item.location.coordinates) {
-            trackPoints.value = item.location.coordinates
+        const item = uni.getStorageSync('INDEX_LAST_ITEM') || uni.getStorageSync('SERVICE_LAST_ITEM') || uni.getStorageSync('CONTENT_DETAIL_ACTIVE_V1')
+        if (item && (item._id || item.name)) {
+          storeData.value = { ...storeData.value, ...item }
+          if (item.distance) distanceKm.value = Number(item.distance).toFixed(1)
+          if (item.address) storeData.value.address = item.address
+          if (item.category) storeData.value.category = item.category
+          const deal = item.bookDeal
+          if (deal && deal.price) {
+            dealPrice.value = Number(deal.price)
+            basePeople.value = Number(item.people || 2) || 2
+          } else if (item.price) {
+            dealPrice.value = Number(item.price)
           }
-
-          // 如果有轨迹点，先尝试获取真实路线
-          if (trackPoints.value && trackPoints.value.length >= 2) {
-            const start = trackPoints.value[0]
-            const end = trackPoints.value[trackPoints.value.length - 1]
-            try {
-              const result = await ROUTE_PLANNER.getFixedRoute(start, end)
-              if (result.success && result.path.length > 0) {
-                trackPoints.value = result.path
-                trackData.value.distance = result.distance
-                trackData.value.duration = result.duration
-              }
-            } catch (e) {
-              console.warn('获取真实路线失败，使用原始数据')
-            }
-          }
-
-          // 更新地图
-          updateMapView()
+          if (item.people) peopleValue.value = Number(item.people)
         }
       } catch (e) {
-        console.warn('加载轨迹数据失败:', e)
-      }
-    }
-
-    const updateMapView = () => {
-      if (!trackPoints.value || trackPoints.value.length === 0) return
-
-      // 计算中心点
-      const lats = trackPoints.value.map(p => parseFloat(p[1]))
-      const lngs = trackPoints.value.map(p => parseFloat(p[0]))
-      mapCenter.value = {
-        latitude: (Math.max(...lats) + Math.min(...lats)) / 2,
-        longitude: (Math.max(...lngs) + Math.min(...lngs)) / 2
-      }
-
-      // 设置轨迹线
-      polyline.value = [{
-        points: trackPoints.value.map(p => ({
-          latitude: parseFloat(p[1]),
-          longitude: parseFloat(p[0])
-        })),
-        color: '#667eea',
-        width: 5,
-        dottedLine: false
-      }]
-
-      // 设置标记点
-      markers.value = [
-        {
-          id: 0,
-          latitude: parseFloat(trackPoints.value[0][1]),
-          longitude: parseFloat(trackPoints.value[0][0]),
-          width: 24,
-          height: 24,
-          iconPath: '/static/marker.png',
-          callout: { content: '起点', display: 'ALWAYS', fontSize: 12, bgColor: '#22c55e', color: '#fff', padding: 6, borderRadius: 8 }
-        },
-        {
-          id: 1,
-          latitude: parseFloat(trackPoints.value[trackPoints.value.length - 1][1]),
-          longitude: parseFloat(trackPoints.value[trackPoints.value.length - 1][0]),
-          width: 24,
-          height: 24,
-          iconPath: '/static/marker-green.png',
-          callout: { content: '终点', display: 'ALWAYS', fontSize: 12, bgColor: '#f97316', color: '#fff', padding: 6, borderRadius: 8 }
-        }
-      ]
-
-      // 添加途经点标记
-      if (trackData.value.highEnergyPoints) {
-        trackData.value.highEnergyPoints.forEach((point, index) => {
-          if (point.coordinate) {
-            markers.value.push({
-              id: 100 + index,
-              latitude: parseFloat(point.coordinate[1]),
-              longitude: parseFloat(point.coordinate[0]),
-              width: 20,
-              height: 20,
-              callout: { content: point.label || `途经${index + 1}`, display: 'ALWAYS', fontSize: 11, bgColor: '#3b82f6', color: '#fff', padding: 4, borderRadius: 6 }
-            })
-          }
-        })
+        console.warn('加载门店导航数据失败:', e)
       }
     }
 
@@ -356,25 +282,25 @@ export default {
     })
 
     return {
-      trackData,
-      isLiked,
-      isCollected,
+      storeData,
       bottomHeight,
       statusBarHeight,
-      mapCenter,
-      markers,
-      polyline,
-      formattedDuration,
-      waypointCount,
-      formattedStartCoord,
-      formattedEndCoord,
-      middleWaypoints,
-      formatCoord,
-      toggleLike,
-      toggleCollect,
-      resetMapView,
-      startNavigation,
-      shareContent,
+      distanceKm,
+      activeMetric,
+      isCollapsed,
+      timeValue,
+      peopleValue,
+      dealPrice,
+      themeStyle,
+      themeIcon,
+      storeName,
+      storeAddress,
+      totalPrice,
+      currentTickIndex,
+      stepMetric,
+      togglePanel,
+      openSetting,
+      confirmBooking,
       back
     }
   }
@@ -382,295 +308,553 @@ export default {
 </script>
 
 <style scoped>
-.detail-page {
+.store-nav-detail {
+  --tc: #10b981;
+  --tc-deep: #059669;
+  --tc-glow: rgba(16, 185, 129, 0.35);
+  --tc-bg: rgba(16, 185, 129, 0.16);
   min-height: 100vh;
-  background: var(--color-page);
+  background: #0b1220;
+  position: relative;
+  overflow: hidden;
 }
 
-.detail-nav {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
+/* ========= 全屏实景地图背景 ========= */
+.nav-map-bg {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1500rpx;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 22% 68%, var(--tc-glow) 0%, transparent 48%),
+    radial-gradient(circle at 78% 32%, rgba(251,146,60,0.16) 0%, transparent 40%),
+    linear-gradient(180deg, #16233b 0%, #101c30 60%, #0b1220 100%);
 }
 
-.detail-nav.immersive {
-  background: linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 100%);
+/* 商圈街道网格 */
+.nav-map-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(90deg, rgba(148,163,184,0.1) 1px, transparent 1px),
+    linear-gradient(rgba(148,163,184,0.1) 1px, transparent 1px);
+  background-size: 80rpx 80rpx;
+  mask-image: linear-gradient(180deg, black 0%, transparent 90%);
+  -webkit-mask-image: linear-gradient(180deg, black 0%, transparent 90%);
+}
+
+/* 商圈楼宇剪影 */
+.nav-map-bg::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 66%;
+  background:
+    radial-gradient(ellipse 90rpx 300rpx at 18% 100%, rgba(100,116,139,0.5) 0 40%, transparent 52%),
+    linear-gradient(180deg, transparent 40%, rgba(100,116,139,0.4) 40% 44%, transparent 44%) 18% 100% / 20rpx 620rpx no-repeat,
+    radial-gradient(ellipse 110rpx 340rpx at 38% 100%, rgba(148,163,184,0.4) 0 40%, transparent 52%),
+    linear-gradient(180deg, transparent 32%, rgba(148,163,184,0.34) 32% 36%, transparent 36%) 38% 100% / 24rpx 700rpx no-repeat,
+    radial-gradient(ellipse 80rpx 260rpx at 58% 100%, rgba(100,116,139,0.45) 0 40%, transparent 52%),
+    linear-gradient(180deg, transparent 48%, rgba(100,116,139,0.38) 48% 52%, transparent 52%) 58% 100% / 18rpx 540rpx no-repeat,
+    radial-gradient(ellipse 100rpx 320rpx at 76% 100%, rgba(148,163,184,0.42) 0 40%, transparent 52%),
+    linear-gradient(180deg, transparent 36%, rgba(148,163,184,0.36) 36% 40%, transparent 40%) 76% 100% / 22rpx 660rpx no-repeat,
+    radial-gradient(ellipse 90rpx 280rpx at 92% 100%, rgba(100,116,139,0.4) 0 40%, transparent 52%);
+  opacity: 0.9;
+  filter: blur(0.5px);
+}
+
+/* ========= 顶部导航 ========= */
+.overlay-nav {
+  position: relative;
+  z-index: 20;
 }
 
 .nav-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 16rpx 28rpx;
 }
 
-.nav-back {
-  width: 40px;
-  height: 40px;
+.nav-back,
+.nav-setting {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .back-icon {
-  font-size: 32px;
+  font-size: 44rpx;
+  color: #ffffff;
   font-weight: bold;
-  color: #fff;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  line-height: 44rpx;
+  margin-right: 4rpx;
+}
+
+.setting-icon {
+  font-size: 36rpx;
+  color: #ffffff;
 }
 
 .nav-title {
-  font-size: 17px;
-  font-weight: 600;
-  color: #fff;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5rpx;
+  text-shadow: 0 2rpx 10rpx rgba(0,0,0,0.5);
 }
 
-.nav-actions {
-  width: 40px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.action-icon {
-  font-size: 20px;
-  color: #fff;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
-}
-
-.track-map {
-  height: 280px;
-  position: relative;
-  background: #e8f4ea;
-}
-
-.map-view {
-  width: 100%;
-  height: 100%;
-}
-
-.map-controls {
+/* ========= 门店点位 ========= */
+.store-marker {
   position: absolute;
-  right: 16px;
-  bottom: 16px;
+  left: 52%;
+  top: 30%;
+  z-index: 15;
+  transform: translate(-50%, -50%);
 }
 
-.control-btn {
-  padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.control-btn text {
-  font-size: 12px;
-  color: #333;
-}
-
-.route-info-card {
-  margin: -30px 16px 16px;
-  padding: 20px;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+.marker-avatar {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: relative;
+  box-shadow: 0 12rpx 30rpx rgba(0, 0, 0, 0.1);
+}
+
+.marker-avatar::before {
+  content: '';
+  position: absolute;
+  inset: 7rpx;
+  border-radius: 50%;
+  background: var(--color-text);
+}
+
+.avatar-inner {
+  position: relative;
+  z-index: 2;
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: linear-gradient(140deg, var(--tc) 0%, var(--tc-deep) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-icon {
+  font-size: 32rpx;
+}
+
+.marker-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--tc-glow) 0%, rgba(16,185,129,0.06) 55%, transparent 100%);
+}
+
+.marker-direction {
+  position: absolute;
+  bottom: -12rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 13rpx solid transparent;
+  border-right: 13rpx solid transparent;
+  border-top: 15rpx solid #ffffff;
+  filter: drop-shadow(0 4rpx 4rpx rgba(0,0,0,0.2));
+}
+
+.distance-bubble {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 26rpx);
+  transform: translateY(-50%);
+  padding: 12rpx 22rpx;
+  background: rgba(17, 24, 39, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+  border-radius: 22rpx;
+  white-space: nowrap;
+}
+
+.distance-value {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: var(--tc);
+}
+
+/* 绿色虚线定位引导 */
+.guide-line {
+  position: absolute;
+  top: 26%;
+  left: 52%;
+  width: 6rpx;
+  height: 560rpx;
   z-index: 10;
 }
 
-.route-header {
-  margin-bottom: 16px;
+.guide-path {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6rpx;
+  height: 100%;
+  background-image: repeating-linear-gradient(180deg, var(--tc) 0 18rpx, transparent 18rpx 36rpx);
+  opacity: 0.75;
 }
 
-.route-title {
-  display: block;
-  font-size: 18px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 4px;
-}
-
-.route-author {
-  font-size: 13px;
-  color: #999;
-}
-
-.route-stats {
-  display: flex;
-  align-items: center;
-  justify-content: space-around;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.stat-icon {
-  font-size: 18px;
-}
-
-.stat-value {
-  font-size: 16px;
-  font-weight: 700;
-  color: #333;
-}
-
-.stat-label {
-  font-size: 11px;
-  color: #999;
-}
-
-.stat-divider {
-  width: 1px;
-  height: 40px;
-  background: #eee;
-}
-
-.waypoints-section {
-  padding: 20px;
-  background: #fff;
-}
-
-.section-title {
-  display: block;
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 16px;
-}
-
-.waypoints-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.waypoint-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 8px 0;
-}
-
-.waypoint-marker {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 16px;
-}
-
-.marker-circle {
-  width: 16px;
-  height: 16px;
+.guide-endpoint {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24rpx;
+  height: 24rpx;
   border-radius: 50%;
-  border: 3px solid #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-  flex-shrink: 0;
+  background: var(--tc);
+  box-shadow: 0 0 0 8rpx var(--tc-bg);
 }
 
-.start-color { background: #22c55e; }
-.middle-color { background: #3b82f6; }
-.end-color { background: #f97316; }
+.guide-endpoint.start { top: 0; }
+.guide-endpoint.end { bottom: 0; background: #ffffff; box-shadow: 0 0 0 8rpx var(--tc-glow); }
 
-.marker-line {
-  width: 2px;
-  flex: 1;
-  background: #ddd;
-  margin: 4px 0;
-  min-height: 20px;
+/* 底部门店名标签 */
+.store-name-chip {
+  position: absolute;
+  left: 50%;
+  bottom: 260rpx;
+  transform: translateX(-50%);
+  z-index: 14;
+  padding: 20rpx 32rpx;
+  background: rgba(17, 24, 39, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 28rpx;
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+  box-shadow: 0 14rpx 30rpx rgba(0, 0, 0, 0.1);
+  max-width: 560rpx;
 }
 
-.waypoint-item.end .marker-line {
-  display: none;
+.chip-text {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.5rpx;
 }
 
-.waypoint-info {
-  flex: 1;
+.chip-addr {
+  font-size: 22rpx;
+  color: rgba(255, 255, 255, 0.55);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 480rpx;
 }
 
-.waypoint-name {
-  display: block;
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 2px;
-}
-
-.waypoint-coord {
-  font-size: 12px;
-  color: #999;
-}
-
-.route-desc {
-  padding: 20px;
-  background: #fff;
-}
-
-.desc-text {
-  font-size: 14px;
-  color: #666;
-  line-height: 1.6;
-}
-
-.bottom-bar {
+/* ========= 底部磨砂调节面板 ========= */
+.glass-panel {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 50;
+  padding: 28rpx 32rpx 40rpx;
+  padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+  background: rgba(17, 24, 39, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: none;
+  border-radius: 48rpx 48rpx 0 0;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 -20rpx 60rpx rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.glass-panel.collapsed {
+  transform: translateY(calc(100% - 110rpx));
+}
+
+/* 面板头部 */
+.panel-head {
   display: flex;
   align-items: center;
-  padding: 10px 16px;
-  padding-bottom: calc(10px + env(safe-area-inset-bottom));
-  background: #fff;
-  box-shadow: 0 -1px 8px rgba(0, 0, 0, 0.05);
+  justify-content: space-between;
+  margin-bottom: 22rpx;
 }
 
-.bar-left {
+.head-left {
   display: flex;
-  gap: 20px;
+  align-items: center;
+  gap: 14rpx;
+  min-width: 0;
 }
 
-.bar-action {
+.head-name {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #ffffff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 380rpx;
+}
+
+.head-status {
+  font-size: 20rpx;
+  color: var(--tc);
+  flex-shrink: 0;
+}
+
+.head-collapse {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.collapse-icon {
+  font-size: 22rpx;
+  color: var(--color-text-muted);
+}
+
+/* 参数切换 Tab */
+.metric-tabs {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.metric-tab {
+  padding: 14rpx 30rpx;
+  border-radius: 40rpx;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.metric-tab text {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.metric-tab.active {
+  background: #ffffff;
+}
+
+.metric-tab.active text {
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+/* 大数字 */
+.metric-display {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 14rpx;
+  margin-bottom: 24rpx;
+}
+
+.metric-number {
+  font-size: 110rpx;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1;
+  letter-spacing: 2rpx;
+  font-family: "SF Mono", Consolas, monospace;
+}
+
+.metric-unit {
+  font-size: 40rpx;
+  font-weight: 600;
+  color: var(--tc);
+  letter-spacing: 2rpx;
+  margin-bottom: 12rpx;
+}
+
+/* 刻度滑块 */
+.scale-ruler {
+  padding: 0 16rpx 8rpx;
+  position: relative;
+}
+
+.scale-ticks {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  height: 72rpx;
+  padding: 0 60rpx;
+}
+
+.tick {
+  width: 4rpx;
+  height: 24rpx;
+  border-radius: 4rpx;
+  background: rgba(255, 255, 255, 0.22);
+  transition: all 0.2s ease;
+}
+
+.tick.big {
+  height: 40rpx;
+  width: 5rpx;
+}
+
+.tick.active {
+  background: var(--tc);
+  height: 52rpx;
+  width: 6rpx;
+  box-shadow: 0 0 12rpx var(--tc-glow);
+}
+
+.scale-nav {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 4rpx;
+  padding: 8rpx 10rpx;
+  background: rgba(17, 24, 39, 0.9);
+  border-radius: 40rpx;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.scale-btn {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scale-btn.prev {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.scale-btn.next {
+  background: #ffffff;
+}
+
+.scale-btn text {
+  font-size: 42rpx;
+  font-weight: bold;
+  color: #ffffff;
+  line-height: 42rpx;
+}
+
+.scale-btn.next text {
+  color: var(--color-text);
+  margin-left: 4rpx;
+}
+
+/* 价格联动 */
+.price-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16rpx;
+  padding: 22rpx 26rpx;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 26rpx;
+  margin-bottom: 20rpx;
+}
+
+.price-block {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 2px;
+  gap: 6rpx;
 }
 
-.bar-action text:first-child {
-  font-size: 20px;
-  color: #999;
+.price-label {
+  font-size: 20rpx;
+  color: rgba(255, 255, 255, 0.5);
 }
 
-.bar-action text:first-child.active {
-  color: var(--color-danger);
+.price-value {
+  font-size: 36rpx;
+  font-weight: 800;
+  color: #ffffff;
+  font-family: "SF Mono", Consolas, monospace;
 }
 
-.bar-action text:last-child {
-  font-size: 10px;
-  color: #999;
+.price-value.total {
+  color: var(--tc);
 }
 
-.bar-right {
-  margin-left: auto;
+.price-arrow {
+  font-size: 34rpx;
+  color: var(--tc);
+  font-weight: 700;
+}
+
+/* 确认预约按钮 */
+.confirm-btn {
+  height: 100rpx;
+  border-radius: 50rpx;
+  background: linear-gradient(135deg, var(--tc) 0%, var(--tc-deep) 100%);
+  box-shadow: 0 14rpx 34rpx var(--tc-glow);
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 12px 24px;
-  background: #07c160;
-  border-radius: 24px;
+  justify-content: center;
+  gap: 12rpx;
 }
 
-.nav-icon {
-  font-size: 16px;
+.confirm-text {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 1rpx;
 }
 
-.bar-right text:last-child {
-  font-size: 14px;
-  color: #fff;
-  font-weight: 500;
+.confirm-arrow {
+  font-size: 30rpx;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 700;
+  letter-spacing: 2rpx;
+}
+
+/* 关闭面板 X */
+.panel-close-btn {
+  position: absolute;
+  top: 24rpx;
+  right: 24rpx;
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.panel-close-btn text {
+  font-size: 40rpx;
+  color: var(--color-text-muted);
+  line-height: 40rpx;
 }
 </style>

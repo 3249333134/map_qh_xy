@@ -1,6 +1,6 @@
 <template>
   <view
-    class="card map-card"
+    class="card map-card app-card content-card"
     :style="{ '--card-height': height + 'rpx' }">
     <!-- 卡片上半部分：点击进入详情页并定位 -->
     <view
@@ -110,7 +110,7 @@ export default {
         const first = data.media[0]
         candidates.push(typeof first === 'string' ? first : first && (first.url || first.src))
       }
-      const found = candidates.find(item => typeof item === 'string' && item.trim())
+      const found = candidates.find(item => typeof item === 'string' && item.trim() && !/\/static\/logo\.png(?:\?|$)/i.test(item))
       return found || ''
     },
     heatText() {
@@ -178,13 +178,15 @@ export default {
 
 <style>
 .card.map-card {
-  margin-bottom: 20rpx;
-  border-radius: 24rpx;
-  background-color: #fff;
+  margin-bottom: 16rpx;
+  border-radius: 18rpx;
+  background-color: #ffffff;
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
   position: relative;
+  border: 1rpx solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4rpx 18rpx rgba(0, 0, 0, 0.04);
 }
 
 .card.map-card .card-media {
@@ -193,7 +195,7 @@ export default {
   width: 100%;
   cursor: pointer;
   overflow: hidden;
-  background: #f8f8f8;
+  background: var(--color-surface-raised);
 }
 
 .card-cover {
@@ -204,18 +206,19 @@ export default {
 
 .media-heat {
   position: absolute;
-  bottom: 10rpx;
-  right: 10rpx;
-  height: 30rpx;
-  padding: 0 10rpx;
-  border-radius: 15rpx;
+  top: 12rpx;
+  right: 12rpx;
+  height: 32rpx;
+  padding: 0 12rpx;
+  border-radius: 16rpx;
   display: flex;
   align-items: center;
   font-size: 18rpx;
-  font-weight: 600;
-  line-height: 30rpx;
-  color: #fff;
-  background: rgba(0, 0, 0, 0.5);
+  font-weight: 500;
+  line-height: 32rpx;
+  color: #111827;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
 }
 
 .cover-placeholder {
@@ -224,16 +227,17 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f8f8f8;
+  background: var(--color-surface-raised);
 }
 
 .cover-placeholder-text {
-  color: #ccc;
+  color: #b0b0b0;
   font-size: 22rpx;
+  letter-spacing: 1rpx;
 }
 
 .card.map-card .card-content {
-  padding: 18rpx 18rpx 16rpx;
+  padding: 20rpx 20rpx 18rpx;
   width: 100%;
   box-sizing: border-box;
   cursor: pointer;
@@ -241,24 +245,25 @@ export default {
 
 .card.map-card .card-title {
   width: 100%;
-  color: #000;
+  color: var(--color-text);
   font-size: 28rpx;
-  font-weight: 650;
-  line-height: 38rpx;
-  margin-bottom: 10rpx;
+  font-weight: 600;
+  line-height: 40rpx;
+  margin-bottom: 8rpx;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  letter-spacing: 0.5rpx;
 }
 
 .card.map-card .card-author {
   display: flex;
   align-items: center;
-  color: #64748b;
-  font-size: 22rpx;
-  line-height: 26rpx;
-  margin-bottom: 4rpx;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  line-height: 28rpx;
+  margin-bottom: 12rpx;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -266,13 +271,11 @@ export default {
 
 .card-author::before {
   content: '';
-  width: 32rpx;
-  height: 32rpx;
+  width: 28rpx;
+  height: 28rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg,#ffedd5,#fed7aa);
-  border: 2rpx solid #fff;
-  box-shadow: 0 0 0 1rpx rgba(234,88,12,.12);
-  margin-right: 6rpx;
+  background: var(--color-surface-muted);
+  margin-right: 8rpx;
   flex-shrink: 0;
 }
 
@@ -283,7 +286,10 @@ export default {
 .card.map-card .card-footer {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   width: 100%;
+  padding-top: 10rpx;
+  border-top: 1rpx solid var(--color-surface-muted);
 }
 
 .card.map-card .card-location {
@@ -293,53 +299,54 @@ export default {
 .card-actions {
   display: flex;
   align-items: center;
-  gap: 20rpx;
+  gap: 12px;
   flex-shrink: 0;
 }
 
 .action-btn {
   display: flex;
   align-items: center;
-  gap: 4rpx;
-  transition: all 0.2s;
+  gap: 5rpx;
+  transition: opacity 0.15s ease;
   min-width: 44rpx;
   min-height: 44rpx;
   justify-content: center;
 }
 
 .action-btn:active {
-  opacity: 0.7;
+  opacity: 0.6;
 }
 
 .action-icon {
-  font-size: 24rpx;
-  color: #999;
+  font-size: 15px;
+  color: var(--color-text-muted);
   line-height: 1;
 }
 
 .action-btn.active .action-icon {
-  color: #ff2442;
+  color: var(--color-text);
 }
 
 .action-text {
-  font-size: 20rpx;
-  color: #999;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .action-btn.active .action-text {
-  color: #ff2442;
+  color: var(--color-text);
 }
 
 .action-btn.active {
-  animation: popIn 0.3s ease;
+  animation: popIn 0.25s ease;
 }
 
 @keyframes popIn {
   0% {
-    transform: scale(0.8);
+    transform: scale(0.85);
   }
   50% {
-    transform: scale(1.1);
+    transform: scale(1.08);
   }
   100% {
     transform: scale(1);

@@ -77,12 +77,12 @@ const onBg = () => uni.showToast({ title: '选择主页背景', icon: 'none' })
   --brand-orange: var(--color-primary);
   --brand-purple: var(--color-info);
   --success: #24d06c;
-  --text-primary: #222;
-  --text-body: #5f646d;
-  --text-secondary: #8a8f98;
-  --surface-app: #f7f7f8;
+  --text-primary: var(--color-text);
+  --text-body: var(--color-text-body);
+  --text-secondary: var(--color-text-muted);
+  --surface-app: var(--color-page);
   --surface-card: #fff;
-  --surface-muted: #f0f1f3;
+  --surface-muted: var(--color-surface-muted);
   --card-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   min-height: 100vh;
   background: var(--surface-app);
@@ -99,7 +99,7 @@ const onBg = () => uni.showToast({ title: '选择主页背景', icon: 'none' })
   justify-content: center;
   position: relative;
   background: var(--surface-card);
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .nav-back {
@@ -132,7 +132,7 @@ const onBg = () => uni.showToast({ title: '选择主页背景', icon: 'none' })
   color: #fff;
   font-size: 26rpx;
   font-weight: 600;
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
   line-height: 40rpx;
 }
 

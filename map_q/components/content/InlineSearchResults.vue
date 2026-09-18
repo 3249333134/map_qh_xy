@@ -88,7 +88,7 @@ export default {
 .inline-results {
   width: 100%;
   box-sizing: border-box;
-  background: #f7f7f8;
+  background: var(--color-page);
 }
 
 .results-body {
@@ -101,7 +101,7 @@ export default {
 .map-link-card {
   background: #fff;
   border: 1px solid rgba(148,163,184,.12);
-  box-shadow: 0 5px 16px rgba(15,23,42,.05);
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.05);
 }
 
 .ai-summary-card {
@@ -119,7 +119,7 @@ export default {
   width: 46px;
   height: 46px;
   border-radius: 11px;
-  background: linear-gradient(145deg,#3b82f6,var(--color-info));
+  background: #3b82f6;
   color: #fff;
 }
 
@@ -136,7 +136,7 @@ export default {
 }
 
 .summary-title {
-  color: #171717;
+  color: var(--color-text);
   font-size: 15px;
   font-weight: 700;
   line-height: 1.45;
@@ -144,7 +144,7 @@ export default {
 
 .summary-hint {
   margin-top: 5px;
-  color: #9ca3af;
+  color: var(--color-text-muted);
   font-size: 12px;
 }
 
@@ -156,7 +156,7 @@ export default {
 }
 
 .heading-title {
-  color: #171717;
+  color: var(--color-text);
   font-size: 17px;
   font-weight: 750;
 }
@@ -169,8 +169,8 @@ export default {
   min-height: 44px;
   padding: 0 14px;
   border-radius: 22px;
-  background: #fff7ed;
-  color: #c2410c;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
   box-sizing: border-box;
 }
 
@@ -180,7 +180,7 @@ export default {
 }
 
 .exit-search:active {
-  background: #ffedd5;
+  background: var(--color-primary-soft);
 }
 
 .result-list {
@@ -219,7 +219,7 @@ export default {
 }
 
 .result-thumb.content {
-  background: linear-gradient(145deg,#52b7ea,var(--color-info));
+  background: #52b7ea;
 }
 
 .result-thumb text {
@@ -236,14 +236,14 @@ export default {
 }
 
 .result-title {
-  color: #171717;
+  color: var(--color-text);
   font-size: 16px;
   font-weight: 700;
 }
 
 .result-desc {
   margin-top: 5px;
-  color: #9ca3af;
+  color: var(--color-text-muted);
   font-size: 12px;
   line-height: 1.4;
 }
@@ -256,7 +256,7 @@ export default {
   min-width: 64px;
   min-height: 44px;
   border-radius: 22px;
-  background: #eff6ff;
+  background: var(--color-primary-soft);
   color: var(--color-info);
 }
 
@@ -266,7 +266,7 @@ export default {
 }
 
 .result-action:active {
-  background: #dbeafe;
+  background: var(--color-primary-soft);
 }
 
 .map-link-card {
@@ -278,7 +278,7 @@ export default {
 }
 
 .map-link-title {
-  color: #171717;
+  color: var(--color-text);
   font-size: 16px;
   font-weight: 750;
 }

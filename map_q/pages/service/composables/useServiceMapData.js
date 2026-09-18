@@ -1,8 +1,9 @@
-import { ref, reactive } from 'vue'
+import { ref, reactive, nextTick } from 'vue'
 import { MONGO_CONFIG } from '../../../utils/db.js'
 import { CATEGORY_MAP, MARKER_CONFIG } from '../constants/layoutConfig.js'
 import { generateServiceMockData } from '../../../utils/mockServiceData.js'
 import { isMockEnabled } from '../../../utils/mockMapData.js'
+import { isWeChatTouristRuntime } from '../../../utils/wechatRuntime.js'
 
 // 服务页专用前缀，用于隔离本地存储
 const STORAGE_PREFIX = 'SERVICE_'
@@ -199,7 +200,7 @@ export function useServiceMapData() {
     mapPoints.value = [...mapPoints.value, ...newItems]
     hasMoreData.value = true
     
-    uni.nextTick(() => {
+    nextTick(() => {
       updateMapMarkers()
     })
   }
@@ -243,9 +244,16 @@ export function useServiceMapData() {
   // 获取用户位置 - 服务页专用，保存到服务页专属存储
   const getUserLocation = async () => {
     try {
-      const setting = await uni.getSetting()
-      const hasAuth = setting?.authSetting?.['scope.userLocation'] === true
-      if (!hasAuth) {
+      if (isWeChatTouristRuntime()) {
+        mapConfig.latitude = 30.572269
+        mapConfig.longitude = 104.066541
+        uni.setStorageSync(STORAGE_PREFIX + 'LOCATION', { latitude: mapConfig.latitude, longitude: mapConfig.longitude })
+        return { latitude: mapConfig.latitude, longitude: mapConfig.longitude }
+      }
+      const hasSettingApi = typeof uni.getSetting === 'function'
+      const setting = hasSettingApi ? await uni.getSetting() : null
+      const hasAuth = !hasSettingApi || setting?.authSetting?.['scope.userLocation'] === true
+      if (!hasAuth && typeof uni.authorize === 'function') {
         try {
           await uni.authorize({ scope: 'scope.userLocation' })
         } catch (authErr) {

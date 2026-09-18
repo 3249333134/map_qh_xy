@@ -176,7 +176,7 @@ const sendMessage = () => {
 <style scoped>
 .profile-page {
   height: 100vh;
-  background: #f7f7f8;
+  background: var(--color-page);
   display: flex;
   flex-direction: column;
 }
@@ -240,7 +240,7 @@ const sendMessage = () => {
 .hero-bg {
   position: absolute;
   inset: 0;
-  background: linear-gradient(150deg, #24d06c 0%, #1fae58 55%, #159048 100%);
+  background: #24d06c;
 }
 
 .hero-deco {
@@ -280,7 +280,7 @@ const sendMessage = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.18);
+  box-shadow: 0 10rpx 30rpx rgba(0, 0, 0, 0.1);
 }
 .avatar-ring {
   position: absolute;
@@ -292,7 +292,7 @@ const sendMessage = () => {
   width: 140rpx;
   height: 140rpx;
   border-radius: 50%;
-  background: linear-gradient(135deg, #24d06c 0%, #1fae58 100%);
+  background: #24d06c;
   color: #fff;
   font-size: 64rpx;
   font-weight: 800;
@@ -338,7 +338,7 @@ const sendMessage = () => {
   background: #fff;
   border-radius: 24rpx;
   padding: 8rpx 28rpx;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .info-row {
@@ -364,7 +364,7 @@ const sendMessage = () => {
 .info-icon.icon-orange {
   background: rgba(255, 112, 67, 0.12);
 }
-.info-icon.icon-orange .info-icon-text { color: #ff5b35; }
+.info-icon.icon-orange .info-icon-text { color: var(--color-primary); }
 .info-icon.icon-purple {
   background: rgba(118, 80, 200, 0.12);
 }
@@ -382,14 +382,14 @@ const sendMessage = () => {
 .info-label {
   display: block;
   font-size: 22rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 .info-value {
   display: block;
   margin-top: 6rpx;
   font-size: 30rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 .info-value.muted {
   color: #b3b8c0;
@@ -414,7 +414,7 @@ const sendMessage = () => {
   padding: 28rpx;
   background: #fff;
   border-radius: 24rpx;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .shared-head {
@@ -426,11 +426,11 @@ const sendMessage = () => {
 .shared-title {
   font-size: 30rpx;
   font-weight: 800;
-  color: #222;
+  color: var(--color-text);
 }
 .shared-count {
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .shared-list {
@@ -453,13 +453,13 @@ const sendMessage = () => {
   justify-content: center;
 }
 .shared-avatar.orange {
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
 }
 .shared-avatar.purple {
-  background: linear-gradient(135deg,var(--color-info) 0%,#9b6fe0 100%);
+  background: var(--color-info);
 }
 .shared-avatar.blue {
-  background: linear-gradient(135deg,var(--color-info) 0%,#4aa6ff 100%);
+  background: var(--color-info);
 }
 .shared-avatar-text {
   color: #fff;
@@ -468,7 +468,7 @@ const sendMessage = () => {
 }
 .shared-name {
   font-size: 22rpx;
-  color: #5f646d;
+  color: var(--color-text-body);
   text-align: center;
 }
 
@@ -483,7 +483,7 @@ const sendMessage = () => {
   padding: 20rpx 28rpx;
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   background: #fff;
-  border-top: 1rpx solid #f1f5f9;
+  border-top: 1rpx solid var(--color-surface-muted);
 }
 
 .bottom-btn {
@@ -496,7 +496,7 @@ const sendMessage = () => {
 
 .follow-btn {
   flex: 1;
-  background: #f0f1f3;
+  background: var(--color-surface-muted);
   border: 2rpx solid transparent;
 }
 .follow-btn.following {
@@ -506,7 +506,7 @@ const sendMessage = () => {
 .follow-text {
   font-size: 28rpx;
   font-weight: 700;
-  color: #5f646d;
+  color: var(--color-text-body);
 }
 .follow-btn.following .follow-text {
   color: #1fae58;
@@ -514,8 +514,8 @@ const sendMessage = () => {
 
 .message-btn {
   flex: 1.4;
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
-  box-shadow: 0 6rpx 16rpx rgba(255, 91, 53, 0.3);
+  background: var(--color-primary);
+  box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.1);
 }
 .message-text {
   color: #fff;

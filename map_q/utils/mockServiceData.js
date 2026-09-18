@@ -1,6 +1,13 @@
 import { ROUTE_PLANNER } from './routePlanner.js'
+import { SERVICE_CATEGORY_LIST, normalizeService } from './serviceCatalog.js'
 
 const CATEGORY_PREFIX = {
+  ticket: { prefix: '现场', address: '成都市锦江区' },
+  food: { prefix: '城市', address: '成都市锦江区' },
+  leisure: { prefix: '周末', address: '成都市武侯区' },
+  beauty: { prefix: '精选', address: '成都市青羊区' },
+  fitness: { prefix: '活力', address: '成都市高新区' },
+  visit: { prefix: '新店', address: '成都市成华区' },
   'personal': { prefix: '个人兴趣', address: '成都市青羊区' },
   'merchant': { prefix: '商家场景', address: '成都市锦江区' },
   'event': { prefix: '活动协作', address: '成都市武侯区' },
@@ -64,10 +71,15 @@ const buildServiceTrackCard = async (index, prefix, centerLat, centerLng, latRan
 
 const buildServiceCard = (index, prefix, addressPrefix, centerLat, centerLng, latRange, lngRange, activeCategory, currentPage) => {
   const date = new Date().toISOString().slice(0, 10)
-  return {
+  // 品类轮换：让服务卡片展示不同主色主题（餐饮/丽人/健身/娱乐/养生）
+  const category = activeCategory === 'all'
+    ? SERVICE_CATEGORY_LIST[index % SERVICE_CATEGORY_LIST.length]
+    : (SERVICE_CATEGORY_LIST.find(item => item.id === activeCategory) || SERVICE_CATEGORY_LIST[index % SERVICE_CATEGORY_LIST.length])
+  return normalizeService({
     _id: `${activeCategory}_${currentPage}_${index}_${Date.now()}`,
     type: 'service',
-    name: `${prefix}服务 ${index + 1}`,
+    name: `${prefix}${category.shortName}精选 ${index + 1}`,
+    category: category.id,
     author: `服务商${Math.floor(Math.random() * 1000)}`,
     address: `${addressPrefix}测试地址 ${index + 1}`,
     description: `提供${prefix}服务，包含明确的服务范围、预约时间和取消规则。`,
@@ -84,7 +96,7 @@ const buildServiceCard = (index, prefix, addressPrefix, centerLat, centerLng, la
         centerLat + (Math.random() - 0.5) * latRange * 0.8
       ]
     }
-  }
+  }, category.id)
 }
 
 export const generateServiceMockData = async (activeCategory, mapConfig, mapBounds, currentPage, existingCount, isLoadMore = false) => {

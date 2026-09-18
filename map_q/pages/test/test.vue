@@ -89,7 +89,7 @@ export default {
 <style>
 .test-page {
   padding: 20px;
-  background-color: #f5f5f5;
+  background-color: var(--color-page);
   min-height: 100vh;
 }
 
@@ -101,7 +101,7 @@ export default {
 .test-title {
   font-size: 20px;
   font-weight: bold;
-  color: #333;
+  color: var(--color-text);
 }
 
 .test-card {
@@ -115,7 +115,7 @@ export default {
 .test-media {
   position: relative;
   height: 200px;
-  background-color: #eee;
+  background-color: var(--color-border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -144,14 +144,14 @@ export default {
 .test-name {
   font-size: 16px;
   font-weight: bold;
-  color: #333;
+  color: var(--color-text);
   display: block;
   margin-bottom: 5px;
 }
 
 .test-desc {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-body);
 }
 
 .log-area {
@@ -164,7 +164,7 @@ export default {
 .log-title {
   font-size: 16px;
   font-weight: bold;
-  color: #333;
+  color: var(--color-text);
   display: block;
   margin-bottom: 10px;
 }
@@ -177,9 +177,9 @@ export default {
 .log-item {
   display: block;
   padding: 5px 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-body);
 }
 
 .test-modal {
@@ -206,14 +206,14 @@ export default {
 .modal-title {
   font-size: 18px;
   font-weight: bold;
-  color: #333;
+  color: var(--color-text);
   display: block;
   margin-bottom: 15px;
 }
 
 .modal-text {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-body);
   display: block;
   margin-bottom: 20px;
 }

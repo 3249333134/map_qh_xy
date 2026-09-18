@@ -3,6 +3,7 @@ Component({
     selected: 0,
     publishIndex: 2,
     publishOpen: false,
+    itemStyles: [],
     list: [
       { pagePath: '/pages/index/index', text: '首页', iconPath: '/static/tabbar/home.png', selectedIconPath: '/static/tabbar/home-active.png' },
       { pagePath: '/pages/service/index', text: '服务', iconPath: '/static/tabbar/service.png', selectedIconPath: '/static/tabbar/service-active.png' },
@@ -16,13 +17,29 @@ Component({
     this.updateSelected()
   },
 
+  ready() {
+    this.updateSelected()
+  },
+
   pageLifetimes: {
     show() {
       this.updateSelected()
+      // The destination page can become current after the initial show callback.
+      if (typeof wx !== 'undefined' && wx.nextTick) wx.nextTick(() => this.updateSelected())
     }
   },
 
   methods: {
+    setPublishOpen(open, complete) {
+      const request = this._publishRequest = (this._publishRequest || 0) + 1;
+      if (!open) { this.setData({ publishOpen: false }); complete?.(); return; }
+      this.createSelectorQuery().selectAll('.tabbar-item').boundingClientRect(rects => {
+        if (request !== this._publishRequest) return;
+        const itemStyles = (rects || []).map(rect => `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;height:${rect.height}px;`);
+        this.setData({ itemStyles, publishOpen: true });
+        complete?.();
+      }).exec();
+    },
     // 路径统一：确保带前导斜杠
     normalize(path) {
         if (!path) return '';
@@ -33,18 +50,17 @@ Component({
         try {
             const pages = getCurrentPages();
             const page = pages[pages.length - 1];
-            const route = this.normalize(page.route);
+            const route = this.normalize(page?.route);
             const idx = this.data.list.findIndex(i => this.normalize(i.pagePath) === route);
-            this.setData({ selected: idx >= 0 ? idx : 0 });
+            if (idx < 0 || this.data.list[idx].type === 'publish') return;
+            this.setData({ selected: idx });
 
             // 记录当前选中的 Tab，供 plus 页返回使用
             try {
               const app = getApp();
               if (app && app.globalData) app.globalData.prevTabPath = route;
             } catch (e2) {}
-        } catch (e) {
-            this.setData({ selected: 0 });
-        }
+        } catch (e) {}
     },
 
     onTap(e) {
@@ -63,7 +79,7 @@ Component({
         // 中间“发布”：仅触发弹窗，不进行页面跳转
         if (index === Number(this.data.publishIndex)) {
             const nextOpen = !this.data.publishOpen;
-            this.setData({ publishOpen: nextOpen });
+            this.setPublishOpen(nextOpen);
             try {
                 const app = getApp();
                 if (app && app.globalData) app.globalData.showPublishOverlay = nextOpen;
@@ -80,6 +96,7 @@ Component({
             return;
         }
 
+        if (this.data.publishOpen) return;
         // 其他 Tab：切换并用数字更新选中态
         const url = this.normalize(item.pagePath);
         if (!url) {

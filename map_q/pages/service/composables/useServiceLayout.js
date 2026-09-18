@@ -15,7 +15,8 @@ export function useServiceLayout() {
   const dragStartHeight = ref(0)
   
   // 计算属性
-  const mapHeight = computed(() => screenHeight.value - contentHeight.value)
+  // Keep the map as the full-screen canvas; the draggable content sheet overlays it.
+  const mapHeight = computed(() => screenHeight.value)
   
   // 与首页一致：内容区最小高度仅保留搜索框
   const minContentHeight = computed(() => 

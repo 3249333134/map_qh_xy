@@ -98,7 +98,7 @@ export default {
   position: relative;
   width: 100%;
   height: 900rpx;
-  background-color: #f5f5f5;
+  background-color: var(--color-page);
 }
 .swiper {
   width: 100%;

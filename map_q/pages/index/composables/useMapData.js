@@ -16,7 +16,8 @@ const TYPE_LAYER_MAP = {
   service: 'service',
   event: 'event',
   track: 'route',
-  replica: 'replica'
+  replica: 'replica',
+  messageBoard: 'content'
 }
 
 function filterItems(items, query) {

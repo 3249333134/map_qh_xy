@@ -101,7 +101,7 @@ function onBuild() {
 .fog-unlock-page {
   min-height: 100vh;
   background: #2b2f36;
-  color: #222;
+  color: var(--color-text);
   position: relative;
   overflow: hidden;
 }
@@ -121,7 +121,7 @@ function onBuild() {
   position: relative;
   z-index: 40;
   background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
   border-bottom: 1rpx solid rgba(255, 255, 255, 0.08);
 }
 
@@ -138,7 +138,7 @@ function onBuild() {
   color: #fff;
   font-size: 56rpx;
   line-height: 56rpx;
-  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
   transition: transform 160ms ease, background-color 160ms ease;
 }
 
@@ -236,7 +236,7 @@ function onBuild() {
   width: 28rpx;
   height: 28rpx;
   border-radius: 50%;
-  background: #8a8f98;
+  background: var(--color-text-muted);
   border: 4rpx solid #ffffff;
   opacity: 0.7;
 }
@@ -287,7 +287,7 @@ function onBuild() {
   border-radius: 50%;
   background: var(--color-warning);
   border: 6rpx solid #ffffff;
-  box-shadow: 0 4rpx 16rpx rgba(255, 212, 0, 0.6);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.1);
 }
 
 .unlock-card {
@@ -298,14 +298,14 @@ function onBuild() {
   padding: 32rpx 28rpx 28rpx;
   border-radius: 18rpx;
   background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.22);
+  box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.1);
 }
 
 .unlock-title {
   display: block;
   font-size: 34rpx;
   font-weight: 800;
-  color: #222;
+  color: var(--color-text);
   line-height: 46rpx;
 }
 
@@ -314,7 +314,7 @@ function onBuild() {
   margin-top: 14rpx;
   font-size: 26rpx;
   line-height: 40rpx;
-  color: #5f646d;
+  color: var(--color-text-body);
 }
 
 .info-row {
@@ -334,13 +334,13 @@ function onBuild() {
 
 .info-label {
   font-size: 22rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .info-value {
   font-size: 28rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .info-value.highlight {
@@ -350,7 +350,7 @@ function onBuild() {
 .info-divider {
   width: 1rpx;
   height: 56rpx;
-  background: #f0f1f3;
+  background: var(--color-surface-muted);
 }
 
 .chip-row {
@@ -366,13 +366,13 @@ function onBuild() {
   display: flex;
   align-items: center;
   border-radius: 999rpx;
-  background: #f0f1f3;
+  background: var(--color-surface-muted);
 }
 
 .chip-text {
   font-size: 24rpx;
   font-weight: 600;
-  color: #5f646d;
+  color: var(--color-text-body);
 }
 
 .action-bar {
@@ -402,13 +402,13 @@ function onBuild() {
 }
 
 .btn-secondary {
-  color: #5f646d;
-  background: #f0f1f3;
+  color: var(--color-text-body);
+  background: var(--color-surface-muted);
 }
 
 .btn-primary {
   color: #fff;
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
-  box-shadow: 0 8rpx 20rpx rgba(255, 91, 53, 0.28);
+  background: var(--color-primary);
+  box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.1);
 }
 </style>

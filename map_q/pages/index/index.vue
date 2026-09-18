@@ -16,7 +16,21 @@
       @show-track="onShowTrack"
     />
 
+    <inline-map-social
+      v-if="socialMode"
+      :scene="socialScene"
+      :selected="socialSelected"
+      @close="closeMapSocial"
+      @scene-change="changeSocialScene"
+      @locate="locateSocial"
+      @zoom="zoomSocialMap"
+      @layers="openSocialLayers"
+      @create-board="createSocialBoard"
+      @open-selected="openSocialSelected"
+    />
+
     <content-area
+      v-show="!socialMode"
       :height="contentHeight"
       :search-box-height="searchBoxHeight"
       :min-content-height="minContentHeight"
@@ -39,6 +53,7 @@
       :explore-tool-mode="exploreToolMode"
       :layers="exploreState.layers"
       :explore-snapshot="exploreState"
+      :social-scene="socialScene"
       show-explore-controls
       storage-key-prefix="indexContentArea"
       @drag-start="handleDragStart"
@@ -53,6 +68,7 @@
       @space-change="handleSpaceChange"
       @layer-tap="openLayers"
       @share-tap="openShare"
+      @social-scene-change="openMapSocial"
       @close-explore-tool="closeExploreTool"
       @layers-change="handleLayersChange"
       @request-location="requestCurrentLocation"
@@ -78,6 +94,7 @@
 import { onMounted, ref } from 'vue'
 import { onHide, onLoad, onShareAppMessage, onShow } from '@dcloudio/uni-app'
 import MapBackground from '../../components/map/MapBackground.vue'
+import InlineMapSocial from '../../components/map/InlineMapSocial.vue'
 import ContentArea from '../../components/content/ContentArea.vue'
 import GlobalOverlayHost from '../../components/common/GlobalOverlayHost.vue'
 import { useMapData } from './composables/useMapData.js'
@@ -92,12 +109,13 @@ import {
   encodeShareSnapshot
 } from '../../utils/mapExploreState.js'
 import { setCreationCommand } from '../../utils/creationCommand.js'
+import { messageBoardApi } from '../../utils/api/messageBoard.js'
 
 const endOfDay = date => date ? `${date}T23:59:59` : ''
 
 export default {
   name: 'IndexPage',
-  components: { MapBackground, ContentArea, GlobalOverlayHost },
+  components: { MapBackground, InlineMapSocial, ContentArea, GlobalOverlayHost },
   setup() {
     const mapBackground = ref(null)
     const selectedPoint = ref(null)
@@ -109,6 +127,10 @@ export default {
     const pendingShareState = ref(null)
     const exploreToolMode = ref('')
     const contentHeightBeforeTool = ref(0)
+    const socialScene = ref('people')
+    const socialMode = ref(false)
+    const socialSelected = ref(null)
+    let regularMarkers = []
 
     const {
       mapPoints,
@@ -189,8 +211,11 @@ export default {
       if (locationState.value === 'loading') return
       locationState.value = 'loading'
       try {
-        await requestLocationPermission()
-        locationState.value = 'granted'
+        const location = await requestLocationPermission()
+        locationState.value = location?.unavailable ? 'manual' : 'granted'
+        if (location?.unavailable) {
+          uni.showToast({ title: '游客模式暂不支持定位，已使用当前城市', icon: 'none' })
+        }
         selectedPoint.value = null
         visibleCardIndices.value = []
         await refreshData({ force: true })
@@ -318,7 +343,16 @@ export default {
       if (!canActivateContent() || !cardData?._id) return
       try {
         uni.setStorageSync('INDEX_LAST_ITEM', cardData)
-        if (['place', 'service', 'track'].includes(cardData.type)) {
+        // 服务卡片：跳转到设计的服务详情页（门店/套餐/预约）
+        if (cardData.type === 'service') {
+          uni.setStorageSync('SERVICE_LAST_ITEM', cardData)
+          await uni.navigateTo({
+            url: `/pages/detail/index?id=${encodeURIComponent(cardData._id)}&title=${encodeURIComponent(cardData.name || cardData.title || '')}&source=index&type=service&inline=0`
+          })
+          return
+        }
+        // 地点/轨迹：保持地图内联预览
+        if (['place', 'track'].includes(cardData.type)) {
           await activateCardOnMap(cardData)
           const coords = cardData.location?.type === 'LineString'
             ? cardData.location.coordinates?.[0]
@@ -363,6 +397,10 @@ export default {
       exploreState.center.longitude = Number(mapConfig.longitude)
       exploreState.scale = mapConfig.scale
       saveMapState()
+      if (socialMode.value) {
+        applySocialMarkers()
+        return
+      }
       await refreshData()
     }
 
@@ -379,6 +417,10 @@ export default {
       exploreToolMode.value = ''
       const marker = payload?.marker || mapConfig.markers.find(item => String(item.id) === String(payload?.markerId))
       if (!marker) return
+      if (socialMode.value) {
+        socialSelected.value = marker
+        return
+      }
       const custom = marker.customData || {}
       if (custom.anchorKind === 'cluster') {
         visibleCardIndices.value = []
@@ -424,6 +466,12 @@ export default {
       const latitude = Number(payload?.latitude)
       const longitude = Number(payload?.longitude)
       if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return
+      if (socialMode.value) {
+        if (socialScene.value !== 'board') return
+        uni.setStorageSync('MESSAGE_BOARD_PICKED_LOCATION', { longitude, latitude })
+        uni.navigateTo({ url: '/pages/message-board-editor/index' })
+        return
+      }
       try {
         const existing = mapPoints.value
           .filter(item => item.location?.type === 'Point' && Array.isArray(item.location.coordinates))
@@ -472,6 +520,86 @@ export default {
           customData: { pointId: point._id, name: point.name, anchorKind: point.anchorKind || 'normal' }
         }
       })
+    }
+    const socialScenes = ['people', 'checkin', 'mate', 'couple', 'board']
+    const socialDemo = {
+      people: [['阿蓝', '300m · 现在在线'], ['林野', '1.2km · 城市漫步'], ['小北', '860m · 看展中']],
+      checkin: [['太古里夜景', '23人刚刚打卡'], ['望平街咖啡', '12条新动态'], ['江滩日落', '今日热度上升']],
+      mate: [['周末 Livehouse', '还缺 2 位同行者'], ['城市骑行', '周六 09:00 集合'], ['公园飞盘', '还可加入 4 人']],
+      couple: [['亲密共享', '对方已授权 · 48m']]
+    }
+    const socialOffsets = [[.004, -.004], [-.006, .006], [.009, .003], [-.003, -.009]]
+    const buildSocialMarkers = scene => {
+      if (scene === 'board') {
+        try {
+          const boards = messageBoardApi.list()
+          return boards.map((board, index) => ({
+            id: 8100 + index,
+            latitude: Number(board.location?.coordinates?.[1] || mapConfig.latitude),
+            longitude: Number(board.location?.coordinates?.[0] || mapConfig.longitude),
+            width: 46,
+            height: 54,
+            iconPath: '/static/marker-green.png',
+            customData: { kind: 'board', id: board.id, title: board.title || '地图留言板', subtitle: `${board.itemCount || 0} 条内容 · ${board.location?.address || '地图留言板'}` },
+            callout: { content: `${board.itemCount || 0} 条留言`, display: 'ALWAYS', padding: 7, borderRadius: 14, bgColor: '#20c7b7', color: '#ffffff', fontSize: 11 }
+          }))
+        } catch (error) { return [] }
+      }
+      return (socialDemo[scene] || []).map((item, index) => ({
+        id: 8000 + index,
+        latitude: Number(mapConfig.latitude) + socialOffsets[index][0],
+        longitude: Number(mapConfig.longitude) + socialOffsets[index][1],
+        width: index === 0 ? 52 : 44,
+        height: index === 0 ? 60 : 52,
+        iconPath: scene === 'couple' ? '/static/marker-purple.png' : index === 0 ? '/static/marker-green.png' : '/static/marker-blue.png',
+        customData: { kind: scene, id: `${scene}_${index}`, title: item[0], subtitle: item[1] },
+        callout: { content: item[0], display: index === 0 ? 'ALWAYS' : 'BYCLICK', padding: 7, borderRadius: 14, bgColor: index === 0 ? '#17201e' : '#ffffff', color: index === 0 ? '#ffffff' : '#17201e', fontSize: 11 }
+      }))
+    }
+    const applySocialMarkers = () => {
+      socialSelected.value = null
+      mapConfig.markers = buildSocialMarkers(socialScene.value)
+      mapConfig.polyline = []
+    }
+    const openMapSocial = scene => {
+      const nextScene = socialScenes.includes(scene) ? scene : socialScene.value
+      if (!socialMode.value) regularMarkers = [...(mapConfig.markers || [])]
+      socialScene.value = nextScene
+      socialMode.value = true
+      try { uni.setStorageSync('MAP_SOCIAL_SCENE_ENTRY_V1', nextScene) } catch (error) {}
+      applySocialMarkers()
+    }
+    const changeSocialScene = scene => {
+      if (!socialScenes.includes(scene)) return
+      socialScene.value = scene
+      try { uni.setStorageSync('MAP_SOCIAL_SCENE_ENTRY_V1', scene) } catch (error) {}
+      applySocialMarkers()
+    }
+    const closeMapSocial = () => {
+      socialMode.value = false
+      socialSelected.value = null
+      mapConfig.markers = regularMarkers.length ? [...regularMarkers] : []
+      updateMapMarkers(mapPoints.value)
+    }
+    const zoomSocialMap = delta => { mapConfig.scale = Math.max(11, Math.min(18, Number(mapConfig.scale || 14) + Number(delta || 0))) }
+    const locateSocial = async () => {
+      await requestCurrentLocation()
+      if (socialMode.value) applySocialMarkers()
+    }
+    const openSocialLayers = () => {
+      closeMapSocial()
+      openLayers()
+    }
+    const createSocialBoard = () => {
+      uni.setStorageSync('MESSAGE_BOARD_PICKED_LOCATION', { longitude: mapConfig.longitude, latitude: mapConfig.latitude })
+      uni.navigateTo({ url: '/pages/message-board-editor/index' })
+    }
+    const openSocialSelected = marker => {
+      if (marker?.customData?.kind === 'board') {
+        uni.navigateTo({ url: `/pages/message-board-detail/index?id=${encodeURIComponent(marker.customData.id)}` })
+        return
+      }
+      uni.showModal({ title: marker?.customData?.title || '地图社交', content: marker?.customData?.subtitle || '', showCancel: false })
     }
 
     const lastContentHeightBeforeExpand = ref(0)
@@ -533,6 +661,7 @@ export default {
     }
 
     const init = async () => {
+      try { socialScene.value = uni.getStorageSync('MAP_SOCIAL_SCENE_ENTRY_V1') || 'people' } catch (error) {}
       initLayout()
       mapConfig.polyline = []
       const restored = loadMapState()
@@ -569,7 +698,10 @@ export default {
         const page = pages[pages.length - 1]
         if (page?.getTabBar?.()) page.getTabBar().setData({ selected: 0 })
       } catch (error) {}
-      if (initialized.value) await applyCommand(consumeMapExploreCommand())
+      if (initialized.value) {
+        await applyCommand(consumeMapExploreCommand())
+        if (socialMode.value) applySocialMarkers()
+      }
     })
 
     onHide(saveMapState)
@@ -633,6 +765,17 @@ export default {
       closePointDetail,
       navigateToPoint,
       openCenterPointDetail,
+      openMapSocial,
+      socialScene,
+      socialMode,
+      socialSelected,
+      closeMapSocial,
+      changeSocialScene,
+      zoomSocialMap,
+      locateSocial,
+      openSocialLayers,
+      createSocialBoard,
+      openSocialSelected,
       showError,
       errorMessage,
       handleMapError,

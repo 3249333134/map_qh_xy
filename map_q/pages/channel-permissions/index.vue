@@ -154,7 +154,7 @@ const toggleAudit = (item) => {
 <style scoped>
 .perm-page {
   min-height: 100vh;
-  background: #f7f7f8;
+  background: var(--color-page);
   display: flex;
   flex-direction: column;
 }
@@ -170,7 +170,7 @@ const toggleAudit = (item) => {
   align-items: center;
   justify-content: center;
   background: #ffffff;
-  border-bottom: 1rpx solid #f0f1f3;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .nav-back {
@@ -182,7 +182,7 @@ const toggleAudit = (item) => {
   align-items: center;
   justify-content: center;
   font-size: 52rpx;
-  color: #222;
+  color: var(--color-text);
   font-weight: 300;
   line-height: 1;
 }
@@ -190,7 +190,7 @@ const toggleAudit = (item) => {
 .nav-title {
   font-size: 34rpx;
   font-weight: 800;
-  color: #222;
+  color: var(--color-text);
 }
 
 .nav-right {
@@ -205,11 +205,11 @@ const toggleAudit = (item) => {
   align-items: center;
   justify-content: center;
   border-radius: 999rpx;
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
   color: #ffffff;
   font-size: 26rpx;
   font-weight: 700;
-  box-shadow: 0 4rpx 14rpx rgba(255, 91, 53, 0.3);
+  box-shadow: 0 4rpx 14rpx rgba(0, 0, 0, 0.1);
 }
 
 .perm-scroll {
@@ -220,7 +220,7 @@ const toggleAudit = (item) => {
 
 .group-label {
   font-size: 26rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
   font-weight: 700;
   margin: 0 8rpx 18rpx;
 }
@@ -230,7 +230,7 @@ const toggleAudit = (item) => {
   background: #ffffff;
   border-radius: 24rpx;
   overflow: hidden;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .role-row {
@@ -256,7 +256,7 @@ const toggleAudit = (item) => {
 .role-rank.orange {
   background: rgba(255, 112, 67, 0.12);
 }
-.role-rank.orange .rank-text { color: #ff5b35; }
+.role-rank.orange .rank-text { color: var(--color-primary); }
 .role-rank.purple {
   background: rgba(118, 80, 200, 0.12);
 }
@@ -266,9 +266,9 @@ const toggleAudit = (item) => {
 }
 .role-rank.blue .rank-text { color: #248cf5; }
 .role-rank.gray {
-  background: #f0f1f3;
+  background: var(--color-surface-muted);
 }
-.role-rank.gray .rank-text { color: #8a8f98; }
+.role-rank.gray .rank-text { color: var(--color-text-muted); }
 
 .rank-text {
   font-size: 28rpx;
@@ -287,7 +287,7 @@ const toggleAudit = (item) => {
 .role-title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 .role-count {
   padding: 4rpx 16rpx;
@@ -295,7 +295,7 @@ const toggleAudit = (item) => {
   background: rgba(36, 140, 245, 0.1);
 }
 .role-count.muted {
-  background: #f0f1f3;
+  background: var(--color-surface-muted);
 }
 .count-text {
   font-size: 22rpx;
@@ -303,14 +303,14 @@ const toggleAudit = (item) => {
   font-weight: 700;
 }
 .role-count.muted .count-text {
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .role-desc {
   display: block;
   margin-top: 8rpx;
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
   line-height: 34rpx;
 }
 
@@ -331,13 +331,13 @@ const toggleAudit = (item) => {
   width: 10rpx;
   height: 10rpx;
   border-radius: 50%;
-  background: #ff7043;
+  background: var(--color-primary);
   margin-top: 12rpx;
   flex-shrink: 0;
 }
 .hint-text {
   font-size: 22rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
   line-height: 34rpx;
 }
 
@@ -346,7 +346,7 @@ const toggleAudit = (item) => {
   background: #ffffff;
   border-radius: 24rpx;
   padding: 28rpx;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .audit-head {
@@ -359,7 +359,7 @@ const toggleAudit = (item) => {
   width: 80rpx;
   height: 80rpx;
   border-radius: 20rpx;
-  background: linear-gradient(135deg, #248cf5 0%, #7650c8 100%);
+  background: #248cf5;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -377,19 +377,19 @@ const toggleAudit = (item) => {
   display: block;
   font-size: 30rpx;
   font-weight: 800;
-  color: #222;
+  color: var(--color-text);
 }
 .audit-sub {
   display: block;
   margin-top: 4rpx;
   font-size: 22rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .audit-desc {
   display: block;
   font-size: 25rpx;
-  color: #5f646d;
+  color: var(--color-text-body);
   line-height: 40rpx;
   margin-bottom: 8rpx;
 }
@@ -419,13 +419,13 @@ const toggleAudit = (item) => {
   display: block;
   font-size: 28rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 .toggle-sub {
   display: block;
   margin-top: 4rpx;
   font-size: 22rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 /* 自定义 toggle 开关 */
@@ -439,7 +439,7 @@ const toggleAudit = (item) => {
   transition: background 0.25s;
 }
 .switch.on {
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
 }
 .switch-knob {
   position: absolute;
@@ -449,7 +449,7 @@ const toggleAudit = (item) => {
   height: 42rpx;
   border-radius: 50%;
   background: #ffffff;
-  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
   transition: transform 0.25s;
 }
 .switch.on .switch-knob {

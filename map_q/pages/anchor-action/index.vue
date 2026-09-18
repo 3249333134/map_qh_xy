@@ -194,7 +194,7 @@ function onActionTap(action) {
 .anchor-action-page {
   min-height: 100vh;
   background: #e9ecf0;
-  color: #222;
+  color: var(--color-text);
   position: relative;
   overflow: hidden;
 }
@@ -214,7 +214,7 @@ function onActionTap(action) {
   position: relative;
   z-index: 40;
   background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
   border-bottom: 1rpx solid rgba(0, 0, 0, 0.04);
 }
 
@@ -228,10 +228,10 @@ function onActionTap(action) {
   justify-content: center;
   border-radius: 50%;
   background: rgba(0, 0, 0, 0.06);
-  color: #222;
+  color: var(--color-text);
   font-size: 56rpx;
   line-height: 56rpx;
-  box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.12);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
   transition: transform 160ms ease, background-color 160ms ease;
 }
 
@@ -243,7 +243,7 @@ function onActionTap(action) {
 .nav-title {
   font-size: 34rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .nav-right {
@@ -255,7 +255,7 @@ function onActionTap(action) {
   align-items: center;
   justify-content: center;
   font-size: 26rpx;
-  color: #5f646d;
+  color: var(--color-text-body);
 }
 
 .map-bg {
@@ -342,7 +342,7 @@ function onActionTap(action) {
   height: 32rpx;
   border-radius: 50%;
   border: 4rpx solid #ffffff;
-  box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.18);
+  box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.1);
 }
 
 .marker-dot.gold {
@@ -393,7 +393,7 @@ function onActionTap(action) {
   border-radius: 50%;
   background: #f6b33b;
   border: 4rpx solid #ffffff;
-  box-shadow: 0 4rpx 12rpx rgba(246, 179, 59, 0.5);
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
 }
 
 .action-sheet {
@@ -427,7 +427,7 @@ function onActionTap(action) {
   border-radius: 4rpx;
   background: #e0e2e6;
   margin: 0 auto;
-  box-shadow: inset 0 1rpx 2rpx rgba(15, 23, 42, 0.08);
+  box-shadow: none;
 }
 
 .sheet-scroll { width: 100%; }
@@ -456,14 +456,14 @@ function onActionTap(action) {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 5px 14px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.1);
 }
 .compact-action-icon text { color: #fff; font-size: 17px; font-weight: 800; }
 .compact-action-name {
   width: 100%;
   margin-top: 6px;
   overflow: hidden;
-  color: #475569;
+  color: var(--color-text-body);
   font-size: 10px;
   font-weight: 600;
   line-height: 14px;
@@ -492,7 +492,7 @@ function onActionTap(action) {
   display: block;
   font-size: 34rpx;
   font-weight: 800;
-  color: #222;
+  color: var(--color-text);
   line-height: 46rpx;
 }
 
@@ -546,7 +546,7 @@ function onActionTap(action) {
 
 .meta-text {
   font-size: 24rpx;
-  color: #5f646d;
+  color: var(--color-text-body);
 }
 
 .detail-desc {
@@ -554,7 +554,7 @@ function onActionTap(action) {
   display: block;
   font-size: 26rpx;
   line-height: 40rpx;
-  color: #5f646d;
+  color: var(--color-text-body);
 }
 
 .action-grid {
@@ -566,7 +566,7 @@ function onActionTap(action) {
 
 .action-item {
   padding: 24rpx;
-  background: #f7f7f8;
+  background: var(--color-page);
   border-radius: 14rpx;
   display: flex;
   flex-direction: column;
@@ -592,12 +592,12 @@ function onActionTap(action) {
   margin-top: 16rpx;
   font-size: 28rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .action-desc {
   margin-top: 6rpx;
   font-size: 22rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 </style>

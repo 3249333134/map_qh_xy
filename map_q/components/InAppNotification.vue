@@ -83,7 +83,7 @@ export default {
   right: 15px;
   background-color: white;
   border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   padding: 12px 15px;
@@ -111,14 +111,14 @@ export default {
 .notification-title {
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text);
   display: block;
   margin-bottom: 2px;
 }
 
 .notification-text {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-body);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

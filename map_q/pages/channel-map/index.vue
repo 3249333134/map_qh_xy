@@ -185,14 +185,14 @@ const joinChannel = () => {
   overflow: hidden;
   background: #e8ecf1;
   --brand-blue: #248cf5;
-  --brand-orange: #ff7043;
+  --brand-orange: var(--color-primary);
   --brand-purple: #7650c8;
   --success: #24d06c;
-  --text-primary: #222;
-  --text-body: #5f646d;
-  --text-secondary: #8a8f98;
+  --text-primary: var(--color-text);
+  --text-body: var(--color-text-body);
+  --text-secondary: var(--color-text-muted);
   --surface-card: #ffffff;
-  --surface-muted: #f0f1f3;
+  --surface-muted: var(--color-surface-muted);
 }
 
 /* 地图背景 */
@@ -265,11 +265,11 @@ const joinChannel = () => {
   height: 28rpx;
   border-radius: 50%;
   border: 6rpx solid #ffffff;
-  box-shadow: 0 4rpx 12rpx rgba(18, 24, 38, 0.2);
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
   z-index: 2;
 }
 .brand-blue { background: #248cf5; }
-.brand-orange { background: #ff7043; }
+.brand-orange { background: var(--color-primary); }
 .brand-purple { background: #7650c8; }
 
 .marker-pulse {
@@ -282,7 +282,7 @@ const joinChannel = () => {
   animation: pulse 2.2s ease-out infinite;
 }
 .pulse-blue { background: #248cf5; }
-.pulse-orange { background: #ff7043; }
+.pulse-orange { background: var(--color-primary); }
 
 @keyframes pulse {
   0% { transform: scale(0.6); opacity: 0.6; }
@@ -295,11 +295,11 @@ const joinChannel = () => {
   background: rgba(255, 255, 255, 0.92);
   border-radius: 999rpx;
   font-size: 22rpx;
-  color: #5f646d;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  color: var(--color-text-body);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 .marker-label.active {
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
   color: #ffffff;
   font-weight: 700;
 }
@@ -319,7 +319,7 @@ const joinChannel = () => {
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(20rpx);
+  backdrop-filter: blur(10px);
   border-bottom: 1rpx solid rgba(241, 241, 241, 0.6);
 }
 
@@ -332,7 +332,7 @@ const joinChannel = () => {
   align-items: center;
   justify-content: center;
   font-size: 52rpx;
-  color: #222;
+  color: var(--color-text);
   font-weight: 300;
   line-height: 1;
 }
@@ -340,7 +340,7 @@ const joinChannel = () => {
 .nav-title {
   font-size: 34rpx;
   font-weight: 800;
-  color: #222;
+  color: var(--color-text);
 }
 
 .nav-right {
@@ -355,11 +355,11 @@ const joinChannel = () => {
   align-items: center;
   justify-content: center;
   border-radius: 999rpx;
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
   color: #ffffff;
   font-size: 26rpx;
   font-weight: 700;
-  box-shadow: 0 4rpx 14rpx rgba(255, 91, 53, 0.3);
+  box-shadow: 0 4rpx 14rpx rgba(0, 0, 0, 0.1);
 }
 
 /* 底部 sheet */
@@ -371,7 +371,7 @@ const joinChannel = () => {
   height: 720rpx;
   background: #ffffff;
   border-radius: 32rpx 32rpx 0 0;
-  box-shadow: 0 -8rpx 30rpx rgba(18, 24, 38, 0.1);
+  box-shadow: 0 -8rpx 30rpx rgba(0, 0, 0, 0.1);
   display: flex;
   flex-direction: column;
   z-index: 20;
@@ -396,14 +396,14 @@ const joinChannel = () => {
 .tree-nav {
   width: 240rpx;
   flex-shrink: 0;
-  background: #f7f7f8;
-  border-right: 1rpx solid #f0f1f3;
+  background: var(--color-page);
+  border-right: 1rpx solid var(--color-surface-muted);
 }
 
 .tree-node {
   position: relative;
   padding: 28rpx 24rpx 28rpx 28rpx;
-  border-bottom: 1rpx solid #f0f1f3;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .tree-bar {
@@ -420,10 +420,10 @@ const joinChannel = () => {
   background: #ffffff;
 }
 .tree-node.active .tree-bar {
-  background: linear-gradient(180deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
 }
 .tree-node.active .tree-name {
-  color: #222;
+  color: var(--color-text);
   font-weight: 800;
 }
 
@@ -436,19 +436,19 @@ const joinChannel = () => {
 
 .tree-name {
   font-size: 28rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
   font-weight: 600;
 }
 
 .tree-tag {
   font-size: 18rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
   background: #e8eaee;
   padding: 2rpx 10rpx;
   border-radius: 999rpx;
 }
 .tree-node.active .tree-tag {
-  color: #ff5b35;
+  color: var(--color-primary);
   background: rgba(255, 112, 67, 0.12);
 }
 
@@ -460,7 +460,7 @@ const joinChannel = () => {
 }
 .tree-sub-item {
   font-size: 22rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
   line-height: 30rpx;
 }
 
@@ -484,12 +484,12 @@ const joinChannel = () => {
   width: 80rpx;
   height: 80rpx;
   border-radius: 20rpx;
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4rpx 14rpx rgba(255, 91, 53, 0.28);
+  box-shadow: 0 4rpx 14rpx rgba(0, 0, 0, 0.1);
 }
 .detail-icon-text {
   color: #ffffff;
@@ -505,19 +505,19 @@ const joinChannel = () => {
   display: block;
   font-size: 32rpx;
   font-weight: 800;
-  color: #222;
+  color: var(--color-text);
   line-height: 40rpx;
 }
 .detail-sub {
   display: block;
   margin-top: 6rpx;
   font-size: 22rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .detail-desc {
   font-size: 25rpx;
-  color: #5f646d;
+  color: var(--color-text-body);
   line-height: 40rpx;
   margin-bottom: 24rpx;
 }
@@ -532,12 +532,12 @@ const joinChannel = () => {
 .chip {
   padding: 10rpx 26rpx;
   border-radius: 999rpx;
-  background: #f0f1f3;
+  background: var(--color-surface-muted);
   border: 2rpx solid transparent;
 }
 .chip-text {
   font-size: 24rpx;
-  color: #5f646d;
+  color: var(--color-text-body);
 }
 .chip.selected {
   background: rgba(36, 140, 245, 0.1);
@@ -549,10 +549,10 @@ const joinChannel = () => {
 }
 .chip.selected.orange {
   background: rgba(255, 112, 67, 0.12);
-  border-color: #ff7043;
+  border-color: var(--color-primary);
 }
 .chip.selected.orange .chip-text {
-  color: #ff5b35;
+  color: var(--color-primary);
 }
 .chip.selected.purple {
   background: rgba(118, 80, 200, 0.12);
@@ -566,7 +566,7 @@ const joinChannel = () => {
   margin-top: auto;
   display: flex;
   align-items: center;
-  background: #f7f7f8;
+  background: var(--color-page);
   border-radius: 18rpx;
   padding: 22rpx 0;
 }
@@ -579,13 +579,13 @@ const joinChannel = () => {
 .meta-num {
   font-size: 34rpx;
   font-weight: 800;
-  color: #222;
+  color: var(--color-text);
   line-height: 1;
 }
 .meta-label {
   margin-top: 10rpx;
   font-size: 20rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 .meta-divider {
   width: 1rpx;

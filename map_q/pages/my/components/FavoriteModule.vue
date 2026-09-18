@@ -196,7 +196,7 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
           console.warn('收藏卡片缺少 id，仍尝试跳转详情（可能无法加载数据）', cardData)
         }
         uni.navigateTo({
-          url: `/pages/detail/index?id=${id}&title=${title}&author=${author}&likes=${likes}`
+          url: `/pages/detail/index?id=${id}&title=${title}&author=${author}&likes=${likes}&type=${encodeURIComponent(cardData.type || (this.isServiceItem(cardData) ? 'service' : ''))}&inline=0`
         })
       } catch (e) {
         console.error('打开详情失败', e)
@@ -362,7 +362,7 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
   padding: 2px 10px 4px 10px; /* 压缩上下内边距，使整体更扁 */
   gap: 3px; /* 更紧凑的间距 */
   overflow-x: auto;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
   background: #fff;
   position: relative;
   z-index: 6;
@@ -376,7 +376,7 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
   align-items: center;
   padding: 2px 6px; /* 更薄的标签 */
   border-radius: 12px; /* 略微减小圆角 */
-  background: #f5f5f5;
+  background: var(--color-page);
   min-width: 44px; /* 更紧凑的最小宽度 */
   transition: all 0.2s ease; /* 更轻微的动效 */
   flex-shrink: 0;
@@ -391,7 +391,7 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
 
 .category-name {
   font-size: 10px; /* 更小的文案字号 */
-  color: #666;
+  color: var(--color-text-body);
   font-weight: 500;
   line-height: 1;
 }
@@ -399,7 +399,7 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
 .category-item.active {
   background: #007aff;
   transform: scale(1.02);
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .category-icon {
@@ -410,7 +410,7 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
 
 .category-name {
   font-size: 11px;
-  color: #666;
+  color: var(--color-text-body);
   font-weight: 500;
   line-height: 1;
 }
@@ -491,12 +491,12 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
   text-overflow: ellipsis;
   white-space: nowrap;
   width: 100%;
-  color: #333;
+  color: var(--color-text);
 }
 
 .card-author {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-body);
   margin-bottom: 8px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -512,7 +512,7 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
 
 .card-location {
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -521,7 +521,7 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
 
 .card-stats {
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -536,7 +536,7 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
 }
 
 .no-items-text {
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 14px;
 }
 
@@ -544,7 +544,7 @@ import ServiceCardItem from '../../../components/card/ServiceCardItem.vue'
 .loading-more {
   text-align: center;
   padding: 15px 0;
-  color: #666;
+  color: var(--color-text-body);
   font-size: 14px;
 }
 

@@ -7,6 +7,7 @@
 <script>
 import { ref, onMounted, onUnmounted, getCurrentInstance } from 'vue'
 import PublishOverlay from '../PublishOverlay.vue'
+import { syncH5TabOverlay } from '../../utils/h5TabOverlay.js'
 
 export default {
   name: 'GlobalOverlayHost',
@@ -42,11 +43,15 @@ export default {
     }
 
     const _syncTabBar = open => {
+      // #ifdef H5
+      syncH5TabOverlay(open)
+      // #endif
       try {
         const pages = getCurrentPages()
         const page = pages[pages.length - 1]
         const tabBar = page?.getTabBar?.()
-        if (tabBar?.setData) tabBar.setData({ publishOpen: Boolean(open) })
+        if (tabBar?.setPublishOpen) tabBar.setPublishOpen(Boolean(open))
+        else if (tabBar?.setData) tabBar.setData({ publishOpen: Boolean(open) })
       } catch (e) {}
       try { uni.$emit(open ? 'publishOverlayOpened' : 'publishOverlayClosed') } catch (e) {}
     }

@@ -1,6 +1,6 @@
 <template>
   <view
-    class="card article-card app-card"
+    class="card article-card app-card content-card"
     :style="{ '--card-height': height + 'rpx' }">
     <!-- 上半部分：文章封面（横向长图） -->
     <view
@@ -113,7 +113,7 @@ export default {
         data.image
       ]
       if (Array.isArray(data.images)) candidates.push(data.images[0])
-      const found = candidates.find(item => typeof item === 'string' && item.trim())
+      const found = candidates.find(item => typeof item === 'string' && item.trim() && !/\/static\/logo\.png(?:\?|$)/i.test(item))
       return found || ''
     },
     readCountText() {
@@ -201,6 +201,7 @@ export default {
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
+  --card-media-height: 104px;
 }
 
 .article-card .card-media {
@@ -246,7 +247,7 @@ export default {
   padding: 4rpx 10rpx;
   border-radius: 6rpx;
   background: rgba(255, 255, 255, 0.95);
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 18rpx;
 }
 
@@ -256,11 +257,13 @@ export default {
   left: 10rpx;
   width: 36rpx;
   height: 36rpx;
-  border-radius: 8rpx;
-  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 10px;
+  background: rgba(255,255,255,.92);
+  color: #3f5650;
+  box-shadow: none;
 }
 
 .badge-icon {
@@ -291,12 +294,19 @@ export default {
 
 .article-card .card-excerpt {
   display: none;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--color-text-body);
+  -webkit-line-clamp: 3;
+  margin-bottom: 10px;
 }
 
 .article-card .card-footer {
   display: flex;
   align-items: center;
   width: 100%;
+  flex-wrap: wrap;
+  gap: 4px 8px;
 }
 
 .article-card .card-author {
@@ -311,14 +321,14 @@ export default {
   width: 32rpx;
   height: 32rpx;
   border-radius: 50%;
-  background: #eee;
+  background: var(--color-border);
   margin-right: 6rpx;
   flex-shrink: 0;
 }
 
 .author-name {
-  color: #999;
-  font-size: 20rpx;
+  color: var(--color-text-muted);
+  font-size: 11px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -329,15 +339,20 @@ export default {
 }
 
 .stat-text {
-  font-size: 20rpx;
-  color: #999;
+  font-size: 11px;
+  color: var(--color-text-muted);
 }
 
 .article-card .card-actions {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: 12px;
   flex-shrink: 0;
+  width: 100%;
+  justify-content: flex-end;
+  border-top: 1px solid var(--color-divider);
+  margin-top: 4px;
+  padding-top: 2px;
 }
 
 .article-card .action-btn {
@@ -352,14 +367,14 @@ export default {
 }
 
 .article-card .action-icon {
-  font-size: 24rpx;
-  color: #999;
+  font-size: 15px;
+  color: var(--color-text-muted);
   line-height: 1;
 }
 
 .article-card .action-text {
-  font-size: 20rpx;
-  color: #999;
+  font-size: 11px;
+  color: var(--color-text-muted);
 }
 
 .article-card .action-btn.active .action-icon {

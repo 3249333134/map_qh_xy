@@ -12,6 +12,10 @@
       @poitap="onPoiTap"
       ref="mapBackground"
     />
+    <view class="service-hero">
+      <view><text>{{ exploreState.center.cityName || '成都' }}</text><text>附近好店与现场体验</text></view>
+      <view class="hero-ticket" @tap="openTicketPreview"><text>票</text><view><text>本周现场</text><text>热门演出正在售票</text></view></view>
+    </view>
     <!-- 可滑动区域 -->
     <content-area
       :height="contentHeight"
@@ -33,6 +37,7 @@
       :explore-tool-mode="exploreToolMode"
       :layers="exploreState.layers"
       :explore-snapshot="exploreState"
+      card-component="ServiceCardItem"
       show-explore-controls
       storage-key-prefix="serviceContentArea"
       @drag-start="handleDragStart"
@@ -283,17 +288,30 @@ export default {
       return item
     }
 
-    // 处理上方媒体区域点击：在当前地图中替换内容区域
+    // 处理上方媒体区域点击：定位并进入对应服务详情
     const handleMediaTap = async ({ cardData, index }) => {
-      const item = typeof index === 'number' ? baseHandleCardTap(index) : cardData
-      if (item) showInlineServiceDetail(item)
+      const item = cardData || (typeof index === 'number' ? mapPoints.value[index] : null)
+      const itemIndex = item ? mapPoints.value.findIndex(point => point === item || ((point._id || point.id) && (point._id || point.id) === (item._id || item.id))) : -1
+      if (itemIndex >= 0) baseHandleCardTap(itemIndex)
+      if (item?.serviceCategory === 'ticket' || item?.category === 'ticket') {
+        uni.setStorageSync('SERVICE_LAST_ITEM', item)
+        uni.navigateTo({ url: `/pages/service-ticket-preview/index?id=${encodeURIComponent(item._id || item.id || '')}` })
+      } else if (item) {
+        uni.setStorageSync('SERVICE_LAST_ITEM', item)
+        uni.navigateTo({ url: `/pages/detail/index?id=${encodeURIComponent(item._id || item.id || '')}&type=service&inline=0` })
+      }
       return item
+    }
+    const openTicketPreview = () => {
+      const ticket = mapPoints.value.find(item => item.serviceCategory === 'ticket' || item.category === 'ticket') || mapPoints.value[0]
+      if (ticket) uni.setStorageSync('SERVICE_LAST_ITEM', { ...ticket, serviceCategory: 'ticket', category: 'ticket' })
+      uni.navigateTo({ url: '/pages/service-ticket-preview/index' })
     }
 
     // 处理下方内容区域点击：只定位到地图
     const handleContentTap = async ({ cardData, index }) => {
       // 只定位到地图，不跳转详情
-      const item = typeof index === 'number' ? mapPoints.value[index] : cardData
+      const item = cardData || (typeof index === 'number' ? mapPoints.value[index] : null)
       if (!item) {
         uni.showToast({ title: '未找到服务数据', icon: 'none' })
         return
@@ -598,6 +616,7 @@ export default {
       handleMoveToLocation,
       onMapRegionChanged,
       handleMediaTap,
+      openTicketPreview,
       handleContentTap,
       handleReserve,
       handleCategoryChange,
@@ -638,4 +657,5 @@ export default {
   overflow: hidden;
   overscroll-behavior-y: none;
 }
+.service-hero { position: absolute; z-index: 25; left: 16px; right: 16px; top: calc(env(safe-area-inset-top) + 16px); display: flex; align-items: flex-start; justify-content: space-between; pointer-events: none; }.service-hero>view:first-child text { display: block; text-shadow: 0 2px 12px rgba(255,255,255,.9); }.service-hero>view:first-child text:first-child { font-size: 24px; font-weight: 850; }.service-hero>view:first-child text:last-child { margin-top: 3px; color: var(--color-text-body); font-size: 11px; }.hero-ticket { pointer-events: auto; padding: 8px 10px; border-radius: 15px; display: flex; align-items: center; gap: 8px; color: #fff; background: rgba(23,28,31,.88); box-shadow: var(--shadow-float); }.hero-ticket>text { width: 28px; height: 28px; border-radius: 9px; display: flex; align-items: center; justify-content: center; background: var(--color-primary); font-weight: 850; }.hero-ticket view text { display: block; }.hero-ticket view text:first-child { font-size: 11px; font-weight: 750; }.hero-ticket view text:last-child { margin-top: 2px; color: #c8cfcd; font-size: 9px; }
 </style>

@@ -136,8 +136,8 @@ function openResult(item) {
 <style scoped>
 .ai-search-page {
   min-height: 100vh;
-  background: #f7f7f8;
-  color: #222;
+  background: var(--color-page);
+  color: var(--color-text);
 }
 
 .status-spacer {
@@ -150,7 +150,7 @@ function openResult(item) {
   display: flex;
   align-items: center;
   gap: 20rpx;
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
   background: rgba(255, 255, 255, 0.98);
 }
 
@@ -161,14 +161,14 @@ function openResult(item) {
   display: flex;
   align-items: center;
   border-radius: 999rpx;
-  background: #f0f1f3;
+  background: var(--color-surface-muted);
 }
 
 .search-glyph {
   width: 28rpx;
   height: 28rpx;
   margin-right: 18rpx;
-  border: 4rpx solid #8a8f98;
+  border: 4rpx solid var(--color-text-muted);
   border-radius: 50%;
   position: relative;
   flex-shrink: 0;
@@ -182,7 +182,7 @@ function openResult(item) {
   right: -10rpx;
   bottom: -4rpx;
   border-radius: 4rpx;
-  background: #8a8f98;
+  background: var(--color-text-muted);
   transform: rotate(45deg);
 }
 
@@ -190,7 +190,7 @@ function openResult(item) {
   flex: 1;
   height: 72rpx;
   font-size: 28rpx;
-  color: #222;
+  color: var(--color-text);
 }
 
 .clear-btn {
@@ -209,7 +209,7 @@ function openResult(item) {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #5f646d;
+  color: var(--color-text-body);
   font-size: 28rpx;
 }
 
@@ -224,7 +224,7 @@ function openResult(item) {
   padding: 28rpx;
   border-radius: 14rpx;
   background: #fff;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
   display: flex;
   align-items: flex-start;
   gap: 20rpx;
@@ -234,7 +234,7 @@ function openResult(item) {
   width: 64rpx;
   height: 64rpx;
   border-radius: 16rpx;
-  background: linear-gradient(135deg, var(--color-info) 0%, var(--color-info) 100%);
+  background: var(--color-info);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -254,7 +254,7 @@ function openResult(item) {
 
 .ai-summary-title {
   display: block;
-  color: #222;
+  color: var(--color-text);
   font-size: 28rpx;
   line-height: 42rpx;
   font-weight: 600;
@@ -263,7 +263,7 @@ function openResult(item) {
 .ai-summary-copy {
   display: block;
   margin-top: 10rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
   font-size: 24rpx;
   line-height: 34rpx;
 }
@@ -273,7 +273,7 @@ function openResult(item) {
   font-size: 32rpx;
   line-height: 44rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .result-list {
@@ -289,7 +289,7 @@ function openResult(item) {
   margin-bottom: 16rpx;
   border-radius: 14rpx;
   background: #fff;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .result-thumb {
@@ -306,15 +306,15 @@ function openResult(item) {
 }
 
 .result-thumb.poi {
-  background: linear-gradient(135deg, #24d06c 0%, #32c5a6 100%);
+  background: #24d06c;
 }
 
 .result-thumb.track {
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary) 100%);
 }
 
 .result-thumb.content {
-  background: linear-gradient(135deg,#69c8ff 0%,var(--color-info) 100%);
+  background: #69c8ff;
 }
 
 .thumb-text {
@@ -337,7 +337,7 @@ function openResult(item) {
 }
 
 .result-title {
-  color: #222;
+  color: var(--color-text);
   font-size: 30rpx;
   line-height: 40rpx;
   font-weight: 700;
@@ -345,7 +345,7 @@ function openResult(item) {
 
 .result-desc {
   margin-top: 6rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
   font-size: 24rpx;
   line-height: 34rpx;
 }
@@ -370,7 +370,7 @@ function openResult(item) {
   padding: 28rpx;
   border-radius: 14rpx;
   background: #fff;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .hint-title,
@@ -381,12 +381,12 @@ function openResult(item) {
 .hint-title {
   font-size: 30rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .hint-copy {
   margin-top: 16rpx;
-  color: #5f646d;
+  color: var(--color-text-body);
   font-size: 26rpx;
   line-height: 42rpx;
 }

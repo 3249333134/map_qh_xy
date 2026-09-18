@@ -85,7 +85,7 @@ export default {
 .comment-item {
   display: flex;
   padding: 10px 0;
-  border-bottom: 1px solid #f5f5f5;
+  border-bottom: 1px solid var(--color-page);
   align-items: flex-start;
 }
 .comment-avatar {
@@ -142,7 +142,7 @@ export default {
   z-index: 1;           /* 位于下层，避免遮挡右侧操作区 */
 }
 .comment-username { font-size: 14px; font-weight: 600; color: var(--color-text); }
-.comment-time { font-size: 12px; color: #999; }
+.comment-time { font-size: 12px; color: var(--color-text-muted); }
 .comment-right-section {
   display: flex;
   flex-direction: column;
@@ -153,7 +153,7 @@ export default {
 }
 .comment-meta { display: flex; flex-direction: column; }
 .comment-text {
-  font-size: 14px; color: #333; line-height: 1.4; margin-bottom: 6px; word-wrap: break-word;
+  font-size: 14px; color: var(--color-text); line-height: 1.4; margin-bottom: 6px; word-wrap: break-word;
 }
 .comment-reply { font-size: 12px; color: var(--color-text-muted); }
 .comment-reply:hover { color: var(--color-info); }
@@ -165,7 +165,7 @@ export default {
 .replies-section {
   margin-top: 8px;
   padding-left: 12px;
-  border-left: 2px solid #f1f5f9;
+  border-left: 2px solid var(--color-surface-muted);
 }
 .reply-item {
   display: flex;

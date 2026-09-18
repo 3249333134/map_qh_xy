@@ -93,12 +93,12 @@ const onExport = () => uni.showToast({ title: '导出足迹数据', icon: 'none'
   --brand-orange: var(--color-primary);
   --brand-purple: var(--color-info);
   --success: #24d06c;
-  --text-primary: #222;
-  --text-body: #5f646d;
-  --text-secondary: #8a8f98;
-  --surface-app: #f7f7f8;
+  --text-primary: var(--color-text);
+  --text-body: var(--color-text-body);
+  --text-secondary: var(--color-text-muted);
+  --surface-app: var(--color-page);
   --surface-card: #fff;
-  --surface-muted: #f0f1f3;
+  --surface-muted: var(--color-surface-muted);
   --card-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
   min-height: 100vh;
   background: var(--surface-app);
@@ -115,7 +115,7 @@ const onExport = () => uni.showToast({ title: '导出足迹数据', icon: 'none'
   justify-content: center;
   position: relative;
   background: var(--surface-card);
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .nav-back {
@@ -226,7 +226,7 @@ const onExport = () => uni.showToast({ title: '导出足迹数据', icon: 'none'
   height: 20rpx;
   border-radius: 50%;
   background: var(--brand-blue);
-  box-shadow: 0 0 12rpx rgba(36, 140, 245, 0.6);
+  box-shadow: 0 0 12rpx rgba(0, 0, 0, 0.1);
 }
 
 .radar-dot.d1 { top: 30%; left: 62%; background: var(--brand-orange); }
@@ -244,7 +244,7 @@ const onExport = () => uni.showToast({ title: '导出足迹数据', icon: 'none'
   border-radius: 50%;
   background: var(--brand-blue);
   transform: translate(-50%, -50%);
-  box-shadow: 0 0 16rpx rgba(36, 140, 245, 0.8);
+  box-shadow: 0 0 16rpx rgba(0, 0, 0, 0.1);
 }
 
 .radar-label {

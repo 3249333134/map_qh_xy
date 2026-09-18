@@ -394,7 +394,7 @@ export default {
   border-radius: 50%;
   background: #07c160;
   border: 3px solid #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: relative;
   z-index: 2;
 }
@@ -428,7 +428,7 @@ export default {
 
 .map-hint {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-body);
 }
 
 .place-header {
@@ -453,14 +453,14 @@ export default {
 
 .distance-badge {
   padding: 4px 10px;
-  background: #f0f0f0;
+  background: var(--color-surface-muted);
   border-radius: 12px;
   margin-left: 12px;
 }
 
 .distance-badge text {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-body);
 }
 
 .place-rating {
@@ -504,7 +504,7 @@ export default {
 .address-text {
   flex: 1;
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-body);
   line-height: 1.4;
 }
 
@@ -555,7 +555,7 @@ export default {
 
 .action-btn .btn-text {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-body);
 }
 
 .action-btn.primary .btn-text {
@@ -564,7 +564,7 @@ export default {
 
 .section-divider {
   height: 8px;
-  background: #f5f5f5;
+  background: var(--color-page);
 }
 
 .place-intro {
@@ -575,13 +575,13 @@ export default {
 .section-title {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
   margin-bottom: 12px;
 }
 
 .intro-text {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-body);
   line-height: 1.6;
 }
 
@@ -600,7 +600,7 @@ export default {
 }
 
 .info-row:not(:last-child) {
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .info-icon {
@@ -610,12 +610,12 @@ export default {
 .info-label {
   flex: 1;
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-body);
 }
 
 .info-value {
   font-size: 14px;
-  color: #333;
+  color: var(--color-text);
   font-weight: 500;
 }
 
@@ -633,7 +633,7 @@ export default {
 
 .reviews-count {
   font-size: 13px;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .reviews-list {
@@ -668,7 +668,7 @@ export default {
 .review-name {
   font-size: 13px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
 }
 
 .review-rating {
@@ -688,14 +688,14 @@ export default {
 .review-text {
   display: block;
   font-size: 14px;
-  color: #333;
+  color: var(--color-text);
   line-height: 1.5;
   margin-bottom: 6px;
 }
 
 .review-time {
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .bottom-bar {
@@ -725,7 +725,7 @@ export default {
 
 .bar-action text:first-child {
   font-size: 20px;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .bar-action text:first-child.active {
@@ -734,7 +734,7 @@ export default {
 
 .bar-action text:last-child {
   font-size: 10px;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .bar-right {

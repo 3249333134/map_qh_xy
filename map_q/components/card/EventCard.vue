@@ -1,6 +1,6 @@
 <template>
   <view
-    class="card event-card app-card"
+    class="card event-card app-card content-card"
     :style="{ '--card-height': height + 'rpx' }">
     <!-- 上半部分：活动封面 -->
     <view
@@ -112,7 +112,7 @@ export default {
         data.poster
       ]
       if (Array.isArray(data.images)) candidates.push(data.images[0])
-      const found = candidates.find(item => typeof item === 'string' && item.trim())
+      const found = candidates.find(item => typeof item === 'string' && item.trim() && !/\/static\/logo\.png(?:\?|$)/i.test(item))
       return found || ''
     },
     statusText() {
@@ -276,6 +276,7 @@ export default {
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
+  --card-media-height: 144px;
 }
 
 .event-card .card-media {
@@ -353,15 +354,17 @@ export default {
   position: absolute;
   left: 10rpx;
   bottom: 10rpx;
-  padding: 4rpx 10rpx;
-  border-radius: 8rpx;
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(255,255,255,.92);
+  color: #263d32;
+  border-radius: 12px;
+  padding: 6px 9px;
+  box-shadow: none;
 }
 
 .time-text {
-  color: #fff;
-  font-size: 18rpx;
-  font-weight: 500;
+  color: #263d32;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .event-card .card-content {
@@ -389,10 +392,12 @@ export default {
   align-items: center;
   width: 100%;
   margin-bottom: 8rpx;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .info-text {
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 20rpx;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -414,13 +419,14 @@ export default {
 }
 
 .registration-progress {
-  margin-bottom: 8rpx;
+  margin-top: 8px;
+  margin-bottom: 8px;
 }
 
 .progress-bar {
   height: 6rpx;
   border-radius: 3rpx;
-  background: #eee;
+  background: var(--color-border);
   overflow: hidden;
   margin-bottom: 4rpx;
 }
@@ -433,14 +439,15 @@ export default {
 
 .progress-text {
   font-size: 18rpx;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .event-card .card-footer {
   display: flex;
   align-items: center;
-  gap: 10rpx;
   width: 100%;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .status-tag {
@@ -468,7 +475,7 @@ export default {
 .event-card .card-actions {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -484,14 +491,14 @@ export default {
 }
 
 .event-card .action-icon {
-  font-size: 24rpx;
-  color: #999;
+  font-size: 15px;
+  color: var(--color-text-muted);
   line-height: 1;
 }
 
 .event-card .action-text {
-  font-size: 20rpx;
-  color: #999;
+  font-size: 11px;
+  color: var(--color-text-muted);
 }
 
 .event-card .action-btn.active .action-icon {
@@ -514,18 +521,23 @@ export default {
 
 .register-btn {
   flex: 0 0 auto;
-  height: 40rpx;
-  padding: 0 16rpx;
-  border-radius: 20rpx;
-  color: #fff;
-  font-size: 20rpx;
+  height: 36px;
+  padding: 0 12px;
   font-weight: 500;
-  line-height: 40rpx;
-  background: var(--color-primary);
+  line-height: 36px;
+  min-height: 40px;
+  width: 100%;
+  border-radius: 14px;
+  background: #263d32;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
 }
 
 .register-btn.registered {
-  background: #eee;
-  color: #999;
+  background: var(--color-border);
+  color: var(--color-text-muted);
 }
 </style>

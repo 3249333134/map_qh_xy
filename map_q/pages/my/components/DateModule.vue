@@ -907,7 +907,7 @@ export default {
 
 .calendar-section {
   background: #fff;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border);
   touch-action: pan-y;
   position: relative;
   overflow: hidden;
@@ -935,7 +935,7 @@ export default {
   align-items: center;
   justify-content: space-between;
   padding: 6px 16px; /* 原10px 20px → 更窄 */
-  background: #e9ecef;
+  background: var(--color-border);
   position: relative;
   z-index: 10;
 }
@@ -943,7 +943,7 @@ export default {
 .month-title {
   font-size: 15px; /* 原16px → 略微缩小 */
   font-weight: bold;
-  color: #333;
+  color: var(--color-text);
   flex: 1;
   text-align: left;
   transition: opacity 0.2s ease;
@@ -1001,7 +1001,7 @@ export default {
   flex: 1;
   text-align: center;
   font-size: 12px;
-  color: #999;
+  color: var(--color-text-muted);
   padding: 6px 0; /* 与周视图星期标题一致 */
   font-weight: normal;
   display: inline-block; /* 移除潜在的默认 block/换行影响，确保在 flex 下均匀分布 */
@@ -1047,7 +1047,7 @@ export default {
 
 .day-number {
   font-size: 15px;
-  color: #333;
+  color: var(--color-text);
   font-weight: 500; /* 与周视图的 date-number 保持一致 */
 }
 
@@ -1090,7 +1090,7 @@ export default {
   flex: 1;
   text-align: center;
   font-size: 12px;
-  color: #999;
+  color: var(--color-text-muted);
   padding: 6px 0; /* 与周视图星期标题一致 */
   font-weight: normal;
 }
@@ -1128,7 +1128,7 @@ export default {
 
 .date-number {
   font-size: 15px;
-  color: #333;
+  color: var(--color-text);
   font-weight: 500;
 }
 
@@ -1150,7 +1150,7 @@ export default {
   display: flex;
   justify-content: center;
   padding: 12rpx 0; /* 压缩高度 */
-  border-top: 1rpx solid #eee;
+  border-top: 1rpx solid var(--color-border);
   margin-top: 12rpx; /* 减少上边距 */
 }
 
@@ -1158,9 +1158,9 @@ export default {
   display: flex;
   align-items: center;
   padding: 10rpx 24rpx; /* 更薄的按钮 */
-  background: #f8f9fa;
+  background: var(--color-page);
   border-radius: 18rpx; /* 略微减小圆角 */
-  border: 1rpx solid #e9ecef;
+  border: 1rpx solid var(--color-border);
 }
 
 .toggle-text {
@@ -1275,7 +1275,7 @@ export default {
   flex: 1;
   min-height: 0; /* 允许子滚动区在弹性布局中正确压缩并填充剩余空间 */
   padding: 0 9px; /* 原 20px → 缩小边距，让卡片更宽 */
-  background-color: #f8f9fa;
+  background-color: var(--color-page);
 }
 
 
@@ -1309,7 +1309,7 @@ export default {
 }
 
 .no-schedule-text {
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 14px;
 }
 
@@ -1329,20 +1329,20 @@ export default {
   align-items: center;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--color-surface-muted);
 }
 
 .date-text {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
   margin-right: 8px;
 }
 
 .weekday-text {
   font-size: 12px;
-  color: #666;
-  background-color: #f8f9fa;
+  color: var(--color-text-body);
+  background-color: var(--color-page);
   padding: 2px 6px;
   border-radius: 4px;
 }
@@ -1366,7 +1366,7 @@ export default {
 
 .time-text {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-body);
   font-weight: 500;
 }
 
@@ -1380,13 +1380,13 @@ export default {
 .schedule-title-text {
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text);
   line-height: 1.4;
 }
 
 .schedule-desc {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-body);
   line-height: 1.3;
 }
 
@@ -1412,7 +1412,7 @@ export default {
 
 .type-personal .type-text {
   background-color: #ffc107;
-  color: #333;
+  color: var(--color-text);
 }
 
 .type-health .type-text {

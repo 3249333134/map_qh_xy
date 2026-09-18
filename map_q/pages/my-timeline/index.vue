@@ -112,19 +112,19 @@ const shareReview = () => {
 </script>
 
 <style scoped>
-.page { min-height: 100vh; background: var(--color-page); color: #202633; }
-.nav { height: 88rpx; padding: 0 18rpx; display: flex; align-items: center; justify-content: space-between; background: #fff; border-bottom: .03125rem solid #ECEEF2; }
+.page { min-height: 100vh; background: var(--color-page); color: var(--color-text); }
+.nav { height: 88rpx; padding: 0 18rpx; display: flex; align-items: center; justify-content: space-between; background: #fff; border-bottom: .03125rem solid var(--color-surface-muted); }
 .nav > text { font-size: 31rpx; font-weight: 750; }
 .nav button { width: 76rpx; height: 72rpx; margin: 0; padding: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; font-size: 24rpx; }
 .nav button::after, .toolbar button::after { border: 0; }
-.back { width: 20rpx; height: 20rpx; border-left: 4rpx solid #202633; border-bottom: 4rpx solid #202633; transform: rotate(45deg); }
+.back { width: 20rpx; height: 20rpx; border-left: 4rpx solid var(--color-text); border-bottom: 4rpx solid var(--color-text); transform: rotate(45deg); }
 .share { color: var(--color-primary); }
 .content { height: calc(100vh - 88rpx); }
-.summary { margin: 24rpx; padding: 32rpx; border-radius: 24rpx; background: #fff; box-shadow: 0 7rpx 24rpx rgba(25,36,55,.05); }
+.summary { margin: 24rpx; padding: 32rpx; border-radius: 24rpx; background: #fff; box-shadow: 0 7rpx 24rpx rgba(0, 0, 0, 0.05); }
 .summary-kicker { display: block; color: var(--color-primary); font-size: 19rpx; font-weight: 800; letter-spacing: 2rpx; }
 .summary-title { display: block; margin-top: 12rpx; font-size: 36rpx; line-height: 1.4; font-weight: 800; }
 .summary-desc { display: block; margin-top: 12rpx; color: #7b8493; font-size: 23rpx; line-height: 1.55; }
-.summary-stats { margin-top: 28rpx; padding-top: 22rpx; display: flex; border-top: 1rpx solid #EEF0F3; }
+.summary-stats { margin-top: 28rpx; padding-top: 22rpx; display: flex; border-top: 1rpx solid var(--color-surface-muted); }
 .summary-stats view { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5rpx; }
 .summary-stats text:first-child { font-size: 30rpx; font-weight: 800; }
 .summary-stats text:last-child { color: #8B94A5; font-size: 21rpx; }
@@ -144,7 +144,7 @@ const shareReview = () => {
 .item-title-row { display: flex; align-items: center; gap: 8rpx; }
 .item-title-row > text:first-child { min-width: 0; font-size: 26rpx; font-weight: 700; }
 .item-copy > text { color: #838C9C; font-size: 21rpx; }
-.private-tag { padding: 3rpx 8rpx; border-radius: 8rpx; background: #F0F1F3; color: #747D8B; font-size: 18rpx; }
+.private-tag { padding: 3rpx 8rpx; border-radius: 8rpx; background: var(--color-surface-muted); color: #747D8B; font-size: 18rpx; }
 .empty { margin: 70rpx 30rpx; display: flex; flex-direction: column; align-items: center; gap: 12rpx; color: #8A93A2; font-size: 23rpx; text-align: center; }
 .empty text:first-child { color: #4F5968; font-size: 28rpx; font-weight: 700; }
 .bottom-space { height: calc(60rpx + env(safe-area-inset-bottom)); }

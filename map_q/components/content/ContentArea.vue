@@ -40,6 +40,7 @@
           :spatial-filter="spatialFilter"
           :is-refreshing="isRefreshing"
           :error="dataError"
+          :social-scene="socialScene"
           @city-select="$emit('city-select', $event)"
           @time-change="$emit('time-change', $event)"
           @space-change="$emit('space-change', $event)"
@@ -48,6 +49,7 @@
           @request-location="$emit('request-location')"
           @retry="$emit('retry')"
           @sheet-state="filterSheetOpen = $event"
+          @social-scene-change="$emit('social-scene-change', $event)"
         />
       </view>
       
@@ -209,6 +211,8 @@ export default {
     exploreToolMode: { type: String, default: '' },
     layers: { type: Array, default: () => [] },
     exploreSnapshot: { type: Object, default: () => ({}) }
+    ,
+    socialScene: { type: String, default: 'people' }
   },
   // 在 data 中初始化为 false
   data() {
@@ -860,7 +864,7 @@ export default {
   width: 100%;
   z-index: 10;
   overflow: hidden;
-  border-radius: 26px 26px 0 0;
+  border-radius: 30px 30px 0 0;
   background: transparent;
   transition: height 260ms cubic-bezier(.2,.8,.2,1);
 }
@@ -877,20 +881,16 @@ export default {
   overflow: hidden;
   border: 1px solid rgba(255,255,255,.82);
   border-bottom: 0;
-  border-radius: 26px 26px 0 0;
-  background: rgba(255,255,255,.97);
-  box-shadow: 0 -12px 40px rgba(15,23,42,.12);
-  backdrop-filter: blur(18px) saturate(135%);
-}
+  border-radius: 30px 30px 0 0;  background: var(--color-surface-glass); box-shadow: var(--shadow-sheet); backdrop-filter: blur(24px) saturate(135%); -webkit-backdrop-filter: blur(24px) saturate(135%); }
 
 .explore-controls-slot {
   position: absolute;
-  /* 8px 顶部留白 + border-box 下 16px 拖拽把手，与 48px 搜索框严格齐平。 */
+  /* 8px 顶部留白 + border-box 下 16px 拖拽把手，与 44px 搜索框严格齐平。 */
   top: 24px;
-  right: 16px;
+  right: 14px;
   z-index: 8;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
 }
 
 .explore-controls-slot.is-collapsed {
@@ -907,19 +907,7 @@ export default {
   overflow: visible;
 }
 
-.content-area::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  z-index: 2;
-  width: 64px;
-  height: 1px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, transparent, rgba(234,88,12,.48), transparent);
-  transform: translateX(-50%);
-  pointer-events: none;
-}
+.content-area::before { display: none; }
 
 .content-area.collapsed { height: auto !important; overflow: visible; }
 .content-area.collapsed::before { display: none; }
@@ -928,7 +916,7 @@ export default {
   border: 0;
   background: transparent;
   box-shadow: none;
-  backdrop-filter: none;
+  backdrop-filter: none; -webkit-backdrop-filter: none;
 }
 
 @media (prefers-reduced-motion: reduce) { .content-area { transition: none; } }

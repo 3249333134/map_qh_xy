@@ -22,6 +22,7 @@
     <view class="location-btn" role="button" aria-label="Center on my location" @tap="refreshLocation">
       <view class="location-icon" aria-hidden="true"><view class="location-core"></view></view>
     </view>
+
   </view>
 </template>
 
@@ -30,6 +31,7 @@ import { APP_CONFIG } from '@/utils/config.js'
 import { debounce } from '@/utils/debounce.js'
 
 export default {
+  name: 'MapBackground',
   props: {
     height: {
       type: Number,
@@ -159,18 +161,18 @@ export default {
       // 主轨迹线 - 带有渐变效果
       polyline.push({
         points: points,
-        color: '#667eea',
+        color: '#3182F6',
         width: 10,
         dottedLine: false,
         arrowLine: true,
-        borderColor: '#764ba2',
+        borderColor: '#FFFFFF',
         borderWidth: 2
       })
       
       // 添加阴影轨迹线
       polyline.push({
         points: points,
-        color: 'rgba(102, 126, 234, 0.3)',
+        color: 'rgba(49, 130, 246, 0.18)',
         width: 16,
         dottedLine: false,
         arrowLine: false
@@ -490,8 +492,8 @@ export default {
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(255,255,255,.9);
-  box-shadow: 0 8px 24px rgba(15,23,42,.16);
-  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
   z-index: 10;
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
@@ -500,12 +502,12 @@ export default {
   position: relative;
   width: 18px;
   height: 18px;
-  border: 2px solid #334155;
+  border: 2px solid #0b9388;
   border-radius: 50%;
   font-size: 0;
   box-sizing: border-box;
 }
-.location-icon::before { content: ''; position: absolute; left: 5px; top: 5px; width: 4px; height: 4px; border-radius: 50%; background: #ea580c; }
-.location-icon::after { content: ''; position: absolute; inset: -6px; border: 1.5px solid #334155; border-color: #334155 transparent; border-radius: 50%; }
-.location-btn:active { transform: scale(.94); box-shadow: 0 4px 14px rgba(15,23,42,.14); }
+.location-icon::before { content: ''; position: absolute; left: 5px; top: 5px; width: 4px; height: 4px; border-radius: 50%; background: var(--color-primary); }
+.location-icon::after { content: ''; position: absolute; inset: -6px; border: 1.5px solid #0b9388; border-color: #0b9388 transparent; border-radius: 50%; }
+.location-btn:active { transform: scale(.94); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1); }
 </style>

@@ -125,7 +125,7 @@ function syncMapPreview(state) {
       latitude: Number(center.latitude) + item[0],
       longitude: Number(center.longitude) + item[1]
     })),
-    color: '#f97316',
+    color: '#f58b62',
     width: 5,
     dottedLine: false,
     arrowLine: true
@@ -169,19 +169,19 @@ function copyLink() {
 function generatePoster() {
   try {
     const context = uni.createCanvasContext('sharePoster')
-    context.setFillStyle('#fff7ed')
+    context.setFillStyle('#fff1ee')
     context.fillRect(0, 0, 320, 500)
-    context.setFillStyle('#ea580c')
+    context.setFillStyle('#f56f64')
     context.fillRect(0, 0, 320, 12)
-    context.setFillStyle('#0f172a')
+    context.setFillStyle('#182033')
     context.setFontSize(24)
     context.fillText(`${snapshot.value.center.cityName}地图探索`, 24, 64)
-    context.setFillStyle('#64748b')
+    context.setFillStyle('#5c667a')
     context.setFontSize(14)
     context.fillText(`${timeLabel.value} · ${spaceLabel.value}`, 24, 94)
     context.setFillStyle('#e2e8f0')
     context.fillRect(24, 126, 272, 260)
-    context.setFillStyle('#f97316')
+    context.setFillStyle('#f58b62')
     ;[[72,190],[164,248],[240,176],[214,330]].forEach(([x,y]) => {
       context.beginPath()
       context.arc(x, y, 8, 0, Math.PI * 2)
@@ -212,8 +212,8 @@ function generatePoster() {
 <style scoped>
 .map-share-page {
   min-height: 100vh;
-  background: #f7f7f8;
-  color: #222;
+  background: var(--color-page);
+  color: var(--color-text);
 }
 
 .status-spacer {
@@ -228,7 +228,7 @@ function generatePoster() {
   justify-content: center;
   position: relative;
   background: #fff;
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .nav-back {
@@ -240,8 +240,8 @@ function generatePoster() {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #f0f1f3;
-  color: #222;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
   font-size: 56rpx;
   line-height: 56rpx;
 }
@@ -249,7 +249,7 @@ function generatePoster() {
 .nav-title {
   font-size: 34rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .nav-right {
@@ -261,11 +261,11 @@ function generatePoster() {
   align-items: center;
   justify-content: center;
   border-radius: 999rpx;
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
   color: #fff;
   font-size: 26rpx;
   font-weight: 700;
-  box-shadow: 0 6rpx 18rpx rgba(255, 91, 53, 0.28);
+  box-shadow: 0 6rpx 18rpx rgba(0, 0, 0, 0.1);
   border: 0;
   line-height: 64rpx;
 }
@@ -280,7 +280,7 @@ function generatePoster() {
 .share-card {
   background: #fff;
   border-radius: 14rpx;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
 
@@ -289,7 +289,7 @@ function generatePoster() {
   height: 30vh;
   min-height: 440rpx;
   max-height: 560rpx;
-  background: #e2e8f0;
+  background: var(--color-border);
   overflow: hidden;
 }
 
@@ -374,7 +374,7 @@ function generatePoster() {
   height: 24rpx;
   border-radius: 50%;
   border: 4rpx solid #ffffff;
-  box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.18);
+  box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.1);
 }
 
 .marker-dot.gold {
@@ -407,7 +407,7 @@ function generatePoster() {
   display: block;
   font-size: 34rpx;
   font-weight: 800;
-  color: #222;
+  color: var(--color-text);
   line-height: 46rpx;
 }
 
@@ -415,7 +415,7 @@ function generatePoster() {
   display: block;
   margin-top: 10rpx;
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
   line-height: 34rpx;
 }
 
@@ -447,7 +447,7 @@ function generatePoster() {
 }
 
 .chip.orange .chip-text {
-  color: #ff5b35;
+  color: var(--color-primary);
 }
 
 .chip.purple {
@@ -468,13 +468,13 @@ function generatePoster() {
   font-size: 32rpx;
   line-height: 44rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .option-list {
   background: #fff;
   border-radius: 14rpx;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
 
@@ -483,7 +483,7 @@ function generatePoster() {
   align-items: center;
   gap: 20rpx;
   padding: 28rpx;
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .option-row.last {
@@ -515,14 +515,14 @@ function generatePoster() {
   display: block;
   font-size: 30rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .option-desc {
   display: block;
   margin-top: 6rpx;
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .option-arrow {

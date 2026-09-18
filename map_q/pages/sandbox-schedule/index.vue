@@ -101,7 +101,7 @@ const onDone = () => {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f7f7f8;
+  background: var(--color-page);
 }
 
 .status-spacer {
@@ -115,7 +115,7 @@ const onDone = () => {
   height: 88rpx;
   padding: 0 24rpx;
   background: #fff;
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .nav-back {
@@ -125,8 +125,8 @@ const onDone = () => {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #f0f1f3;
-  color: #222;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
   font-size: 44rpx;
   line-height: 44rpx;
 }
@@ -134,7 +134,7 @@ const onDone = () => {
 .nav-title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .nav-right {
@@ -150,7 +150,7 @@ const onDone = () => {
   padding: 0 36rpx;
   height: 56rpx;
   border-radius: 999rpx;
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
   color: #fff;
   font-size: 26rpx;
   font-weight: 700;
@@ -164,14 +164,14 @@ const onDone = () => {
   padding: 28rpx 24rpx;
   border-radius: 14rpx;
   background: #fff;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .card-title {
   display: block;
   font-size: 28rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .week-grid {
@@ -184,7 +184,7 @@ const onDone = () => {
 .day-cell {
   padding: 16rpx 0;
   border-radius: 14rpx;
-  background: #f0f1f3;
+  background: var(--color-surface-muted);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -196,7 +196,7 @@ const onDone = () => {
 
 .day-week {
   font-size: 22rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .day-cell.active .day-week {
@@ -207,7 +207,7 @@ const onDone = () => {
   margin-top: 6rpx;
   font-size: 28rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .day-cell.active .day-num {
@@ -227,8 +227,8 @@ const onDone = () => {
   align-items: center;
   justify-content: center;
   border-radius: 999rpx;
-  background: #f0f1f3;
-  color: #5f646d;
+  background: var(--color-surface-muted);
+  color: var(--color-text-body);
   font-size: 28rpx;
   font-weight: 600;
 }
@@ -242,21 +242,21 @@ const onDone = () => {
   margin-top: 20rpx;
   padding: 28rpx 24rpx;
   border-radius: 14rpx;
-  background: #f0f1f3;
+  background: var(--color-surface-muted);
 }
 
 .note-title {
   display: block;
   font-size: 26rpx;
   font-weight: 700;
-  color: #5f646d;
+  color: var(--color-text-body);
 }
 
 .note-desc {
   display: block;
   margin-top: 10rpx;
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
   line-height: 1.6;
 }
 
@@ -264,7 +264,7 @@ const onDone = () => {
   margin-top: 20rpx;
   padding: 28rpx 24rpx;
   border-radius: 14rpx;
-  background: linear-gradient(135deg, var(--color-info) 0%, var(--color-info) 100%);
+  background: var(--color-info);
   display: flex;
   align-items: center;
   justify-content: space-between;

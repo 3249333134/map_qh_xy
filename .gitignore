@@ -13,3 +13,9 @@ Thumbs.db
 *.swp
 *.bak
 _tmp_*
+
+# IDE / 工具目录
+.trae/
+.workbuddy/
+.impeccable/
+.qa-h5-build/

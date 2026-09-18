@@ -96,7 +96,7 @@ const setPublicProfile = ({ detail }) => {
 .page {
   min-height: 100vh;
   background: var(--color-page);
-  color: #202633;
+  color: var(--color-text);
 }
 
 .nav {
@@ -106,7 +106,7 @@ const setPublicProfile = ({ detail }) => {
   align-items: center;
   justify-content: space-between;
   background: #fff;
-  border-bottom: .03125rem solid #ECEEF2;
+  border-bottom: .03125rem solid var(--color-surface-muted);
 }
 
 .nav > text {
@@ -136,8 +136,8 @@ const setPublicProfile = ({ detail }) => {
 .back {
   width: 20rpx;
   height: 20rpx;
-  border-left: 4rpx solid #202633;
-  border-bottom: 4rpx solid #202633;
+  border-left: 4rpx solid var(--color-text);
+  border-bottom: 4rpx solid var(--color-text);
   transform: rotate(45deg);
 }
 
@@ -169,7 +169,7 @@ const setPublicProfile = ({ detail }) => {
   padding: 0 26rpx;
   border-radius: 22rpx;
   background: #fff;
-  box-shadow: 0 5rpx 18rpx rgba(25, 36, 55, 0.05);
+  box-shadow: 0 5rpx 18rpx rgba(0, 0, 0, 0.05);
 }
 
 .row {
@@ -178,7 +178,7 @@ const setPublicProfile = ({ detail }) => {
   align-items: center;
   justify-content: space-between;
   gap: 24rpx;
-  border-bottom: 1rpx solid #EEF0F3;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .row:last-child {
@@ -217,7 +217,7 @@ const setPublicProfile = ({ detail }) => {
   padding: 0;
   border-radius: 34rpx;
   background: #F0F2F5;
-  color: #697386;
+  color: var(--color-text-body);
   font-size: 23rpx;
   line-height: 68rpx;
 }
@@ -245,7 +245,7 @@ const setPublicProfile = ({ detail }) => {
   width: 30rpx;
   height: 34rpx;
   flex-shrink: 0;
-  border: 3rpx solid #FF8A4A;
+  border: 3rpx solid var(--color-primary);
   border-radius: 14rpx 14rpx 18rpx 18rpx;
 }
 </style>

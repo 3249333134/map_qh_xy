@@ -93,7 +93,7 @@ export default {
   align-items: center;
   padding: 8px 12px; /* 具体 padding-bottom 由 bottomActionsStyle 接管 */
   background-color: #fff;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--color-surface-muted);
   box-sizing: border-box;
   z-index: 999;
 }
@@ -101,7 +101,7 @@ export default {
 .comment-input {
   display: flex;
   align-items: center;
-  background: #f5f5f5;
+  background: var(--color-page);
   border-radius: 18px;
   padding: 4px 10px;
 }
@@ -111,7 +111,7 @@ export default {
   margin-right: 8px;
 }
 .placeholder {
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 14px;
 }
 .action-right {
@@ -121,7 +121,7 @@ export default {
   margin-left: 10px;
 }
 .action-btn { display: flex; align-items: center; gap: 6px; }
-.icon { font-size: 18px; color: #999; }
+.icon { font-size: 18px; color: var(--color-text-muted); }
 .icon.liked { color: #ef4444; }
-.count { font-size: 12px; color: #666; }
+.count { font-size: 12px; color: var(--color-text-body); }
 </style>

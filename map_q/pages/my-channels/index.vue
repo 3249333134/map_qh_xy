@@ -56,17 +56,17 @@ const openChannel = channel => {
 </script>
 
 <style scoped>
-.page { height: 100vh; background: var(--color-page); color: #202633; overflow: hidden; }
-.nav { height: 88rpx; padding: 0 18rpx; display: flex; align-items: center; justify-content: space-between; background: #fff; border-bottom: .03125rem solid #ECEEF2; }
+.page { height: 100vh; background: var(--color-page); color: var(--color-text); overflow: hidden; }
+.nav { height: 88rpx; padding: 0 18rpx; display: flex; align-items: center; justify-content: space-between; background: #fff; border-bottom: .03125rem solid var(--color-surface-muted); }
 .nav > text { font-size: 32rpx; font-weight: 750; }
 .nav button, .nav-space { width: 72rpx; height: 72rpx; margin: 0; padding: 0; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; }
 .nav button::after, .tabs button::after { border: 0; }
-.back { width: 20rpx; height: 20rpx; border-left: 4rpx solid #202633; border-bottom: 4rpx solid #202633; transform: rotate(45deg); }
+.back { width: 20rpx; height: 20rpx; border-left: 4rpx solid var(--color-text); border-bottom: 4rpx solid var(--color-text); transform: rotate(45deg); }
 .tabs { height: 86rpx; padding: 0 20rpx; display: flex; align-items: center; gap: 8rpx; background: #fff; }
 .tabs button { flex: 1; height: 60rpx; margin: 0; padding: 0; border-radius: 30rpx; background: transparent; color: #798293; font-size: 23rpx; line-height: 60rpx; }
 .tabs button.active { background: #FFF1E7; color: #C55819; font-weight: 700; }
 .list { height: calc(100vh - 174rpx); box-sizing: border-box; padding: 20rpx 24rpx calc(40rpx + env(safe-area-inset-bottom)); }
-.channel-card { min-height: 132rpx; margin-bottom: 16rpx; padding: 22rpx; border-radius: 20rpx; display: flex; align-items: center; gap: 18rpx; background: #fff; box-shadow: 0 5rpx 18rpx rgba(25,36,55,.04); }
+.channel-card { min-height: 132rpx; margin-bottom: 16rpx; padding: 22rpx; border-radius: 20rpx; display: flex; align-items: center; gap: 18rpx; background: #fff; box-shadow: 0 5rpx 18rpx rgba(0, 0, 0, 0.04); }
 .avatar { width: 76rpx; height: 76rpx; flex-shrink: 0; border-radius: 22rpx; display: flex; align-items: center; justify-content: center; background: #eaf4ff; color: #2478D3; font-size: 29rpx; font-weight: 800; }
 .copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 6rpx; }
 .copy > view { display: flex; align-items: center; gap: 10rpx; }

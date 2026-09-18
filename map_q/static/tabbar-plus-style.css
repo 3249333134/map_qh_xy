@@ -22,11 +22,11 @@ uni-tabbar .uni-tabbar__item:nth-child(3) .uni-tabbar__icon,
   clip-path: circle(50% at 50% 50%) !important;
   overflow: visible !important;
   box-sizing: border-box !important;
-  background: #ea580c !important;
+  background: #f56f64 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow: 0 8px 24px rgba(234, 88, 12, 0.24) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* 隐藏原始图标，使用自定义样式 - 多重选择器 */
@@ -77,24 +77,24 @@ uni-tabbar .uni-tabbar__item:nth-child(3).uni-tabbar__item--selected .uni-tabbar
 @keyframes tabbar-pulse {
   0% {
     box-shadow: 
-      0 4px 12px rgba(255, 71, 87, 0.3),
-      0 2px 8px rgba(255, 107, 53, 0.2),
-      0 0 20px rgba(247, 147, 30, 0.1),
+      0 4px 12px rgba(0, 0, 0, 0.1),
+      0 2px 8px rgba(0, 0, 0, 0.1),
+      0 0 20px rgba(0, 0, 0, 0.1),
       0 8px 32px rgba(0, 0, 0, 0.1);
   }
   50% {
     box-shadow: 
-      0 6px 16px rgba(255, 71, 87, 0.4),
-      0 4px 12px rgba(255, 107, 53, 0.3),
-      0 0 30px rgba(247, 147, 30, 0.2),
-      0 12px 40px rgba(0, 0, 0, 0.15);
+      0 6px 16px rgba(0, 0, 0, 0.1),
+      0 4px 12px rgba(0, 0, 0, 0.1),
+      0 0 30px rgba(0, 0, 0, 0.1),
+      0 12px 40px rgba(0, 0, 0, 0.1);
     transform: translateY(-15px) scale(1.05);
   }
   100% {
     box-shadow: 
-      0 4px 12px rgba(255, 71, 87, 0.3),
-      0 2px 8px rgba(255, 107, 53, 0.2),
-      0 0 20px rgba(247, 147, 30, 0.1),
+      0 4px 12px rgba(0, 0, 0, 0.1),
+      0 2px 8px rgba(0, 0, 0, 0.1),
+      0 0 20px rgba(0, 0, 0, 0.1),
       0 8px 32px rgba(0, 0, 0, 0.1);
   }
 }

@@ -1,15 +1,16 @@
 <template>
   <view
-    class="card place-card app-card"
+    class="card place-card app-card content-card"
     :style="{ '--card-height': height + 'rpx' }">
     <view
       class="card-media"
       @tap="handleMediaTap"
       @click="handleMediaTap">
-      <view class="place-map-bg">
+      <image v-if="coverImage" class="card-cover" :src="coverImage" mode="aspectFill" @error="failedCover = coverImage" />
+      <view v-else class="place-map-bg">
         <view class="map-grid"></view>
       </view>
-      <view class="center-marker">
+      <view v-if="!coverImage" class="center-marker">
         <view class="marker-dot"></view>
         <view class="marker-pulse"></view>
         <view class="marker-pulse-delay"></view>
@@ -61,6 +62,7 @@
 </template>
 
 <script>
+import { getContentCover } from '../../utils/contentResolver.js'
 import { useInteraction } from '../../utils/interaction.js'
 
 export default {
@@ -85,11 +87,13 @@ export default {
   },
   data() {
     return {
+      failedCover: '',
       isLiked: false,
       isFavorited: false
     }
   },
   computed: {
+    coverImage() { const cover = getContentCover(this.cardData); return cover === this.failedCover ? '' : cover },
     cardId() {
       return this.cardData && (this.cardData._id || this.cardData.id || this.index)
     },
@@ -206,6 +210,7 @@ export default {
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
+  --card-media-height: 144px;
 }
 
 .place-card .card-media {
@@ -250,7 +255,7 @@ export default {
   border-radius: 50%;
   background: #22c55e;
   border: 4rpx solid #fff;
-  box-shadow: 0 2rpx 8rpx rgba(34, 197, 94, 0.3);
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
   z-index: 2;
 }
 
@@ -325,7 +330,7 @@ export default {
 
 .place-card .card-address {
   width: 100%;
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 20rpx;
   line-height: 26rpx;
   margin-bottom: 6rpx;
@@ -350,11 +355,11 @@ export default {
 }
 
 .tag-item {
-  padding: 2rpx 8rpx;
-  border-radius: 6rpx;
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
-  font-size: 18rpx;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: var(--color-surface-muted);
+  color: var(--color-text-body);
+  font-size: 10px;
   flex-shrink: 0;
 }
 
@@ -371,8 +376,8 @@ export default {
 }
 
 .stat-text {
-  color: #999;
-  font-size: 20rpx;
+  color: var(--color-text-muted);
+  font-size: 11px;
 }
 
 .place-card .card-footer {
@@ -380,20 +385,26 @@ export default {
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
 .quick-actions {
   display: flex;
-  gap: 12rpx;
+  width: 100%;
+  gap: 6px;
 }
 
 .quick-btn {
   display: flex;
   align-items: center;
   gap: 4rpx;
-  padding: 6rpx 12rpx;
-  border-radius: 16rpx;
+  padding: 0 6px;
   transition: all 0.2s;
+  min-height: 40px;
+  border-radius: 14px;
+  flex: 1;
+  justify-content: center;
 }
 
 .quick-btn:active {
@@ -401,7 +412,8 @@ export default {
 }
 
 .nav-btn {
-  background: rgba(14, 165, 233, 0.1);
+  background: #e0f2ec;
+  color: #286c5c;
 }
 
 .nav-btn .quick-icon {
@@ -409,12 +421,13 @@ export default {
 }
 
 .nav-btn .quick-text {
-  font-size: 20rpx;
-  color: #0ea5e9;
+  font-size: 11px;
+  color: var(--color-primary);
 }
 
 .reserve-btn {
-  background: rgba(34, 197, 94, 0.1);
+  background: #263d32;
+  color: #fff;
 }
 
 .reserve-btn .quick-icon {
@@ -422,15 +435,17 @@ export default {
 }
 
 .reserve-btn .quick-text {
-  font-size: 20rpx;
-  color: #22c55e;
+  font-size: 11px;
+  color: var(--color-text);
 }
 
 .place-card .card-actions {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: 12px;
   flex-shrink: 0;
+  width: 100%;
+  justify-content: flex-end;
 }
 
 .place-card .action-btn {
@@ -445,14 +460,14 @@ export default {
 }
 
 .place-card .action-icon {
-  font-size: 24rpx;
-  color: #999;
+  font-size: 15px;
+  color: var(--color-text-muted);
   line-height: 1;
 }
 
 .place-card .action-text {
-  font-size: 20rpx;
-  color: #999;
+  font-size: 11px;
+  color: var(--color-text-muted);
 }
 
 .place-card .action-btn.active .action-icon {
@@ -471,5 +486,16 @@ export default {
   0% { transform: scale(0.8); }
   50% { transform: scale(1.1); }
   100% { transform: scale(1); }
+}
+
+.place-card .card-cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.quick-icon {
+  display: none;
 }
 </style>

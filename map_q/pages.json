@@ -74,6 +74,26 @@
       }
     },
     {
+      "path": "pages/service-ticket-preview/index",
+      "style": { "navigationBarTitleText": "票卡预览", "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/ticket-detail/index",
+      "style": { "navigationBarTitleText": "演出详情", "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/service-params/index",
+      "style": { "navigationBarTitleText": "预约参数", "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/message-board-editor/index",
+      "style": { "navigationBarTitleText": "创建留言板", "navigationStyle": "custom" }
+    },
+    {
+      "path": "pages/message-board-detail/index",
+      "style": { "navigationBarTitleText": "留言板", "navigationStyle": "custom" }
+    },
+    {
       "path": "pages/plus/index",
       "style": {
         "navigationBarTitleText": "发布",
@@ -345,44 +365,44 @@
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "uni-app",
     "navigationBarBackgroundColor": "#F8F8F8",
-    "backgroundColor": "#F8F8F8"
+    "backgroundColor": "#F6F6F5"
   },
   "tabBar": {
     "custom": true,
-    "color": "#7A7E83",
-    "selectedColor": "#ffd700",
+    "color": "#737373",
+    "selectedColor": "#202020",
     "borderStyle": "black",
-    "backgroundColor": "#ffffff",
+    "backgroundColor": "#FFFFFF",
     "list": [
       {
         "pagePath": "pages/index/index",
         "text": "首页",
         "iconPath": "static/tabbar/home.png",
-        "selectedIconPath": "static/tabbar/home-active.png"
+        "selectedIconPath": "static/tabbar/home.png"
       },
       {
         "pagePath": "pages/service/index",
         "text": "服务",
         "iconPath": "static/tabbar/service.png",
-        "selectedIconPath": "static/tabbar/service-active.png"
+        "selectedIconPath": "static/tabbar/service.png"
       },
       {
         "pagePath": "pages/plus/index",
         "text": "发布",
-        "iconPath": "static/tabbar/plus.png",
+        "iconPath": "static/tabbar/plus-active.png",
         "selectedIconPath": "static/tabbar/plus-active.png"
       },
       {
         "pagePath": "pages/message/index",
         "text": "消息",
         "iconPath": "static/tabbar/message.png",
-        "selectedIconPath": "static/tabbar/message-active.png"
+        "selectedIconPath": "static/tabbar/message.png"
       },
       {
         "pagePath": "pages/my/index",
         "text": "我的",
         "iconPath": "static/tabbar/my.png",
-        "selectedIconPath": "static/tabbar/my-active.png"
+        "selectedIconPath": "static/tabbar/my.png"
       }
     ]
   }

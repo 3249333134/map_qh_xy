@@ -12,7 +12,7 @@
           <text class="plus-sign">+</text>
         </view>
       </view>
-      <image v-else class="icon" :src="selectedIndex === index ? item.selectedIconPath : item.iconPath" mode="aspectFit" />
+      <image v-else class="icon" :class="{ 'active-icon': selectedIndex === index }" :src="item.iconPath" mode="aspectFit" />
       <text class="label">{{ item.text }}</text>
     </view>
   </view>
@@ -124,13 +124,9 @@ export default {
   align-items: center;
   justify-content: space-around;
   height: 48px;
-  background-color: rgba(255,255,255,.98);
-  border-top: 1px solid var(--color-border);
-  box-shadow: 0 -8px 24px rgba(15,23,42,.07);
-  backdrop-filter: blur(18px) saturate(135%);
   padding-bottom: 10px;
   overflow: visible;
-}
+ background-color: var(--color-surface-glass); border-top: 1px solid rgba(255,255,255,.9); border-radius: 24px 24px 0 0; box-shadow: var(--shadow-sheet); backdrop-filter: blur(24px) saturate(135%); -webkit-backdrop-filter: blur(24px) saturate(135%); }
 .tabbar-item {
   flex: 1;
   height: 48px;
@@ -147,7 +143,10 @@ export default {
 .icon {
   width: 23px;
   height: 23px;
+  opacity: .72;
+  transition: opacity 160ms ease, filter 160ms ease;
 }
+.active-icon { opacity: 1; filter: brightness(0) opacity(.88); }
 .label {
   font-size: 11px;
   color: var(--color-text-body);
@@ -168,19 +167,19 @@ export default {
 .publish-hit-area {
   position: relative;
   z-index: 100;
-  width: 80px;
-  height: 68px;
-  margin-top: -22px;
+  width: 72px;
+  height: 64px;
+  margin-top: -18px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .plus-wrapper {
-  width: 58px;
-  height: 58px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
-  background: #ea580c;
-  border: 4px solid #ffffff;
+  background: var(--gradient-publish);
+  border: 3px solid #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -188,23 +187,22 @@ export default {
   overflow: hidden;
   opacity: 1;
   visibility: visible;
-  box-shadow: 0 10px 26px rgba(234,88,12,.38);
+  box-shadow: 0 4px 12px rgba(0,0,0,.10);
   transition: transform var(--motion-fast) var(--ease-standard), opacity var(--motion-fast) ease;
 }
-.plus-wrapper:active {
-  transform: scale(0.92);
-}
-.plus-sign { color: #fff; font-size: 36px; font-weight: 300; line-height: 1; pointer-events: none; transition: transform 180ms ease; }
-.plus-wrapper.open { background: #c2410c; box-shadow: 0 10px 26px rgba(194,65,12,.42); }
+.plus-wrapper:active { transform: scale(0.94); }
+.plus-sign { color: #fff; font-size: 28px; font-weight: 300; line-height: 1; pointer-events: none; transition: transform 180ms ease; }
+.plus-wrapper.open { background: var(--color-accent-strong); box-shadow: 0 7px 18px rgba(0, 0, 0, 0.1); }
 .plus-wrapper.open .plus-sign { transform: rotate(45deg); }
 @media screen and (max-width: 375px) {
   .publish-hit-area { width: 66px; height: 66px; }
-  .plus-wrapper { width: 56px; height: 56px; }
-  .plus-sign { font-size: 34px; }
+  .plus-wrapper { width: 48px; height: 48px; box-shadow: 0 4px 12px rgba(0,0,0,.10); }
+  .plus-sign { font-size: 28px; }
 }
 @media screen and (min-width: 414px) {
   .publish-hit-area { width: 78px; height: 70px; }
-  .plus-wrapper { width: 60px; height: 60px; }
-  .plus-sign { font-size: 36px; }
+  .plus-wrapper { width: 48px; height: 48px; box-shadow: 0 4px 12px rgba(0,0,0,.10); }
+  .plus-sign { font-size: 28px; }
 }
+
 </style>

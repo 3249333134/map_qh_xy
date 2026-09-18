@@ -1,5 +1,8 @@
+import { TEST_VIDEOS, TEST_MEDIA_VERSION, getTestVideo } from '../testMedia.js'
+import { isMockEnabled } from '../mockMapData.js'
 import { getContentImages, getPointCoordinates } from '../contentResolver.js'
 import { asArray, readVersioned, writeVersioned } from './storage.js'
+import { normalizeService } from '../serviceCatalog.js'
 
 const VERSION = 1
 const CACHE_KEY = 'CONTENT_DETAIL_CACHE_V1'
@@ -21,7 +24,9 @@ function defaultSlots() {
 export function normalizeContentDetail(input = {}, requestedType = '') {
   const type = safeType(requestedType || input.type)
   const id = String(input.id || input._id || `${type}_preview`)
-  const coordinates = getPointCoordinates(input)
+  const normalizedLocation = input.location
+  const hasNormalizedLocation = type === 'video' && Number.isFinite(normalizedLocation?.longitude) && Number.isFinite(normalizedLocation?.latitude) && Math.abs(normalizedLocation.longitude) <= 180 && Math.abs(normalizedLocation.latitude) <= 90
+  const coordinates = getPointCoordinates(input) || (hasNormalizedLocation ? [normalizedLocation.longitude, normalizedLocation.latitude] : null)
   const title = input.title || input.name || {
     normal: '城市里的今日灵感',
     video: '城市漫步影像',
@@ -38,6 +43,7 @@ export function normalizeContentDetail(input = {}, requestedType = '') {
     id,
     _id: id,
     type,
+    demoVersion: input.demoVersion,
     title,
     name: title,
     description,
@@ -54,8 +60,8 @@ export function normalizeContentDetail(input = {}, requestedType = '') {
       : images.map((url, index) => ({ id: `${id}_media_${index}`, type: type === 'video' && index === 0 ? 'video' : 'image', url })),
     images,
     location: coordinates ? {
-      name: input.locationName || input.poiName || input.address || title,
-      address: input.address || input.detailAddress || '四川省成都市锦江区',
+      name: input.locationName || input.poiName || (type === 'video' ? input.location?.name : '') || input.address || (type === 'video' ? '' : title),
+      address: input.address || input.detailAddress || (type === 'video' ? input.location?.address || '' : '四川省成都市锦江区'),
       latitude: Number(coordinates[1]),
       longitude: Number(coordinates[0]),
       distanceText: input.distanceText || input.distance || '地图范围内'
@@ -77,7 +83,7 @@ export function normalizeContentDetail(input = {}, requestedType = '') {
 
   if (type === 'video') {
     base.video = {
-      url: input.videoUrl || input.url || '',
+      url: input.videoUrl || input.video?.url || input.url || '',
       poster: input.cover || images[0],
       duration: Number(input.duration || 125)
     }
@@ -116,23 +122,29 @@ export function normalizeContentDetail(input = {}, requestedType = '') {
     Object.assign(base, { startTime: base.event.startTime, endTime: base.event.endTime, registrationDeadline: base.event.registrationDeadline, participants: base.event.participantCount, maxParticipants: base.event.capacity, fee: base.event.fee, rules: base.event.rules, status: new Date(base.event.startTime).getTime() > Date.now() ? 'upcoming' : 'ongoing', address: base.location?.address || '' })
   }
   if (type === 'service') {
+    const normalizedService = normalizeService({ ...input, id, title, description, media: base.media, location: input.location || base.location })
     base.service = {
-      provider: input.provider || { id: `provider_${id}`, name: authorName, kind: input.providerKind || 'merchant', verified: input.verified !== false },
-      verification: input.verification || { status: input.verified === false ? 'unverified' : 'verified', label: input.verified === false ? '身份待认证' : '主体已认证' },
-      pricing: input.pricing || { mode: 'fixed', amount: Number(input.price || 88), unit: '次', requiresPayment: Boolean(input.requiresPayment) },
+      category: normalizedService.serviceCategory,
+      packages: normalizedService.packages,
+      bookingConfig: normalizedService.bookingConfig,
+      venue: normalizedService.venue,
+      highlights: normalizedService.highlights,
+      provider: normalizedService.provider,
+      verification: normalizedService.verification,
+      pricing: normalizedService.pricing,
       serviceArea: input.serviceArea || { mode: 'radius', radiusKm: 5, description: '到店或 5km 范围内上门服务' },
-      availableSlots: asArray(input.availableSlots).length ? input.availableSlots : defaultSlots(),
+      availableSlots: normalizedService.availableSlots,
       reviews: asArray(input.reviews).length ? input.reviews : [
         { id: 'review_1', authorName: '林女士', rating: 5, content: '沟通清楚，服务过程专业可靠。', createdAt: nowIso(), merchantReply: '' }
       ],
-      policies: input.policies || {
+      policies: normalizedService.policies || {
         cancellation: '开始前 24 小时可免费取消',
         reschedule: '开始前 12 小时可免费改期一次',
         refund: '符合取消规则的订单原路退回',
         privacy: '联系方式仅用于本次服务履约'
       }
     }
-    Object.assign(base, { provider: base.service.provider, verification: base.service.verification, pricing: base.service.pricing, price: base.service.pricing.amount, serviceArea: base.service.serviceArea, availableSlots: base.service.availableSlots, reviews: base.service.reviews, policies: base.service.policies, address: base.location?.address || '' })
+    Object.assign(base, { serviceCategory: normalizedService.serviceCategory, category: normalizedService.serviceCategory, packages: base.service.packages, bookingConfig: base.service.bookingConfig, venue: base.service.venue, highlights: base.service.highlights, provider: base.service.provider, verification: base.service.verification, pricing: base.service.pricing, price: base.service.pricing.amount, serviceArea: base.service.serviceArea, availableSlots: base.service.availableSlots, reviews: base.service.reviews, policies: base.service.policies, address: base.location?.address || normalizedService.address })
   }
   if (type === 'track') {
     const line = input.location?.type === 'LineString' ? asArray(input.location.coordinates) : []
@@ -161,7 +173,7 @@ function findCandidate(id, type) {
     uni.getStorageSync(type === 'service' ? 'SERVICE_LAST_ITEM' : 'INDEX_LAST_ITEM'),
     uni.getStorageSync('BOOKING_ITEM')
   ].filter(Boolean)
-  return candidates.find(item => String(item.id || item._id || '') === String(id)) || candidates[0] || {}
+  return candidates.find(item => String(item.id || item._id || '') === String(id) && (type !== 'video' || item.type === 'video')) || (type === 'video' ? null : candidates[0] || {})
 }
 
 export const contentDetailApi = {
@@ -169,8 +181,15 @@ export const contentDetailApi = {
     const cache = readVersioned(CACHE_KEY, VERSION, {})
     const cacheKey = `${safeType(type)}:${id}`
     const cached = cache[cacheKey]
-    if (cached && !options.force && Date.now() - cached.cachedAt < 10 * 60 * 1000) return cached.detail
-    const detail = normalizeContentDetail(findCandidate(id, type), type)
+    const demoIndex = type === 'video' && isMockEnabled() ? TEST_VIDEOS.findIndex(item => item.id === String(id)) : -1
+    const validCache = cached && (!cached.detail?.demoVersion || isMockEnabled()) && cached.detail?.id === String(id) && cached.detail?.type === type && (demoIndex < 0 || cached.detail.demoVersion === TEST_MEDIA_VERSION)
+    if (validCache && !options.force && Date.now() - cached.cachedAt < 10 * 60 * 1000) {
+      uni.setStorageSync(ACTIVE_DETAIL_KEY, cached.detail)
+      return cached.detail
+    }
+    const candidate = demoIndex >= 0 ? getTestVideo(demoIndex) : findCandidate(id, type)
+    if (!candidate || (type === 'video' && candidate.demoVersion && !isMockEnabled())) throw new Error('未找到这条视频，请返回列表重新打开')
+    const detail = normalizeContentDetail(candidate, type)
     detail.id = String(id || detail.id)
     detail._id = detail.id
     cache[cacheKey] = { detail, cachedAt: Date.now() }

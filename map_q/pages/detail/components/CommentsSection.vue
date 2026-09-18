@@ -70,7 +70,7 @@ export default {
 .comment-count-section {
   background: #fff;
   padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-surface-muted);
   position: sticky;
   top: 80px;
   z-index: 10;
@@ -78,7 +78,7 @@ export default {
 .comment-count {
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text);
   border-left: 3px solid #007AFF;
   padding-left: 12px;
 }
@@ -91,15 +91,15 @@ export default {
 .empty-comments {
   padding: 30px 0;
   text-align: center;
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 14px;
 }
 
 .load-more {
   padding: 16px 0;
   text-align: center;
-  color: #666;
+  color: var(--color-text-body);
   font-size: 14px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--color-surface-muted);
 }
 </style>

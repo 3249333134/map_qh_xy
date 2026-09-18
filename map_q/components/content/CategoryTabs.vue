@@ -46,10 +46,10 @@ export default {
   display: inline-block;
   padding: 16rpx 32rpx;
   margin-right: 20rpx;
-  background: #f5f5f5;
+  background: var(--color-page);
   border-radius: 40rpx;
   font-size: 28rpx;
-  color: #666;
+  color: var(--color-text-body);
   transition: all 0.3s;
 }
 

@@ -1,4 +1,5 @@
 import { ref, reactive } from 'vue'
+import { isWeChatTouristRuntime } from '../../../utils/wechatRuntime.js'
 import {
   createDefaultMapExploreState,
   loadMapExploreState,
@@ -155,8 +156,8 @@ export function useMapManager() {
               : (selected ? (point.name || point.title || '已选中') : ''),
           fontSize: 12,
           borderRadius: 16,
-          bgColor: isCluster ? '#ea580c' : isCandidate ? '#fffbeb' : '#ffffff',
-          color: isCluster ? '#ffffff' : isCandidate ? '#92400e' : '#0f172a',
+          bgColor: isCluster ? '#16b8a7' : isCandidate ? '#fff1ee' : '#ffffff',
+          color: isCluster ? '#ffffff' : isCandidate ? '#e74862' : '#182033',
           padding: 7,
           display: isCluster || isCandidate || selected ? 'ALWAYS' : 'BYCLICK'
         }
@@ -193,6 +194,18 @@ export function useMapManager() {
   })
 
   const requestLocationPermission = async () => {
+    if (isWeChatTouristRuntime()) {
+      const fallback = {
+        latitude: Number(mapConfig.latitude || 30.572269),
+        longitude: Number(mapConfig.longitude || 104.066541),
+        unavailable: true,
+        reason: 'tourist-runtime'
+      }
+      setCenter(fallback.latitude, fallback.longitude, mapConfig.scale || 14, {
+        cityName: exploreState.center?.cityName || '成都市'
+      })
+      return fallback
+    }
     try {
       if (typeof uni.getSetting !== 'function' || typeof uni.authorize !== 'function') {
         return getUserLocation()
@@ -206,9 +219,7 @@ export function useMapManager() {
         await uni.authorize({ scope: 'scope.userLocation' })
       }
       return getUserLocation()
-    } catch (error) {
-      throw error
-    }
+    } catch (error) { throw error }
   }
 
   const setCenter = (latitude, longitude, scale = mapConfig.scale, city = {}) => {

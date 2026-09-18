@@ -62,7 +62,7 @@ export default {
 .title {
   font-size: 40rpx;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--color-text);
   line-height: 1.4;
   display: block;
   margin-bottom: 16rpx;
@@ -72,11 +72,11 @@ export default {
   display: flex;
   align-items: center;
   font-size: 24rpx;
-  color: #64748b;
+  color: var(--color-text-body);
 }
 
 .author-name {
-  color: #374151;
+  color: var(--color-text);
   font-weight: 500;
 }
 
@@ -86,7 +86,7 @@ export default {
 
 .publish-time,
 .view-count {
-  color: #9ca3af;
+  color: var(--color-text-muted);
 }
 
 .description {
@@ -95,7 +95,7 @@ export default {
 
 .desc-text {
   font-size: 30rpx;
-  color: #4b5563;
+  color: var(--color-text-body);
   line-height: 1.8;
   white-space: pre-wrap;
 }
@@ -109,20 +109,20 @@ export default {
 
 .tag {
   font-size: 24rpx;
-  color: #666;
-  background: #f0f0f0;
+  color: var(--color-text-body);
+  background: var(--color-surface-muted);
   padding: 8rpx 20rpx;
   border-radius: 20rpx;
 }
 
 .meta-info {
   padding-top: 20rpx;
-  border-top: 1rpx solid #f3f4f6;
+  border-top: 1rpx solid var(--color-surface-muted);
 }
 
 .location {
   font-size: 24rpx;
-  color: #64748b;
+  color: var(--color-text-body);
   display: flex;
   align-items: center;
 }

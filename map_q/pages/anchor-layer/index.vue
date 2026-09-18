@@ -166,8 +166,8 @@ function onAnchorTap(anchor) {
 <style scoped>
 .anchor-layer-page {
   min-height: 100vh;
-  background: #f7f7f8;
-  color: #222;
+  background: var(--color-page);
+  color: var(--color-text);
 }
 
 .status-spacer {
@@ -182,7 +182,7 @@ function onAnchorTap(anchor) {
   justify-content: center;
   position: relative;
   background: #fff;
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .nav-back {
@@ -194,8 +194,8 @@ function onAnchorTap(anchor) {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #f0f1f3;
-  color: #222;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
   font-size: 56rpx;
   line-height: 56rpx;
 }
@@ -203,7 +203,7 @@ function onAnchorTap(anchor) {
 .nav-title {
   font-size: 34rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .nav-right {
@@ -236,8 +236,8 @@ function onAnchorTap(anchor) {
   margin-bottom: 28rpx;
   overflow: hidden;
   border-radius: 28rpx;
-  background: #e2e8f0;
-  box-shadow: 0 12rpx 34rpx rgba(15,23,42,.12);
+  background: var(--color-border);
+  box-shadow: 0 12rpx 34rpx rgba(0, 0, 0, 0.1);
 }
 
 .context-map {
@@ -257,13 +257,13 @@ function onAnchorTap(anchor) {
   border: 1rpx solid rgba(255,255,255,.88);
   border-radius: 28rpx;
   background: rgba(255,255,255,.94);
-  color: #334155;
-  box-shadow: 0 8rpx 24rpx rgba(15,23,42,.14);
-  backdrop-filter: blur(14px);
+  color: var(--color-text);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
 }
 
 .caption-text { font-size: 23rpx; font-weight: 700; }
-.caption-pulse { width: 14rpx; height: 14rpx; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 7rpx rgba(34,197,94,.16); }
+.caption-pulse { width: 14rpx; height: 14rpx; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 7rpx rgba(0, 0, 0, 0.1); }
 
 .radar-zone {
   padding: 40rpx 0 36rpx;
@@ -352,7 +352,7 @@ function onAnchorTap(anchor) {
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background: #24d06c;
-  box-shadow: 0 0 0 8rpx rgba(36, 208, 108, 0.2);
+  box-shadow: 0 0 0 8rpx rgba(0, 0, 0, 0.1);
 }
 
 .radar-dot {
@@ -361,7 +361,7 @@ function onAnchorTap(anchor) {
   height: 20rpx;
   border-radius: 50%;
   background: #24d06c;
-  box-shadow: 0 0 0 6rpx rgba(36, 208, 108, 0.25);
+  box-shadow: 0 0 0 6rpx rgba(0, 0, 0, 0.1);
 }
 
 .radar-dot.d1 {
@@ -373,27 +373,27 @@ function onAnchorTap(anchor) {
   top: 64%;
   left: 36%;
   background: var(--color-info);
-  box-shadow: 0 0 0 6rpx rgba(118, 80, 200, 0.25);
+  box-shadow: 0 0 0 6rpx rgba(0, 0, 0, 0.1);
 }
 
 .radar-dot.d3 {
   top: 50%;
   left: 78%;
   background: #f6b33b;
-  box-shadow: 0 0 0 6rpx rgba(246, 179, 59, 0.25);
+  box-shadow: 0 0 0 6rpx rgba(0, 0, 0, 0.1);
 }
 
 .radar-dot.d4 {
   top: 70%;
   left: 60%;
   background: var(--color-info);
-  box-shadow: 0 0 0 6rpx rgba(36, 140, 245, 0.25);
+  box-shadow: 0 0 0 6rpx rgba(0, 0, 0, 0.1);
 }
 
 .radar-hint {
   margin-top: 28rpx;
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .section-title {
@@ -401,13 +401,13 @@ function onAnchorTap(anchor) {
   font-size: 32rpx;
   line-height: 44rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .layer-card {
   background: #fff;
   border-radius: 14rpx;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
 
@@ -416,7 +416,7 @@ function onAnchorTap(anchor) {
   align-items: center;
   gap: 20rpx;
   padding: 28rpx;
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .layer-row.last {
@@ -448,14 +448,14 @@ function onAnchorTap(anchor) {
   display: block;
   font-size: 30rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .layer-desc {
   display: block;
   margin-top: 6rpx;
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .toggle {
@@ -480,7 +480,7 @@ function onAnchorTap(anchor) {
   height: 44rpx;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
   transition: left 0.2s;
 }
 
@@ -498,7 +498,7 @@ function onAnchorTap(anchor) {
   padding: 28rpx 24rpx;
   background: #fff;
   border-radius: 14rpx;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -523,13 +523,13 @@ function onAnchorTap(anchor) {
   margin-top: 18rpx;
   font-size: 30rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .anchor-desc {
   margin-top: 6rpx;
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .bottom-spacer {

@@ -142,7 +142,7 @@ const openResult = (res) => {
 <style scoped>
 .search-page {
   min-height: 100vh;
-  background: #f7f7f8;
+  background: var(--color-page);
   display: flex;
   flex-direction: column;
 }
@@ -157,7 +157,7 @@ const openResult = (res) => {
   gap: 20rpx;
   padding: 18rpx 28rpx 24rpx;
   background: #ffffff;
-  border-bottom: 1rpx solid #f0f1f3;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .search-field {
@@ -167,14 +167,14 @@ const openResult = (res) => {
   display: flex;
   align-items: center;
   border-radius: 999rpx;
-  background: #f0f1f3;
+  background: var(--color-surface-muted);
 }
 
 .search-glyph {
   width: 28rpx;
   height: 28rpx;
   margin-right: 16rpx;
-  border: 4rpx solid #8a8f98;
+  border: 4rpx solid var(--color-text-muted);
   border-radius: 50%;
   position: relative;
   flex-shrink: 0;
@@ -187,7 +187,7 @@ const openResult = (res) => {
   right: -10rpx;
   bottom: -4rpx;
   border-radius: 4rpx;
-  background: #8a8f98;
+  background: var(--color-text-muted);
   transform: rotate(45deg);
 }
 
@@ -195,7 +195,7 @@ const openResult = (res) => {
   flex: 1;
   height: 72rpx;
   font-size: 28rpx;
-  color: #222;
+  color: var(--color-text);
 }
 
 .clear-btn {
@@ -214,7 +214,7 @@ const openResult = (res) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #5f646d;
+  color: var(--color-text-body);
   font-size: 28rpx;
 }
 
@@ -238,17 +238,17 @@ const openResult = (res) => {
 .section-title {
   font-size: 30rpx;
   font-weight: 800;
-  color: #222;
+  color: var(--color-text);
 }
 
 .section-action {
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .section-count {
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 /* 最近搜索 chips */
@@ -263,12 +263,12 @@ const openResult = (res) => {
   border-radius: 999rpx;
   background: #ffffff;
   border: 1rpx solid #eceef1;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .recent-chip-text {
   font-size: 26rpx;
-  color: #5f646d;
+  color: var(--color-text-body);
 }
 
 /* 搜索结果列表 */
@@ -285,7 +285,7 @@ const openResult = (res) => {
   padding: 26rpx 24rpx;
   border-radius: 18rpx;
   background: #ffffff;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .result-icon {
@@ -299,16 +299,16 @@ const openResult = (res) => {
 }
 
 .result-icon.red {
-  background: linear-gradient(135deg, #ff6a6a 0%, #ff3b3b 100%);
-  box-shadow: 0 6rpx 16rpx rgba(255, 59, 59, 0.28);
+  background: #ff6a6a;
+  box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.1);
 }
 .result-icon.orange {
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
-  box-shadow: 0 6rpx 16rpx rgba(255, 91, 53, 0.28);
+  background: var(--color-primary);
+  box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.1);
 }
 .result-icon.green {
-  background: linear-gradient(135deg, #4be08a 0%, #24d06c 100%);
-  box-shadow: 0 6rpx 16rpx rgba(36, 208, 108, 0.28);
+  background: #4be08a;
+  box-shadow: 0 6rpx 16rpx rgba(0, 0, 0, 0.1);
 }
 
 .result-icon-text {
@@ -331,13 +331,13 @@ const openResult = (res) => {
 .result-title {
   font-size: 30rpx;
   font-weight: 800;
-  color: #222;
+  color: var(--color-text);
 }
 
 .result-source {
   font-size: 20rpx;
-  color: #8a8f98;
-  background: #f0f1f3;
+  color: var(--color-text-muted);
+  background: var(--color-surface-muted);
   padding: 2rpx 12rpx;
   border-radius: 999rpx;
 }
@@ -346,7 +346,7 @@ const openResult = (res) => {
   display: block;
   margin-top: 8rpx;
   font-size: 25rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -380,12 +380,12 @@ const openResult = (res) => {
   padding: 24rpx 28rpx;
   border-radius: 18rpx;
   background: #ffffff;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .tip-text {
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
   line-height: 38rpx;
 }
 </style>

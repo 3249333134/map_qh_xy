@@ -1,6 +1,6 @@
 <template>
   <view
-    class="card track-card app-card"
+    class="card track-card app-card content-card"
     :style="{ '--card-height': height + 'rpx' }">
     <!-- 卡片上半部分：地图轨迹预览 -->
     <view
@@ -290,7 +290,7 @@ export default {
 
       // 绘制轨迹线
       ctx.beginPath()
-      ctx.strokeStyle = '#0ea5e9'
+      ctx.strokeStyle = '#3182f6'
       ctx.lineWidth = 4
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
@@ -354,7 +354,7 @@ export default {
   border-radius: 16rpx;
   background-color: #fff;
   overflow: hidden;
-  box-shadow: 0 8rpx 24rpx rgba(31, 41, 55, 0.08);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.08);
   width: 100%;
   box-sizing: border-box;
   border: 1rpx solid rgba(226, 232, 240, 0.9);
@@ -387,7 +387,7 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background: radial-gradient(circle at 75% 24%,rgba(34,197,94,.22),transparent 30%),linear-gradient(135deg,#e0f2fe,#f0fdf4 56%,#f8fafc);
+  background: radial-gradient(circle at 75% 24%,rgba(34,197,94,.22),transparent 30%),linear-gradient(135deg,#e0f2fe,#f0fdf4 56%,var(--color-page));
   background-image:
     linear-gradient(90deg, rgba(100, 116, 139, 0.14) 1rpx, transparent 1rpx),
     linear-gradient(rgba(100, 116, 139, 0.12) 1rpx, transparent 1rpx),
@@ -425,7 +425,7 @@ export default {
 
 /* 终点标记 */
 .end-marker {
-  background: #f97316;
+  background: var(--color-primary);
   width: 22rpx;
   height: 22rpx;
 }
@@ -438,17 +438,19 @@ export default {
   display: flex;
   align-items: center;
   gap: 10rpx;
-  padding: 6rpx 14rpx;
-  border-radius: 20rpx;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 4rpx 12rpx rgba(15, 23, 42, 0.1);
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  background: rgba(250,253,252,.92);
+  color: #365747;
+  border-radius: 12px;
+  padding: 7px 10px;
+  backdrop-filter: blur(12px);
 }
 
 .track-distance {
-  color: #0f172a;
-  font-size: 23rpx;
-  font-weight: 700;
   white-space: nowrap;
+  color: #263d32;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .overlay-dot {
@@ -459,9 +461,9 @@ export default {
 }
 
 .track-duration {
-  color: #64748b;
-  font-size: 21rpx;
   white-space: nowrap;
+  color: #52655e;
+  font-size: 11px;
 }
 
 .track-card .card-title {
@@ -470,7 +472,7 @@ export default {
   line-height: 36rpx;
   margin-bottom: 6rpx;
   width: 100%;
-  color: #1f2937;
+  color: var(--color-text);
   display: -webkit-box;
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
@@ -479,7 +481,7 @@ export default {
 
 .track-card .card-author {
   font-size: 22rpx;
-  color: #64748b;
+  color: var(--color-text-body);
   line-height: 28rpx;
   margin-bottom: 10rpx;
   overflow: hidden;
@@ -491,15 +493,16 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 10rpx;
+  gap: 6px;
   width: 100%;
+  flex-wrap: wrap;
 }
 
 .track-card .card-location {
   min-width: 0;
   flex: 1;
   font-size: 22rpx;
-  color: #94a3b8;
+  color: var(--color-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -509,7 +512,7 @@ export default {
 .track-card .card-actions {
   display: flex;
   align-items: center;
-  gap: 12rpx;
+  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -528,7 +531,7 @@ export default {
 }
 
 .track-card .action-icon {
-  font-size: 26rpx;
+  font-size: 15px;
   color: #d1d5db;
   line-height: 1;
 }

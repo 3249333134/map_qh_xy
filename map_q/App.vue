@@ -36,6 +36,20 @@ export default {
     this.computeTabBarMetrics()
     // 统一计算并缓存顶部导航高度（状态栏 + 自定义导航栏）
     this.computeTopNavMetrics()
+    // #ifdef H5
+    // Keep the existing middle tab in place and use it as the overlay toggle.
+    document.addEventListener('click', event => {
+      const item = event.target.closest?.('.uni-tabbar__item')
+      if (!item) return
+      const items = Array.from(item.parentElement.querySelectorAll('.uni-tabbar__item'))
+      if (items.indexOf(item) === 2) {
+        event.preventDefault(); event.stopImmediatePropagation()
+        uni.$emit(this.globalData.showPublishOverlay ? 'hidePublishOverlay' : 'showPublishOverlay')
+      } else if (this.globalData.showPublishOverlay) {
+        event.preventDefault(); event.stopImmediatePropagation()
+      }
+    }, true)
+    // #endif
   },
   onShow: function() {
     console.log('App Show')
@@ -132,25 +146,26 @@ export default {
 
 page {
   background-color: var(--color-page);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
   font-size: 28rpx;
   color: var(--color-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-:root {
+:root,
+page {
   --primary-color: var(--color-primary);
-  --primary-gradient: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  --primary-gradient: var(--gradient-primary);
   --primary-light: var(--color-primary-soft);
   --primary-dark: var(--color-primary-strong);
-  --accent-color: var(--color-info);
-  --accent-light: var(--color-info-soft);
+  --accent-color: var(--color-explore);
+  --accent-light: var(--color-explore-soft);
   
   --secondary-blue: var(--color-info);
   --secondary-green: var(--color-success);
-  --secondary-purple: var(--color-info);
-  --secondary-orange: var(--color-primary);
+  --secondary-purple: var(--color-lavender);
+  --secondary-orange: var(--color-publish-warm);
   
   --text-primary: var(--color-text);
   --text-secondary: var(--color-text-body);
@@ -159,7 +174,7 @@ page {
   
   --bg-primary: var(--color-surface);
   --bg-secondary: var(--color-page);
-  --bg-tertiary: var(--color-surface-soft);
+  --bg-tertiary: var(--color-surface-muted);
   --bg-card: var(--color-surface);
   
   --border-color: var(--color-border);
@@ -179,24 +194,17 @@ page {
   --space-4: 32rpx;
   --space-6: 48rpx;
   --surface-raised: rgba(255, 255, 255, 0.96);
-  --surface-soft: #fffaf7;
-  --border-soft: rgba(148, 163, 184, 0.22);
-  --shadow-panel: 0 -16rpx 56rpx rgba(15, 23, 42, 0.12);
-}
-
-.card {
-  border-radius: var(--radius-md);
-  background-color: var(--bg-card);
-  overflow: hidden;
-  box-shadow: var(--shadow-lg);
+  --surface-soft: var(--color-surface-raised);
+  --border-soft: var(--color-border);
+  --shadow-panel: var(--shadow-sheet);
 }
 
 .btn-primary {
   background: var(--primary-gradient);
   color: var(--text-white);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-control);
   font-weight: 600;
-  box-shadow: 0 6rpx 14rpx rgba(255, 122, 69, 0.3);
+  box-shadow: 0 10rpx 24rpx rgba(0, 0, 0, 0.1);
 }
 
 .btn-primary:active {
@@ -310,21 +318,21 @@ view {
   -webkit-tap-highlight-color: transparent;
 }
 
-.card.map-card {
+.map-card {
   border: 1rpx solid var(--border-soft);
-  border-radius: 24rpx !important;
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
   transform: translateZ(0);
   transition: transform 180ms var(--ease-standard), box-shadow 180ms var(--ease-standard);
 }
 
-.card.map-card:active {
+.map-card:active {
   transform: scale(.985);
-  box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.08);
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.08);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card.map-card,
+  .map-card,
   .btn-primary,
   .fade-in,
   .slide-up,
@@ -339,4 +347,13 @@ text {
   font-size: 28rpx;
   line-height: 1.5;
 }
+
+/* #ifdef H5 */
+.creation-overlay-open uni-tabbar { position:static!important; z-index:auto!important; height:0!important; }
+.creation-overlay-open .uni-tabbar { position:static!important; height:0!important; z-index:auto!important; background:transparent!important; box-shadow:none!important; backdrop-filter:none!important; -webkit-backdrop-filter:none!important; pointer-events:none; }
+.creation-overlay-open .uni-tabbar::before { content:''; position:fixed; left:0; right:0; bottom:0; height:50px; z-index:8000; border-radius:24px 24px 0 0; background:rgba(250,253,252,.9); }
+.creation-overlay-open .uni-tabbar__item { z-index:8001; pointer-events:none; }
+.creation-overlay-open .uni-tabbar__item:nth-last-child(3) { z-index:10001; pointer-events:auto; }
+.creation-overlay-open .uni-tabbar__item:nth-last-child(3) .uni-tabbar__icon::after { transform:rotate(45deg); }
+/* #endif */
 </style>

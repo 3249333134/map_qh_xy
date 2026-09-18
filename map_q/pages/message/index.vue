@@ -1,5 +1,6 @@
 <template>
   <view class="message-page">
+    <MessageContextMap :context="chatMapContext" :top-inset="topOffset + 68" :focus-revision="mapFocusRevision" @open="openMapConversation" />
     <view class="status-bar" :style="{ height: topOffset + 'px' }"></view>
 
     <view class="top-area" :style="{ paddingRight: rightPadding + 'rpx' }">
@@ -44,6 +45,7 @@
       </view>
     </view>
 
+    <view class="message-sheet" :style="{ bottom: bottomOffset + 'px' }">
     <view v-if="!isSearching" class="tab-bar">
       <view
         v-for="(tab, index) in tabs"
@@ -184,7 +186,7 @@
           v-for="(message, index) in currentMessages"
           :key="message.id"
           class="conversation-row"
-          :class="{ pinned: message.pinned }"
+          :class="{ pinned: message.pinned, 'map-selected': mapMessage && mapMessage.id === message.id }"
           @touchstart="startSwipe($event, index)"
           @touchmove="onSwipe($event)"
           @touchend="endSwipe"
@@ -213,6 +215,7 @@
                     {{ message.draft ? `[草稿] ${message.draft}` : (message.deliveryState === 'failed' ? `[发送失败] ${message.preview}` : message.preview) }}
                   </text>
                   <view class="conv-right">
+                    <view v-if="activeTab !== 2" class="map-chat-action" @click.stop="focusConversation(message)">{{ mapMessage && mapMessage.id === message.id ? (chatMapContext.location ? '已定位' : '查看中') : message.type === 'direct' ? '双方' : '地图' }}</view>
                     <view v-if="message.actionBtn" class="inline-action" @click.stop="onInlineAction(index, message)">{{ message.actionBtn }}</view>
                     <view v-else-if="message.unread" class="unread-badge">{{ message.unread > 99 ? '99+' : message.unread }}</view>
                   </view>
@@ -227,6 +230,8 @@
           </view>
         </view>
       </scroll-view>
+    </view>
+
     </view>
 
     <view v-if="showActionSheet" class="sheet-mask" @click="closeActionSheet">
@@ -252,6 +257,8 @@
 
 <script>
 import GlobalOverlayHost from '../../components/common/GlobalOverlayHost.vue'
+import MessageContextMap from '../../components/map/MessageContextMap.vue'
+import { resolveMessageMap } from '../../utils/messageMap.js'
 import { conversationApi, channelApi, socialViewStateApi } from '../../utils/api/social.js'
 import { setChannelOpenCommand } from '../../utils/channelOpenCommand.js'
 
@@ -272,7 +279,7 @@ const ICONS = {
 }
 
 export default {
-  components: { GlobalOverlayHost },
+  components: { GlobalOverlayHost, MessageContextMap },
   data() {
     return {
       topOffset: 0,
@@ -288,6 +295,8 @@ export default {
       actionSheetTarget: -1,
       activeTab: 0,
       selectedBubble: 'nearby',
+      mapMessageId: '',
+      mapFocusRevision: 0,
       dragId: '',
       swipeIndex: -1,
       swipeOffset: 0,
@@ -314,7 +323,7 @@ export default {
             { id: 'nearby', iconChar: '近', bgColor: '#22C55E', iconColor: '#fff', unread: 5 },
             { id: 'city', iconChar: '城', bgColor: '#FF9500', iconColor: '#fff', unread: 2 },
             { id: 'outdoor', iconChar: '户', bgColor: '#FF4D4F', iconColor: '#fff', unread: 100 },
-            { id: 'food', iconChar: '食', bgColor: '#8B5CF6', iconColor: '#fff' },
+            { id: 'food', iconChar: '食', bgColor: '#897CFF', iconColor: '#fff' },
             { id: 'photo', iconChar: '摄', bgColor: '#38A7E8', iconColor: '#fff' }
           ]
         },
@@ -375,6 +384,12 @@ export default {
     }
   },
   computed: {
+    mapMessage() {
+      return this.currentMessages.find(item => item.id === this.mapMessageId) || (this.activeTab === 1 ? this.currentMessages[0] : null) || null
+    },
+    chatMapContext() {
+      return resolveMessageMap({ tab: this.activeTab, bucket: this.selectedBubble, message: this.mapMessage, getChannel: id => channelApi.get(id) })
+    },
     tabUnreadCounts() {
       const overview = conversationApi.unreadOverview()
       return [overview.channel, overview.direct, overview.system]
@@ -396,7 +411,7 @@ export default {
     },
     peopleSuggestions() {
       return [
-        { id: 'near-person-1', type: 'contact', name: '安安', avatarColor: '#8B5CF6', avatarText: '安', time: '约 500m', preview: '共同兴趣：摄影、城市漫步' },
+        { id: 'near-person-1', type: 'contact', name: '安安', avatarColor: '#897CFF', avatarText: '安', time: '约 500m', preview: '共同兴趣：摄影、城市漫步' },
         { id: 'near-person-2', type: 'contact', name: '木早', avatarColor: '#3D8BFF', avatarText: '木', time: '约 1.2km', preview: '共同频道：成都街拍兴趣频道' },
         { id: 'near-person-3', type: 'contact', name: '林屿', avatarColor: '#22C55E', avatarText: '林', time: '今天活跃', preview: '共同兴趣：展览、咖啡' }
       ]
@@ -442,14 +457,12 @@ export default {
   },
   onReady() {
     this.calcHeights()
+    this.syncTabSelection()
   },
   onShow() {
     this.restoreHomeState()
     this.restoreConversationState()
-    try {
-      const tab = typeof this.getTabBar === 'function' ? this.getTabBar() : null
-      if (tab && tab.setData) tab.setData({ selected: 3 })
-    } catch (e) {}
+    this.syncTabSelection()
   },
   onHide() {
     this.persistHomeState()
@@ -459,6 +472,14 @@ export default {
     if (this.undoTimer) clearTimeout(this.undoTimer)
   },
   methods: {
+    syncTabSelection() {
+      this.$nextTick(() => {
+        const pages = getCurrentPages()
+        const page = pages[pages.length - 1]
+        if (page?.route?.replace(/^\//, '') !== 'pages/message/index') return
+        page.getTabBar?.()?.setData({ selected: 3 })
+      })
+    },
     initMetrics() {
       try {
         const info = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
@@ -502,6 +523,7 @@ export default {
     switchTab(index) {
       if (this.activeTab === index) return
       this.activeTab = index
+      this.mapMessageId = ''
       const first = this.currentTabData.channels[0]
       if (first) this.selectedBubble = first.id
       this.currentScrollTop = Number(this.scrollOffsets[this.selectedBubble] || 0)
@@ -509,13 +531,29 @@ export default {
       this.persistHomeState()
     },
     selectBubble(id) {
+      this.mapMessageId = ''
       this.selectedBubble = id
       this.currentScrollTop = Number(this.scrollOffsets[id] || 0)
       this.resetSwipe()
       this.persistHomeState()
     },
+    focusConversation(message) {
+      this.mapMessageId = message.id
+      this.mapFocusRevision += 1
+      this.resetSwipe()
+      if (!this.chatMapContext.location && this.chatMapContext.kind !== 'direct') {
+        uni.showToast({ title: '该聊天尚未标注位置', icon: 'none' })
+      }
+    },
+    openMapConversation() {
+      if (this.mapMessage) return this.openConversation(this.mapMessage)
+      if (this.chatMapContext.channelId && channelApi.get(this.chatMapContext.channelId)) {
+        this.openConversation({ id: this.chatMapContext.channelId, type: 'channel' })
+      }
+    },
     openConversation(message) {
       if (this.isSwipping) return
+      this.mapMessageId = message.id
       this.leaveSearch()
       conversationApi.touch(message.id)
       if (message.type === 'contact') {
@@ -813,6 +851,9 @@ export default {
     toMessageItem(item) {
       return {
         id: item.id,
+        channelId: item.channelId,
+        location: item.location,
+        radius: item.radius,
         type: item.kind === 'system' ? (item.id === 'assistant' ? 'assistant' : 'system_notice') : item.kind,
         name: item.title,
         avatarColor: item.avatarColor || '#3D8BFF',
@@ -859,9 +900,12 @@ export default {
 .top-area {
   display: flex;
   align-items: center;
-  gap: 14rpx;
   padding: 12rpx 86rpx 14rpx 24rpx;
   background: #fff;
+  gap: 8px;
+  padding-left: 14px;
+  padding-top: 12px;
+  padding-bottom: 8px;
 }
 
 .search-bar {
@@ -869,7 +913,7 @@ export default {
   min-width: 0;
   height: 64rpx;
   border-radius: 32rpx;
-  background: #f3f3f5;
+  background: var(--color-surface-muted);
   display: flex;
   align-items: center;
   gap: 12rpx;
@@ -877,7 +921,7 @@ export default {
 }
 
 .search-bar.active {
-  background: #f0f0f3;
+  background: var(--color-surface-muted);
 }
 
 .search-icon {
@@ -890,11 +934,11 @@ export default {
 .search-input {
   flex: 1;
   font-size: 26rpx;
-  color: #9a9a9a;
+  color: var(--color-text-muted);
 }
 
 .search-input {
-  color: #9a9a9a;
+  color: var(--color-text-muted);
   height: 64rpx;
 }
 
@@ -928,7 +972,7 @@ export default {
   width: 64rpx;
   height: 64rpx;
   border-radius: 50%;
-  background: #f3f3f5;
+  background: var(--color-surface-muted);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -947,30 +991,36 @@ export default {
 .add-menu-mask {
   position: fixed;
   inset: 0;
-  z-index: 1000;
-  background: rgba(0, 0, 0, 0.28);
   display: flex;
   justify-content: flex-end;
-  padding-right: 22rpx;
+  align-items: flex-start;
+  z-index: 10020;
+  padding-right: 14px;
+  background: rgba(25,40,36,.16);
 }
 
 .add-menu {
-  width: 280rpx;
-  background: #fff;
-  border-radius: 18rpx;
-  box-shadow: 0 12rpx 40rpx rgba(0, 0, 0, 0.18);
-  overflow: hidden;
+  width: 176px;
+  height: auto;
+  max-height: calc(100vh - 160px);
+  align-self: flex-start;
+  overflow: auto;
+  border-radius: 20px;
+  background: rgba(250,253,252,.96);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: var(--shadow-float);
 }
 
 .menu-item {
-  height: 88rpx;
   display: flex;
   align-items: center;
-  gap: 18rpx;
-  padding: 0 26rpx;
-  border-bottom: 1rpx solid #f1f5f9;
-  font-size: 28rpx;
-  color: #333;
+  border-bottom: 1rpx solid var(--color-surface-muted);
+  color: var(--color-text);
+  height: 48px;
+  gap: 12px;
+  padding: 0 16px;
+  font-size: 14px;
 }
 
 .menu-item:last-child {
@@ -978,15 +1028,18 @@ export default {
 }
 
 .menu-icon {
-  width: 36rpx;
-  height: 36rpx;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .tab-bar {
   position: relative;
   display: flex;
-  height: 88rpx;
-  border-bottom: 1rpx solid #f1f5f9;
+  height: 62px;
+  padding: 12px 14px 6px;
+  gap: 4px;
+  border-bottom: 0;
 }
 
 .tab-item {
@@ -994,13 +1047,18 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  color: #999;
-  font-size: 28rpx;
+  color: var(--color-text-muted);
+  height: 44px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 16px;
+  gap: 4px;
 }
 
 .tab-item.active {
-  color: var(--color-primary);
-  font-weight: 700;
+  background: #e0f2ec;
+  color: #286c5c;
+  font-weight: 600;
 }
 
 .tab-indicator {
@@ -1025,16 +1083,17 @@ export default {
   flex: 1;
   min-height: 0;
   display: flex;
-  background: #fff;
-}
+  background: transparent;
+  overflow: hidden; }
 
 .channel-rail {
-  width: 128rpx;
-  background: var(--color-page);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
+  width: 52px;
+  background: transparent;
+  border-right: 1px solid var(--color-divider);
 }
 
 .channel-scroll {
@@ -1044,20 +1103,21 @@ export default {
 }
 
 .channel-dot {
-  width: 82rpx;
-  height: 82rpx;
-  border-radius: 50%;
-  margin: 10rpx auto 20rpx;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  margin: 8px auto 12px;
+  border-width: 2px;
 }
 
 .channel-dot.active {
   transform: scale(1.08);
-  box-shadow: 0 10rpx 22rpx rgba(255, 107, 53, 0.24);
+  box-shadow: 0 10rpx 22rpx rgba(0, 0, 0, 0.1);
 }
 
 .channel-dot.dragging {
@@ -1070,8 +1130,8 @@ export default {
 }
 
 .channel-icon text {
-  font-size: 28rpx;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .channel-badge {
@@ -1097,12 +1157,12 @@ export default {
 
 .channel-active-bar {
   position: absolute;
-  left: -16rpx;
-  top: 18rpx;
-  bottom: 18rpx;
-  width: 6rpx;
   border-radius: 3rpx;
   background: var(--color-primary);
+  left: -7px;
+  width: 3px;
+  top: 10px;
+  bottom: 10px;
 }
 
 .rail-add {
@@ -1118,41 +1178,38 @@ export default {
 
 .conversation-list {
   flex: 1;
-  background: #fff;
-}
+  width: 0;
+  min-width: 0;
+ background: transparent; }
 
 .refresh-tip {
   height: 56rpx;
   line-height: 56rpx;
   text-align: center;
-  background: #fff4eb;
+  background: var(--color-surface-muted);
   color: var(--color-primary);
   font-size: 24rpx;
 }
 
 .conversation-row {
-  min-height: 126rpx;
   display: flex;
-  align-items: center;
-  gap: 18rpx;
-  padding: 16rpx 18rpx 16rpx 24rpx;
-  background: #fff;
-  border-bottom: 1rpx solid #f1f5f9;
-}
+  align-items: center; min-height: 72px; padding: 12px; margin: 0 10px; gap: 10px; background: transparent; border-radius: 0; border-bottom: 1px solid var(--color-divider); box-shadow: none; }
 
 .conversation-row.pinned {
-  background: #fff9f4;
+  background: rgba(224,242,236,.55);
+  border-radius: 14px;
 }
 
 .conversation-avatar,
 .result-avatar {
-  width: 72rpx;
-  height: 72rpx;
-  border-radius: 18rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  box-shadow: none;
 }
 
 .conversation-avatar text,
@@ -1216,19 +1273,19 @@ export default {
 }
 
 .conv-name {
-  font-size: 30rpx;
-  font-weight: 800;
   color: #202020;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .muted-icon {
   padding: 2rpx 8rpx;
   border-radius: 10rpx;
   background: #ececef;
-  color: #9a9a9a;
+  color: var(--color-text-muted);
   font-size: 18rpx;
   flex-shrink: 0;
 }
@@ -1256,20 +1313,20 @@ export default {
 }
 
 .conv-time {
-  color: #999;
-  font-size: 24rpx;
+  color: var(--color-text-muted);
   margin-left: 16rpx;
   flex-shrink: 0;
+  font-size: 10px;
 }
 
 .conv-preview {
   flex: 1;
   color: #6b6b6b;
-  font-size: 26rpx;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   min-width: 0;
+  font-size: 12px;
 }
 
 .conv-right {
@@ -1328,7 +1385,7 @@ export default {
 
 .section-title {
   display: block;
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 24rpx;
   margin-bottom: 20rpx;
 }
@@ -1343,7 +1400,7 @@ export default {
   padding: 12rpx 24rpx;
   border-radius: 28rpx;
   background: var(--color-page);
-  color: #555;
+  color: var(--color-text-body);
   font-size: 26rpx;
 }
 
@@ -1352,7 +1409,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 18rpx;
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .result-group {
@@ -1366,7 +1423,7 @@ export default {
   justify-content: space-between;
   color: #7b8493;
   font-size: 23rpx;
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .result-group-head text:first-child {
@@ -1385,11 +1442,11 @@ export default {
 .result-name {
   font-size: 30rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .result-preview {
-  color: #777;
+  color: var(--color-text-muted);
   font-size: 25rpx;
   overflow: hidden;
   white-space: nowrap;
@@ -1398,7 +1455,7 @@ export default {
 
 .result-time {
   font-size: 23rpx;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .empty-state {
@@ -1408,7 +1465,7 @@ export default {
   align-items: center;
   justify-content: center;
   gap: 18rpx;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .empty-icon {
@@ -1418,11 +1475,11 @@ export default {
 
 .empty-title {
   font-size: 28rpx;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .empty-desc {
-  color: #b6b6b6;
+  color: var(--color-text-muted);
   font-size: 24rpx;
 }
 
@@ -1467,8 +1524,8 @@ export default {
   line-height: 92rpx;
   text-align: center;
   font-size: 30rpx;
-  color: #333;
-  border-top: 1rpx solid #f1f5f9;
+  color: var(--color-text);
+  border-top: 1rpx solid var(--color-surface-muted);
 }
 
 .sheet-item.danger {
@@ -1478,7 +1535,7 @@ export default {
 .sheet-cancel {
   margin-top: 12rpx;
   border-top: 10rpx solid #F5F5F7;
-  color: #333;
+  color: var(--color-text);
 }
 
 .round-tool,
@@ -1509,7 +1566,7 @@ export default {
   position: absolute;
   left: 50%;
   top: 50%;
-  background: #3d8bff;
+  background: var(--color-text);
   border-radius: 3rpx;
   transform: translate(-50%, -50%);
 }
@@ -1554,64 +1611,64 @@ export default {
 }
 
 .tab-item {
-  gap: 8rpx;
+  height: 44px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 16px;
+  gap: 4px;
 }
 
 .tab-unread {
-  min-width: 28rpx;
-  height: 28rpx;
-  padding: 0 7rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 16rpx;
   color: #fff;
   background: #ff4d4f;
-  font-size: 18rpx;
   font-weight: 700;
   box-sizing: border-box;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 4px;
+  font-size: 10px;
 }
 
 .channel-rail {
-  width: 112rpx;
-  background: var(--color-page);
-  border-right: .03125rem solid #ECEEF2;
+  width: 52px;
+  background: transparent;
+  border-right: 1px solid var(--color-divider);
 }
 
 .channel-dot {
-  width: 88rpx;
-  height: 88rpx;
-  margin: 8rpx auto 16rpx;
-  border-radius: 28rpx;
   border: 4rpx solid transparent;
   box-shadow: none;
   box-sizing: border-box;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  margin: 8px auto 12px;
+  border-width: 2px;
 }
 
 .channel-dot.active {
   transform: none;
   border-color: rgba(255, 107, 53, 0.30);
-  box-shadow: 0 8rpx 20rpx rgba(23, 32, 51, 0.14);
+  box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.1);
 }
 
 .channel-icon text {
-  font-size: 28rpx;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .channel-active-bar {
-  left: -12rpx;
-  top: 20rpx;
-  bottom: 20rpx;
+  left: -7px;
+  width: 3px;
+  top: 10px;
+  bottom: 10px;
 }
 
-.channel-summary {
-  margin: 20rpx 20rpx 8rpx;
-  padding: 22rpx;
-  border: .03125rem solid #E9EDF3;
-  border-radius: 24rpx;
-  background: var(--color-page);
-}
+.channel-summary { border: 0; margin: 4px 12px; padding: 12px 0; background: transparent; border-radius: 0; border-bottom: 1px solid var(--color-divider); }
 
 .summary-top {
   display: flex;
@@ -1620,17 +1677,18 @@ export default {
 }
 
 .summary-avatar {
-  width: 72rpx;
-  height: 72rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   color: #fff;
   background: #3d8bff;
-  border-radius: 20rpx;
-  font-size: 28rpx;
   font-weight: 800;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  box-shadow: none;
+  font-size: 14px;
 }
 
 .summary-copy {
@@ -1645,12 +1703,12 @@ export default {
 }
 
 .summary-title {
-  color: #172033;
-  font-size: 29rpx;
-  font-weight: 800;
+  color: var(--color-text);
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .summary-state {
@@ -1666,8 +1724,8 @@ export default {
   display: block;
   margin-top: 7rpx;
   color: #667085;
-  font-size: 22rpx;
   line-height: 1.45;
+  font-size: 11px;
 }
 
 .summary-action {
@@ -1708,7 +1766,7 @@ export default {
 .activity-title {
   flex: 1;
   min-width: 0;
-  color: #344054;
+  color: var(--color-text);
   font-size: 23rpx;
   overflow: hidden;
   white-space: nowrap;
@@ -1716,7 +1774,7 @@ export default {
 }
 
 .activity-meta {
-  color: #98a2b3;
+  color: var(--color-text-muted);
   font-size: 20rpx;
 }
 
@@ -1727,13 +1785,13 @@ export default {
 }
 
 .empty-title {
-  color: #344054;
+  color: var(--color-text);
   font-weight: 700;
 }
 
 .empty-desc {
   max-width: 420rpx;
-  color: #98a2b3;
+  color: var(--color-text-muted);
   line-height: 1.55;
   text-align: center;
 }
@@ -1759,8 +1817,8 @@ export default {
   justify-content: space-between;
   border-radius: 20rpx;
   color: #fff;
-  background: #172033;
-  box-shadow: 0 12rpx 32rpx rgba(23, 32, 51, 0.24);
+  background: var(--color-text);
+  box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.1);
   font-size: 24rpx;
 }
 
@@ -1773,4 +1831,230 @@ export default {
   color: #FFB38F;
   font-weight: 700;
 }
+
+/* Blue-teal Bento skin. Message behavior and swipe actions stay unchanged. */
+.message-page { color: var(--color-text); background: var(--color-page); }
+.top-area,.message-tabs,.conversation-panel { background: rgba(255,255,255,.96); }
+.search-bar { border: 1rpx solid var(--color-border); background: var(--color-surface-muted); box-shadow: none; }
+.round-tool,.user-entry { border: 1rpx solid var(--color-border); background: #fff; box-shadow: var(--shadow-card); }
+.tab-item.active,.cancel-search,.channel-active-bar { color: var(--color-primary); }
+.tab-indicator,.channel-active-bar,.summary-action,.activity-dot { background: var(--color-primary); }
+.conversation-item,.channel-summary,.add-menu,.search-result-card { border-color: var(--color-border); background: rgba(255,255,255,.98); box-shadow: var(--shadow-card); }
+.conversation-avatar,.result-avatar,.summary-avatar { box-shadow: 0 8rpx 20rpx rgba(0, 0, 0, 0.1); }
+.channel-dot.active { border-color: rgba(32,32,32,.26); box-shadow: 0 8rpx 22rpx rgba(0, 0, 0, 0.1); }
+.empty-action { color: #fff; background: var(--gradient-primary); }
+.undo-bar { background: var(--color-text); box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.1); }
+
+/* Message home: a compact utility header, slim channel rail, and a single list hierarchy. */
+.top-area { padding: 10rpx 76rpx 10rpx 20rpx; border-bottom: 1rpx solid var(--color-divider); gap: 8px; padding-left: 14px; padding-top: 12px; padding-bottom: 8px; }
+.search-bar { height: 60rpx; padding: 0 18rpx; border-radius: 14rpx; }
+.search-input { height: 60rpx; font-size: 24rpx; }
+.search-placeholder {
+  font-size: 13px; }
+.round-tool,.user-entry { width: 60rpx; height: 60rpx; border: 1rpx solid var(--color-border); border-radius: 14rpx; background: var(--color-surface); box-shadow: none; }
+.tab-bar { background: var(--color-surface); border-bottom-color: var(--color-divider); height: 62px; padding: 12px 14px 6px; gap: 4px; border-bottom: 0; }
+.tab-item { height: 44px; font-size: 13px; font-weight: 500; border-radius: 16px; gap: 4px; }
+.tab-item.active { background: #e0f2ec; color: #286c5c; font-weight: 600; }
+.indicator-line { width: 32rpx; height: 4rpx; }
+.channel-rail { width: 52px; background: transparent; border-right: 1px solid var(--color-divider); }
+.channel-scroll { padding-top: 12rpx; }
+.channel-dot { opacity: .78; width: 36px; height: 36px; border-radius: 12px; margin: 8px auto 12px; border-width: 2px; }
+.channel-dot:not(.active) { filter: saturate(.78); }
+.channel-dot.active { transform: none; opacity: 1; box-shadow: none; }
+.channel-icon text {
+  font-size: 14px;
+  font-weight: 600; }
+.channel-badge { top: -7rpx; right: -7rpx; min-width: 27rpx; height: 27rpx; padding: 0 5rpx; border: 2rpx solid var(--color-surface); }
+.channel-badge text { font-size: 16rpx; }
+.channel-active-bar { left: -7px; width: 3px; top: 10px; bottom: 10px; }
+.rail-add { width: 56rpx; height: 56rpx; margin: 12rpx 0 18rpx; border-radius: 16rpx; background: var(--color-surface-muted); }
+.conversation-row { border-bottom-color: var(--color-divider); min-height: 72px; padding: 12px; margin: 0 10px; gap: 10px; background: transparent; border-radius: 0; border-bottom: 1px solid var(--color-divider); box-shadow: none; }
+.conversation-row.pinned {
+  background: rgba(224,242,236,.55);
+  border-radius: 14px; }
+.conversation-avatar,.result-avatar { width: 64rpx; height: 64rpx; border-radius: 16rpx; }
+.conversation-avatar text,.result-avatar text { font-size: 25rpx; }
+.conversation-avatar svg { width: 36rpx; height: 36rpx; }
+.conv-top { margin-bottom: 6rpx; }
+.conv-name { font-size: 14px; font-weight: 600; }
+.conv-time { margin-left: 12rpx; font-size: 10px; }
+.conv-preview { color: var(--color-text-body); font-size: 12px; }
+.inline-action { height: 36rpx; padding: 0 14rpx; border-radius: 10rpx; font-size: 20rpx; line-height: 36rpx; }
+.channel-summary { box-shadow: none; border: 0; margin: 4px 12px; padding: 12px 0; background: transparent; border-radius: 0; border-bottom: 1px solid var(--color-divider); }
+.summary-avatar { width: 36px; height: 36px; border-radius: 12px; box-shadow: none; font-size: 14px; }
+.summary-top { gap: 10rpx; }
+.summary-title {
+  font-size: 14px;
+  font-weight: 600; }
+.summary-desc,.activity-meta { font-size: 21rpx; }
+.summary-action { min-width: 58rpx; height: 42rpx; border-radius: 10rpx; font-size: 21rpx; line-height: 42rpx; }
+.summary-activity { margin-top: 14rpx; padding-top: 12rpx; border-top-color: var(--color-divider); }
+.undo-action { color: #ffc1af; }
+
+/* Give messages the same map canvas and bottom workspace used by the home page. */
+.message-page {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-page);
+}
+
+.message-map-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  height: 100%;
+  pointer-events: none;
+  filter: saturate(.8) brightness(1.04);
+}
+
+.status-bar,
+.top-area,
+.tab-bar,
+.main-content,
+.search-panel {
+  position: relative;
+  z-index: 1;
+}
+
+.status-bar,
+.top-area {
+  background: transparent;
+  border-color: transparent;
+}
+
+.top-area {
+  gap: 8px;
+  padding-left: 14px;
+  padding-top: 12px;
+  padding-bottom: 8px;
+}
+
+.top-area .search-bar,
+.top-area .round-tool,
+.top-area .user-entry {
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 6rpx 18rpx rgba(32, 32, 32, .08);
+}
+
+.top-area .search-bar {
+  height: 44px;
+  min-height: 44px;
+  border-radius: 18px;
+  padding: 0 12px;
+}
+
+.top-area .search-input {
+  height: 44px;
+  font-size: 13px;
+}
+
+.top-area .round-tool,
+.top-area .user-entry {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 16px;
+}
+
+.tab-bar,
+.search-panel { margin-top: 0; border-top: 0; border-radius: 0; box-shadow: none; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+.tab-bar {
+  align-items: center;
+  height: 62px;
+  padding: 12px 14px 6px;
+  gap: 4px;
+  border-bottom: 0;
+}
+
+.tab-item {
+  color: var(--color-text-body);
+  height: 44px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 16px;
+  gap: 4px;
+}
+
+.tab-item.active {
+  background: #e0f2ec;
+  color: #286c5c;
+  font-weight: 600;
+}
+
+.tab-indicator {
+  display: none;
+}
+
+.indicator-line {
+  width: 40rpx;
+}
+
+.main-content {
+  min-height: 0;
+  background: transparent;
+  overflow: hidden; }
+
+.channel-rail,
+.conversation-list {
+  height: auto !important;
+}
+
+.channel-rail {
+  width: 52px;
+  background: transparent;
+  border-right: 1px solid var(--color-divider);
+}
+
+.channel-dot {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  margin: 8px auto 12px;
+  border-width: 2px;
+}
+
+.channel-active-bar {
+  left: -7px;
+  width: 3px;
+  top: 10px;
+  bottom: 10px;
+}
+
+.conversation-row { min-height: 72px; padding: 12px; margin: 0 10px; gap: 10px; background: transparent; border-radius: 0; border-bottom: 1px solid var(--color-divider); box-shadow: none; }
+
+.conversation-row:first-child,
+.channel-summary:first-child {
+  border-top: 0;
+}
+
+.channel-summary { border: 0; margin: 4px 12px; padding: 12px 0; background: transparent; border-radius: 0; border-bottom: 1px solid var(--color-divider); }
+
+.search-panel {
+  flex: 1;
+  height: auto !important;
+  min-height: 0;
+  padding-top: 8rpx;
+}
+
+.map-chat-action { color:#286c5c; font-size:11px; padding:7px 9px; border-radius:10px; background:#e5f1ec; white-space:nowrap; }
+.conversation-row.map-selected { background:rgba(220,239,230,.5); border-radius:12px; }
+.message-sheet {
+  position: absolute;
+  top: 23%;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 30px 30px 0 0;
+  background: rgba(250,253,252,.92);
+  box-shadow: var(--shadow-sheet);
+  backdrop-filter: blur(24px) saturate(125%);
+  -webkit-backdrop-filter: blur(24px) saturate(125%);
+}
+
+@media (orientation: landscape) { .message-sheet { top: 100px; left: 36%; } }
 </style>

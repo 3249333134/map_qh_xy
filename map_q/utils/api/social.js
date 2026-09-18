@@ -86,6 +86,7 @@ function initialState() {
     timeline: [],
     favorites: [],
     favoriteFolders: [{ id: 'default', name: '默认收藏夹', order: 0 }],
+    favoriteFixturesSeeded: false,
     viewState: {
       messageHome: {
         version: 1,
@@ -98,8 +99,11 @@ function initialState() {
       },
       footprint: {
         version: 1,
+        mode: 'favorite',
+        date: '',
         area: 'all',
         category: 'all',
+        panelState: 'default',
         expanded: false,
         selectedPointId: '',
         scrollTop: 0,
@@ -160,6 +164,9 @@ function normalizeLegacyConversation(item, bucketId, order) {
     bucketId,
     kind: item.type === 'system_notice' || item.type === 'assistant' ? 'system' : item.type,
     title: item.name,
+    channelId: item.channelId,
+    location: item.location,
+    radius: item.radius,
     avatarColor: item.avatarColor,
     avatarText: item.avatarText,
     lastMessage: item.preview || '',
@@ -507,7 +514,9 @@ export const profileApi = {
     return {
       following: value.profile.following,
       followers: value.profile.followers,
-      posts: records.filter((item) => item.mode !== 'beacon').length || value.footprints.filter((item) => item.sourceType === 'content').length,
+      posts: records.filter((item) => item.mode !== 'beacon').length || value.footprints.filter((item) => (
+        ['content', 'photo', 'video', 'article', 'music'].includes(item.sourceType || item.contentType)
+      )).length,
       checkins: value.footprints.filter((item) => item.sourceType === 'checkin').length,
       favorites: value.favorites.length,
       services: records.filter((item) => item.serviceId || item.mode === 'service').length
@@ -564,10 +573,13 @@ export const footprintApi = {
         sourceType: item.sourceType || layer,
         layer,
         detailType,
+        contentType: item.contentType || snapshot.contentType || detailType,
         title: item.title || snapshot.title || snapshot.name || '足迹内容',
         author: item.author || snapshot.author || '',
         subtitle: item.subtitle || snapshot.subtitle || snapshot.desc || '',
         cover: item.cover || snapshot.cover || snapshot.thumbnail || '',
+        media: clone(item.media || snapshot.media || snapshot.images || []),
+        duration: item.duration || snapshot.duration || '',
         city: item.city || '成都',
         district: item.district || snapshot.district || '未定位',
         address: item.address || snapshot.address || '',
@@ -679,7 +691,10 @@ export const timelineApi = {
 export const favoriteApi = {
   seed(records) {
     return mutate((value) => {
-      if (!value.favorites.length) value.favorites = clone(records || [])
+      if (!value.favoriteFixturesSeeded) {
+        value.favorites = clone(records || [])
+        value.favoriteFixturesSeeded = true
+      }
       return clone(value.favorites)
     })
   },
@@ -701,6 +716,42 @@ export const favoriteApi = {
       if (!item) return null
       item.folderId = folderId
       return clone(item)
+    })
+  },
+  moveMany(recordIds, folderId) {
+    const ids = new Set((recordIds || []).map(String))
+    return mutate((value) => {
+      const folderExists = value.favoriteFolders.some((folder) => String(folder.id) === String(folderId))
+      if (!folderExists || !ids.size) return []
+      const moved = []
+      value.favorites.forEach((item) => {
+        if (!ids.has(String(item.id))) return
+        item.folderId = folderId
+        moved.push(clone(item))
+      })
+      return moved
+    })
+  },
+  removeMany(recordIds) {
+    const ids = new Set((recordIds || []).map(String))
+    return mutate((value) => {
+      if (!ids.size) return []
+      const removed = value.favorites.filter((item) => ids.has(String(item.id)))
+      value.favorites = value.favorites.filter((item) => !ids.has(String(item.id)))
+      return clone(removed)
+    })
+  },
+  restoreMany(records) {
+    return mutate((value) => {
+      const restored = []
+      ;(records || []).forEach((record) => {
+        if (!record || !record.id) return
+        const index = value.favorites.findIndex((item) => String(item.id) === String(record.id))
+        if (index >= 0) value.favorites.splice(index, 1, clone(record))
+        else value.favorites.push(clone(record))
+        restored.push(clone(record))
+      })
+      return restored
     })
   },
   setRecommendationEnabled(enabled) {

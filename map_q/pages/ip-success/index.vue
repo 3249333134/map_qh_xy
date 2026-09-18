@@ -35,7 +35,7 @@ const onContinue = () => uni.redirectTo({ url: '/pages/publish-type/index' })
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f7f7f8;
+  background: var(--color-page);
 }
 
 .success-area {
@@ -93,14 +93,14 @@ const onContinue = () => uni.redirectTo({ url: '/pages/publish-type/index' })
 }
 
 .secondary-btn {
-  color: #5f646d;
+  color: var(--color-text-body);
   background: #fff;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .primary-btn {
   color: #fff;
-  background: linear-gradient(135deg, var(--color-info) 0%, var(--color-info) 100%);
-  box-shadow: 0 8rpx 24rpx rgba(118, 80, 200, 0.32);
+  background: var(--color-info);
+  box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.1);
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <view 
-    class="hotspot-card app-card"
+    class="hotspot-card app-card content-card"
     :class="{ 'hotspot-card-highlight': isHighlighted, 'hotspot-card-hidden': isHidden }"
     :style="cardStyle"
     @tap="onCardTap"
@@ -184,7 +184,7 @@ export default {
 }
 
 .hotspot-card-highlight {
-  box-shadow: 0 6rpx 20rpx rgba(255, 138, 101, 0.3);
+  box-shadow: 0 6rpx 20rpx rgba(0, 0, 0, 0.1);
   border: 2rpx solid var(--color-primary);
 }
 
@@ -238,7 +238,7 @@ export default {
 }
 
 .cover-event {
-  background: linear-gradient(135deg, #fff0f3 0%, #ffdee9 100%);
+  background: linear-gradient(135deg, var(--color-primary-soft) 0%, #ffdee9 100%);
 }
 
 .cover-track {

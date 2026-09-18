@@ -36,18 +36,18 @@ export default {
 <style scoped>
 .reply-item {
   padding: 20rpx 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-surface-muted);
 }
 
 .reply-content {
   font-size: 28rpx;
-  color: #333;
+  color: var(--color-text);
   line-height: 1.6;
   margin-bottom: 10rpx;
 }
 
 .reply-to {
-  color: #666;
+  color: var(--color-text-body);
   font-size: 26rpx;
 }
 
@@ -59,7 +59,7 @@ export default {
 
 .reply-time {
   font-size: 24rpx;
-  color: #999;
+  color: var(--color-text-muted);
 }
 
 .reply-action {

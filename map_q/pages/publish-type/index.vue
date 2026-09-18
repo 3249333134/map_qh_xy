@@ -50,9 +50,9 @@ const entryTypes = [
   { key: 'ai', name: 'AI模板', icon: 'AI', desc: '摘要 / 标题 / 模板', bg: 'rgba(255, 112, 67, 0.12)', color: '#ff7043', url: '/pages/publish-ai-template/index' }
 ]
 const pickerTypes = [
-  { key: 'normal', name: '普通动态', icon: '文', desc: '图文与位置动态', bg: 'rgba(234,88,12,.1)', color: '#ea580c' },
-  { key: 'video', name: '视频', icon: '播', desc: '单个视频内容', bg: 'rgba(124,58,237,.1)', color: '#7c3aed' },
-  { key: 'article', name: '文章', icon: '章', desc: '长文与目录', bg: 'rgba(37,99,235,.1)', color: '#2563eb' },
+  { key: 'normal', name: '普通动态', icon: '文', desc: '图文与位置动态', bg: 'rgba(234,88,12,.1)', color: '#f56f64' },
+  { key: 'video', name: '视频', icon: '播', desc: '单个视频内容', bg: 'rgba(49,130,246,.1)', color: '#3182F6' },
+  { key: 'article', name: '文章', icon: '章', desc: '长文与目录', bg: 'rgba(37,99,235,.1)', color: '#16b8a7' },
   { key: 'event', name: '活动', icon: '活', desc: '时间、地点与报名', bg: 'rgba(22,163,74,.1)', color: '#16a34a' }
 ]
 const types = computed(() => pickerMode.value ? pickerTypes : entryTypes)
@@ -84,7 +84,7 @@ onLoad(options => { pickerMode.value = options?.picker === '1' })
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f7f7f8;
+  background: var(--color-page);
 }
 
 .status-spacer {
@@ -98,7 +98,7 @@ onLoad(options => { pickerMode.value = options?.picker === '1' })
   height: 88rpx;
   padding: 0 24rpx;
   background: #fff;
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .nav-back {
@@ -108,8 +108,8 @@ onLoad(options => { pickerMode.value = options?.picker === '1' })
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #f0f1f3;
-  color: #222;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
   font-size: 44rpx;
   line-height: 44rpx;
 }
@@ -117,7 +117,7 @@ onLoad(options => { pickerMode.value = options?.picker === '1' })
 .nav-title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .nav-right {
@@ -136,14 +136,14 @@ onLoad(options => { pickerMode.value = options?.picker === '1' })
   display: block;
   font-size: 40rpx;
   font-weight: 800;
-  color: #222;
+  color: var(--color-text);
 }
 
 .page-sub {
   display: block;
   margin-top: 12rpx;
   font-size: 26rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .type-grid {
@@ -156,7 +156,7 @@ onLoad(options => { pickerMode.value = options?.picker === '1' })
   padding: 32rpx 24rpx;
   border-radius: 14rpx;
   background: #fff;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -181,35 +181,35 @@ onLoad(options => { pickerMode.value = options?.picker === '1' })
   margin-top: 20rpx;
   font-size: 30rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .type-desc {
   display: block;
   margin-top: 8rpx;
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .note-card {
   margin-top: 32rpx;
   padding: 28rpx 24rpx;
   border-radius: 14rpx;
-  background: #f0f1f3;
+  background: var(--color-surface-muted);
 }
 
 .note-title {
   display: block;
   font-size: 26rpx;
   font-weight: 700;
-  color: #5f646d;
+  color: var(--color-text-body);
 }
 
 .note-desc {
   display: block;
   margin-top: 10rpx;
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
   line-height: 1.6;
 }
 </style>

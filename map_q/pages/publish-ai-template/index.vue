@@ -84,7 +84,7 @@ const onChip = (c) => {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f7f7f8;
+  background: var(--color-page);
 }
 
 .status-spacer {
@@ -98,7 +98,7 @@ const onChip = (c) => {
   height: 88rpx;
   padding: 0 24rpx;
   background: #fff;
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .nav-back {
@@ -108,8 +108,8 @@ const onChip = (c) => {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #f0f1f3;
-  color: #222;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
   font-size: 44rpx;
   line-height: 44rpx;
 }
@@ -117,7 +117,7 @@ const onChip = (c) => {
 .nav-title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .nav-right {
@@ -133,7 +133,7 @@ const onChip = (c) => {
   padding: 0 28rpx;
   height: 56rpx;
   border-radius: 999rpx;
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
   color: #fff;
   font-size: 26rpx;
   font-weight: 700;
@@ -173,14 +173,14 @@ const onChip = (c) => {
   display: block;
   font-size: 28rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .note-desc {
   display: block;
   margin-top: 8rpx;
   font-size: 24rpx;
-  color: #5f646d;
+  color: var(--color-text-body);
   line-height: 1.6;
 }
 
@@ -189,13 +189,13 @@ const onChip = (c) => {
   margin: 36rpx 8rpx 16rpx;
   font-size: 28rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .result-card {
   background: #fff;
   border-radius: 14rpx;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
   padding: 0 24rpx;
 }
 
@@ -204,7 +204,7 @@ const onChip = (c) => {
   align-items: center;
   justify-content: space-between;
   padding: 28rpx 0;
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .result-row.last {
@@ -219,21 +219,21 @@ const onChip = (c) => {
 
 .result-label {
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .result-value {
   margin-top: 8rpx;
   font-size: 28rpx;
   font-weight: 600;
-  color: #222;
+  color: var(--color-text);
 }
 
 .result-action {
   padding: 8rpx 20rpx;
   border-radius: 999rpx;
-  background: #f0f1f3;
-  color: #5f646d;
+  background: var(--color-surface-muted);
+  color: var(--color-text-body);
   font-size: 24rpx;
 }
 
@@ -247,9 +247,9 @@ const onChip = (c) => {
   padding: 14rpx 28rpx;
   border-radius: 999rpx;
   background: #fff;
-  color: #5f646d;
+  color: var(--color-text-body);
   font-size: 26rpx;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .chip.active {
@@ -262,7 +262,7 @@ const onChip = (c) => {
   padding: 28rpx 24rpx;
   border-radius: 14rpx;
   background: #fff;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .preview-tag {
@@ -280,13 +280,13 @@ const onChip = (c) => {
   margin-top: 16rpx;
   font-size: 32rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .preview-desc {
   display: block;
   margin-top: 8rpx;
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 </style>

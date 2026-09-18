@@ -1,966 +1,974 @@
 <template>
   <view class="my-page">
-    <!-- 个人信息区域 -->
-    <ProfileSection 
-      :userInfo="userInfo" 
-      :stats="profileStats" 
-    />
-    
-    <!-- 内容区域 - 只在页面就绪后渲染 -->
-    <ContentSection 
-      v-if="isPageReady"
-      ref="contentSection"
-      :translateY="contentTranslateY"
-      :activeModule="activeModule"
-      :is-scroll-at-top="activeModule === 'favorite' ? favoriteScrollAtTop : (activeModule === 'date' ? dateScrollAtTop : true)"
-      @drag-start="handleDragStart"
-      @drag-move="handleDragMove"
-      @drag-end="handleDragEnd"
-      @update-translate-y="handleUpdateTranslateY"
-      @switch-module="switchModule"
-      @settings-click="handleSettingsClick"
-    >
-      <!-- 位置模块 - 保持原有拖拽功能 -->
-      <LocationModule 
+    <view class="map-stage" :class="{ muted: activeMode !== 'location' }">
+      <LocationModule
         ref="locationModule"
-        v-show="activeModule === 'location'"
-        :userLocations="userLocations"
-        :isFullyExpanded="isFullyExpanded"
-        :selectedPointId="selectedFootprintId"
+        :user-locations="mapLocations"
+        :is-fully-expanded="panelState === 'default'"
+        :selected-point-id="selectedFootprintId"
         @marker-tap="handleMarkerTap"
       />
-      
-      <!-- 日期模块 - 添加滚动状态监听 -->
-      <DateModule 
-        v-show="activeModule === 'date'"
-        :scheduleData="scheduleData"
-        @event-click="handleEventClick"
-        @scroll-state-change="handleDateScrollChange"
-      />
-      
-      <!-- 收藏模块 - 移除内容拖拽事件监听器 -->
-      <FavoriteModule 
-        v-show="activeModule === 'favorite'"
-        :favoriteData="favoriteData"
-        @item-click="handleFavoriteItemClick"
-        @scroll-state-change="handleFavoriteScrollChange"
-      />
-    </ContentSection>
-    
-    <!-- 地图信息覆盖层 - 独立于ContentSection，不受transform影响 -->
-    <view class="map-info-overlay" :class="{ expanded: isOverlayExpanded, dragging: isDragging }" v-if="isPageReady && activeModule === 'location'" :style="mapOverlayStyle">
-    <view class="overlay-header">
-      <view class="overlay-title-copy" @tap="handleOverlayTap" @click="handleOverlayTap">
-        <view class="overlay-title-row">
-          <text class="map-title">我的足迹地图</text>
-          <text class="result-count">{{ overlayFilteredCards.length }} 条</text>
-        </view>
-        <text class="map-desc">{{ currentAreaLabel }} · {{ currentCategoryLabel }}</text>
-      </view>
-      <view class="overlay-header-actions">
-        <view class="overlay-share" @tap.stop="handleFootprintShare" @click.stop="handleFootprintShare">分享</view>
-        <view class="overlay-toggle" :class="{ expanded: isOverlayExpanded }" @tap.stop="handleOverlayTap" @click.stop="handleOverlayTap">
-          <view class="toggle-chevron"></view>
-        </view>
-      </view>
+      <view v-if="activeMode !== 'location'" class="map-wash"></view>
     </view>
-    <view v-if="selectedFootprintCard && !isOverlayExpanded" class="selected-footprint-preview">
-      <view class="preview-mark" :class="selectedFootprintCard.layer">{{ footprintTypeMark(selectedFootprintCard) }}</view>
-      <view class="preview-copy">
-        <text class="preview-title">{{ selectedFootprintCard.title }}</text>
-        <text class="preview-desc">{{ selectedFootprintCard.address || selectedFootprintCard.author || '足迹内容' }}</text>
-      </view>
-      <view class="preview-detail" @tap.stop="openFootprintDetail(selectedFootprintCard)" @click.stop="openFootprintDetail(selectedFootprintCard)">详情</view>
-    </view>
-      <!-- 展开后显示分类 + 两列瀑布流收藏卡片 -->
-      <view v-if="isOverlayExpanded" class="overlay-expanded-content">
-      <!-- 顶部位置分组筛选（显示每组内容数量） -->
-      <scroll-view class="overlay-area-filter" scroll-x show-scrollbar="false">
-        <view class="overlay-area-filter-inner">
-          <view v-for="g in locationFilterGroups" :key="g.key" class="filter-chip" :class="{ active: g.key === activeOverlayAreaGroup }" @tap.stop="selectAreaGroup(g.key)" @click.stop="selectAreaGroup(g.key)">
-            {{ g.label }}（{{ g.count }}）
+
+    <view class="profile-layer" :class="{ compact: isProfileCompact }" :style="profileStyle">
+      <view class="profile-topline">
+        <view
+          class="profile-identity"
+          role="button"
+          tabindex="0"
+          :aria-label="isProfileCompact ? '展开个人资料' : '收起个人资料'"
+          @tap="toggleProfile"
+          @keyup.enter="toggleProfile"
+        >
+          <image class="avatar" :src="userInfo.avatar" mode="aspectFill" aria-label="个人头像" />
+          <view class="identity-copy">
+            <text class="username">{{ userInfo.username }}</text>
+            <text class="description">{{ userInfo.description }}</text>
           </view>
+        </view>
+        <button class="settings-button" aria-label="打开个人设置" @tap.stop="openSettings">设置</button>
+      </view>
+      <view class="profile-stats">
+        <view v-for="stat in profileStats" :key="stat.label" class="stat-item">
+          <text class="stat-number">{{ stat.number }}</text>
+          <text class="stat-label">{{ stat.label }}</text>
+        </view>
+      </view>
+    </view>
+
+    <view
+      class="footprint-sheet"
+      :class="{ dragging: isDragging, expanded: panelState === 'expanded', minimized: isSheetMinimized, 'location-mode': activeMode === 'location' }"
+      :style="sheetStyle"
+    >
+      <view
+        class="sheet-grab-region"
+        role="button"
+        tabindex="0"
+        catchtouchmove="true"
+        aria-label="拖动足迹面板"
+        :aria-expanded="panelState === 'expanded'"
+        @tap="togglePanelState"
+        @keyup.enter="togglePanelState"
+        @touchstart.stop="startSheetDrag"
+        @touchmove.stop.prevent="moveSheetDrag"
+        @touchend.stop="endSheetDrag"
+        @touchcancel.stop="endSheetDrag"
+      >
+        <view class="drag-handle"></view>
+      </view>
+
+      <view class="mode-tabs" role="tablist" aria-label="足迹查看方式">
+        <button
+          v-for="mode in modes"
+          :key="mode.key"
+          class="mode-tab"
+          role="tab"
+          :class="{ active: activeMode === mode.key }"
+          :aria-label="mode.label"
+          :aria-selected="activeMode === mode.key"
+          :tabindex="activeMode === mode.key ? 0 : -1"
+          @keydown.left.prevent="focusAdjacentMode($event, -1)"
+          @keydown.right.prevent="focusAdjacentMode($event, 1)"
+          @tap="switchMode(mode.key)"
+        >
+          <view class="mode-symbol" :class="`symbol-${mode.key}`" aria-hidden="true"></view>
+          <text>{{ mode.label }}</text>
+        </button>
+      </view>
+
+      <view v-if="!isSheetMinimized" class="sheet-body">
+      <view v-if="activeMode === 'location'" class="location-toolbar">
+        <view class="toolbar-copy">
+          <text class="toolbar-title">我的足迹地图</text>
+          <text class="toolbar-count">{{ recordCount }} 条</text>
+        </view>
+        <button class="toolbar-action" @tap="shareFootprints">分享</button>
+      </view>
+
+      <view v-else-if="activeMode === 'date'" class="date-timeline">
+        <view class="date-timeline-header">
+          <text class="date-timeline-title">{{ selectedDateObject.getFullYear() }}｜{{ String(selectedDateObject.getMonth() + 1).padStart(2, '0') }}.{{ String(selectedDateObject.getDate()).padStart(2, '0') }}</text>
+          <view class="date-timeline-actions">
+            <button class="year-review-button" @tap="openYearReview">年度回顾</button>
+            <button class="today-button" @tap="returnToday">回到今天</button>
+          </view>
+        </view>
+        <view v-if="!calendarExpanded" class="week-strip" role="group" aria-label="本周日期">
+          <button
+            v-for="day in weekDays"
+            :key="day.key"
+            class="week-day"
+            :class="{ selected: day.key === selectedDate, marked: day.hasRecords }"
+            :aria-label="calendarDayLabel(day)"
+            @tap="selectDate(day.key)"
+          ><text>{{ day.weekday }}</text><text>{{ day.number }}</text></button>
+        </view>
+        <button
+          class="calendar-toggle"
+          :class="{ expanded: calendarExpanded }"
+          :aria-expanded="calendarExpanded"
+          :aria-label="calendarExpanded ? '收起月历' : '展开月历'"
+          @tap="toggleCalendar"
+        ><view></view></button>
+      </view>
+
+      <view v-else class="mode-toolbar">
+        <template>
+          <view class="toolbar-copy">
+            <text class="toolbar-title">{{ activeMode === 'favorite' ? '我的收藏' : '我的足迹地图' }}</text>
+            <text class="toolbar-count">{{ recordCount }} 条</text>
+          </view>
+          <button v-if="activeMode === 'favorite'" class="toolbar-action" @tap="toggleManage">
+            {{ managingFavorites ? '完成' : '管理' }}
+          </button>
+          <button v-else class="toolbar-action" @tap="shareFootprints">分享</button>
+        </template>
+      </view>
+
+      <scroll-view v-if="activeMode === 'date' && calendarExpanded" class="calendar-panel" scroll-y :show-scrollbar="false">
+        <view class="calendar-weekdays">
+          <text v-for="weekday in weekdays" :key="weekday">{{ weekday }}</text>
+        </view>
+        <view class="calendar-grid" role="grid" aria-label="足迹日期">
+          <button
+            v-for="day in calendarDays"
+            :key="day.key"
+            class="calendar-day"
+            role="gridcell"
+            :class="{ selected: day.key === selectedDate, muted: !day.currentMonth, marked: day.hasRecords }"
+            :aria-label="calendarDayLabel(day)"
+            :aria-selected="day.key === selectedDate"
+            @tap="selectCalendarDate(day.key)"
+          >
+            <text>{{ day.number }}</text>
+            <view v-if="day.hasRecords" class="calendar-dot"></view>
+          </button>
         </view>
       </scroll-view>
-      <!-- 分类分段模式：左侧竖列类别 + 右侧分段内容（区域在顶部横向 chips） -->
-      <view v-if="overlayDisplayMode === 'sections'" class="overlay-left-right" :style="{ height: overlayExpandedHeight + 'px' }">
-        <!-- 左侧竖列：类别 chips（全部、照片、视频、文章、音乐、地点、服务） -->
-        <view class="overlay-left-nav">
-          <view v-for="g in categoryFilterGroups" :key="'cat-' + g.key" class="left-nav-item" :class="{ active: g.key === activeCategory }" @tap.stop="selectCategoryGroup(g.key)" @click.stop="selectCategoryGroup(g.key)">
-            {{ g.label }}<text v-if="g.count !== undefined" style="margin-left:4px;">（{{ g.count }}）</text>
-          </view>
+
+      <scroll-view v-if="activeMode !== 'location'" class="type-filter" scroll-x :show-scrollbar="false">
+        <view class="type-filter-inner" role="listbox" aria-label="足迹类型">
+          <button
+            v-for="type in types"
+            :key="type.key"
+            class="type-chip"
+            role="option"
+            :class="{ active: activeType === type.key }"
+            :aria-selected="activeType === type.key"
+            @tap="selectType(type.key)"
+          >{{ type.label }}</button>
         </view>
-        <!-- 右侧分段内容列表 -->
-        <scroll-view class="overlay-right-sections" scroll-y show-scrollbar="false" :scroll-into-view="overlayScrollIntoView" :style="{ height: overlayExpandedHeight + 'px' }" @scroll="onOverlayScroll" @touchstart.stop="onOverlayTouchStart" @touchmove.stop="onOverlayTouchMove" @touchend.stop="onOverlayTouchEnd">
-          <view v-for="sec in groupedOverlaySections" :key="'sec-' + sec.key" :id="'section-' + sec.key" class="overlay-section">
-            <view class="section-heading">
-              <text class="section-title">{{ sec.label }}</text>
-              <text class="section-count">{{ sec.items.length }} 条</text>
-            </view>
-            <view v-if="sec.items.length" class="overlay-cards-grid">
-              <view
-                v-for="(item, idx) in sec.items"
-                :key="item._id || item.id || idx"
-                class="grid-cell"
-                :class="{ selected: selectedFootprintId === item.id || selectedFootprintId === item._id }"
-              >
-                <service-card-item
-                  v-if="item.type === 'service' || item.detailType === 'service' || item.layer === 'service'"
-                  :index="idx"
-                  :card-data="item"
-                  :height="getOverlayCardHeight('grid', idx)"
-                  @media-tap="openFootprintDetail"
-                  @content-tap="focusFootprintOnMap"
-                  @reserve="openFootprintDetail"
-                />
-                <card-item
-                  v-else
-                  :index="idx"
-                  :card-data="item"
-                  :height="getOverlayCardHeight('grid', idx)"
-                  @media-tap="openFootprintDetail"
-                  @content-tap="focusFootprintOnMap"
-                />
-              </view>
-            </view>
-            <view v-else class="section-empty">当前筛选下暂无足迹</view>
-          </view>
-        </scroll-view>
+      </scroll-view>
+
+      <view v-if="activeMode === 'location'" class="location-dock-copy">
+        <view class="dock-icon" aria-hidden="true"></view>
+        <text>点按地图上的内容卡片可查看详情</text>
+        <text>拖动地图可浏览全部地点与内容</text>
       </view>
-        <!-- 左侧行政层级分类 -->
-        <view v-if="isOverlayExpanded && overlayDisplayMode === 'waterfall'" class="overlay-levels">
-          <view v-for="lvl in overlayLevels" :key="lvl" class="overlay-level-item" :class="{ active: lvl === activeOverlayLevel }" @tap.stop="handleOverlayLevelChange(lvl)" @click.stop="handleOverlayLevelChange(lvl)">
-            {{ lvl }}
-          </view>
+
+      <view v-else class="sheet-content">
+        <view v-if="activeMode === 'date'" class="content-layout-switch" role="tablist" aria-label="日期内容展示形式">
+          <button role="tab" :aria-selected="dateLayout === 'list'" :class="{ active: dateLayout === 'list' }" @tap="setDateLayout('list')">时间轴</button>
+          <button role="tab" :aria-selected="dateLayout === 'masonry'" :class="{ active: dateLayout === 'masonry' }" @tap="setDateLayout('masonry')">卡片流</button>
         </view>
-        <!-- 右侧两列瀑布流收藏卡片 -->
-        <scroll-view v-if="isOverlayExpanded && overlayDisplayMode === 'waterfall'" class="overlay-cards-container" scroll-y show-scrollbar="false" @touchstart.stop="onOverlayTouchStart" @touchmove.stop="onOverlayTouchMove" @touchend.stop="onOverlayTouchEnd">
-          <view class="overlay-cards-grid">
-            <template v-for="(item, idx) in overlayFilteredCards" :key="(item._id || item.id || '') + '-' + idx">
-              <view class="grid-cell">
-                <service-card-item v-if="item.type === 'service'" :index="idx" :card-data="item" :height="getOverlayCardHeight('grid', idx)" />
-                <card-item v-else :index="idx" :card-data="item" :height="getOverlayCardHeight('grid', idx)" />
-              </view>
-            </template>
-          </view>
-        </scroll-view>
+        <FootprintTimeline
+          v-if="activeMode === 'date' && dateLayout === 'list'"
+          :groups="visibleGroups"
+          :selected-id="selectedFootprintId"
+          :scroll-into-view="scrollIntoView"
+          :managing="managingFavorites"
+          :selected-record-ids="selectedFavoriteIds"
+          :empty-title="emptyState.title"
+          :empty-description="emptyState.description"
+          @item-click="openEntry"
+          @focus="focusEntryOnMap"
+          @toggle-select="toggleFavoriteSelection"
+          @scroll-state-change="handleTimelineScroll"
+          @sheet-drag-start="startSheetDrag"
+          @sheet-drag-move="moveSheetDrag"
+          @sheet-drag-end="endSheetDrag"
+        />
+        <FootprintMasonry
+          v-else
+          :entries="modeEntries"
+          :selected-id="selectedFootprintId"
+          :managing="managingFavorites"
+          :selected-record-ids="selectedFavoriteIds"
+          :empty-title="emptyState.title"
+          :empty-description="emptyState.description"
+          @item-click="openEntry"
+          @toggle-select="toggleFavoriteSelection"
+          @scroll-state-change="handleTimelineScroll"
+        />
+      </view>
+      </view>
+
+      <view v-if="managingFavorites && !isSheetMinimized" class="manage-bar">
+        <button class="manage-select" @tap="toggleSelectAll">{{ allFavoritesSelected ? '取消全选' : '全选' }}</button>
+        <text role="status" aria-live="polite">已选 {{ selectedFavoriteIds.length }} 项</text>
+        <view class="manage-actions">
+          <button :disabled="!selectedFavoriteIds.length" @tap="moveSelectedFavorites">移动</button>
+          <button class="danger" :disabled="!selectedFavoriteIds.length" @tap="removeSelectedFavorites">取消收藏</button>
+        </view>
       </view>
     </view>
-    <!-- 全局发布弹窗挂载点 -->
+
+    <view
+      v-if="undoRecords.length"
+      class="undo-toast"
+      role="status"
+      aria-live="polite"
+      @touchstart="pauseUndoTimer"
+      @touchend="resumeUndoTimer"
+      @mouseenter="pauseUndoTimer"
+      @mouseleave="resumeUndoTimer"
+      @focusin="pauseUndoTimer"
+      @focusout="resumeUndoTimer"
+    >
+      <text>已取消收藏 {{ undoRecords.length }} 项</text>
+      <button @tap="undoRemoveFavorites">撤销</button>
+    </view>
+
     <GlobalOverlayHost />
   </view>
 </template>
 
-<script>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+<script setup>
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
 import GlobalOverlayHost from '../../components/common/GlobalOverlayHost.vue'
-// 导入组件
-import ProfileSection from './components/ProfileSection.vue'
-import ContentSection from './components/ContentSection.vue'
 import LocationModule from './components/LocationModule.vue'
-import DateModule from './components/DateModule.vue'
-import FavoriteModule from './components/FavoriteModule.vue'
-import CardItem from '../../components/card/CardItem.vue'
-import ServiceCardItem from '../../components/card/ServiceCardItem.vue'
-// 导入 composables
-import { useMyData } from './composables/useMyData.js'
-import { useMyLayout } from './composables/useMyLayout.js'
-import { useMyOverlay } from './composables/useMyOverlay.js'
-import { footprintApi, socialViewStateApi } from '../../utils/api/social.js'
+import FootprintTimeline from './components/FootprintTimeline.vue'
+import FootprintMasonry from './components/FootprintMasonry.vue'
+import { FOOTPRINT_TYPES, createMyEntryState, groupTimelineRecords, isMinimumSheetPosition, useMyData } from './composables/useMyData.js'
+import { favoriteApi, footprintApi, socialViewStateApi } from '../../utils/api/social.js'
 
-export default {
-  name: 'MyPage',
-  components: { ProfileSection, ContentSection, LocationModule, DateModule, FavoriteModule, CardItem, ServiceCardItem, GlobalOverlayHost },
-  setup() {
-    // 页面就绪状态
-    const isPageReady = ref(false)
-    const locationModule = ref(null)
-    const savedFootprintView = socialViewStateApi.getFootprint()
-    const selectedFootprintId = ref(savedFootprintView.selectedPointId || '')
+const modes = [
+  { key: 'location', label: '位置' },
+  { key: 'favorite', label: '收藏' },
+  { key: 'date', label: '日期' }
+]
+const types = FOOTPRINT_TYPES
+const weekdays = ['一', '二', '三', '四', '五', '六', '日']
+const validModes = new Set(modes.map((item) => item.key))
+const validTypes = new Set(types.map((item) => item.key))
 
-    // 数据相关
-    const {
-      userInfo,
-      profileStats,
-      scheduleData,
-      favoriteData,
-      userLocations,
-      footprintCards,
-      buildUserLocationsFromFootprints,
-      hydrateRepositories
-    } = useMyData()
-
-    // 覆盖层展开状态（共享给布局/覆盖层逻辑）
-    const isOverlayExpanded = ref(false)
-
-    // 布局与交互
-    const {
-      screenHeight,
-      safeTopOffset,
-      positions,
-      expandUpDistancePx,
-      contentTranslateY,
-      dateScrollAtTop,
-      favoriteScrollAtTop,
-      isDragging,
-      startY,
-      startTranslateY,
-      dragThreshold,
-      dragStartTime,
-      snapThreshold,
-      isFullyExpanded,
-      currentPosition,
-      mapOverlayStyle,
-      overlayExpandedHeight,
-      initPage,
-      handleDragStart,
-      handleDragMove,
-      handleDragEnd: handleDragEndLayout,
-      handleUpdateTranslateY,
-      animateToPosition,
-      handleQuickSwitch
-    } = useMyLayout({ isOverlayExpanded })
-
-    // 当前激活模块
-    const activeModule = ref('favorite')
-
-    // 覆盖层相关（共享展开状态） - 统一在下方一次性解构（包含类别筛选）
-// 修改为包含类别筛选相关变量
 const {
-  isOverlayExpanded: overlayExpanded,
-  overlayLevels,
-  activeOverlayLevel,
-  activeOverlayAreaGroup,
-  overlayDisplayMode,
-  overlayScrollIntoView,
-  overlayLeftColumnData,
-  overlayRightColumnData,
-  overlayTouchStartY,
-  overlayTouchLastY,
-  overlayTouchStartTime,
-  overlaySwipeThreshold,
-  overlaySwipeVelocityThreshold,
-  favoriteAllItems,
-  overlayFilteredCards,
-  groupedOverlaySections,
-  locationFilterGroups,
-  computeOverlayColumns,
-  getOverlayCardHeight,
-  expandMapFullScreen,
-  handleOverlayLevelChange,
-  selectAreaGroup,
-  viewSectionAll,
-  onOverlayTouchStart,
-  onOverlayTouchMove,
-  onOverlayTouchEnd,
-  onOverlayScroll,
-  // 新增：从 useMyOverlay 解构类别相关
-  activeCategory,
-  categoryFilterGroups,
-  selectCategoryGroup
-} = useMyOverlay({ footprintCards, contentTranslateY, screenHeight, safeTopOffset, activeModule, isOverlayExpanded })
+  userInfo, profileStats, footprintEntries, favoriteEntries, timelineEntries,
+  hydrateRepositories, refreshFavorites
+} = useMyData()
 
-    // 当前选中类别的中文标签（用于右侧分段标题展示组合筛选：地区 · 类别）
-    const currentCategoryLabel = computed(() => {
-      const list = categoryFilterGroups || []
-      const arr = Array.isArray(list?.value) ? list.value : list
-      const found = arr.find(g => g.key === activeCategory.value)
-      return found ? found.label : '全部'
-    })
-    const currentAreaLabel = computed(() => {
-      const list = Array.isArray(locationFilterGroups?.value) ? locationFilterGroups.value : []
-      const found = list.find(group => group.key === activeOverlayAreaGroup.value)
-      return found ? found.label : '全部区域'
-    })
-    const selectedFootprintCard = computed(() => {
-      return footprintCards.value.find(item => (
-        String(item.id) === String(selectedFootprintId.value) ||
-        String(item.sourceId) === String(selectedFootprintId.value)
-      )) || null
-    })
+const windowHeight = ref(812)
+const safeTop = ref(20)
+const tabBarHeight = ref(86)
+const entryState = createMyEntryState()
+const activeMode = ref(entryState.mode)
+const activeType = ref(entryState.category)
+const panelState = ref(entryState.panelState)
+const selectedDate = ref(entryState.date)
+const selectedFootprintId = ref(entryState.selectedPointId)
+const scrollIntoView = ref('')
+const calendarExpanded = ref(false)
+const dateLayout = ref(entryState.dateLayout)
+const profileCollapsed = ref(entryState.profileCollapsed)
+const managingFavorites = ref(false)
+const selectedFavoriteIds = ref([])
+const timelineScrollAtTop = ref(true)
+const locationModule = ref(null)
+const undoRecords = ref([])
+let undoTimer = null
 
-    // 包装：拖拽结束，按模块语义处理
-    const handleDragEnd = (e) => {
-      const module = activeModule.value
-      const isAtTop = module === 'favorite' ? !!favoriteScrollAtTop.value : (module === 'date' ? !!dateScrollAtTop.value : true)
-      handleDragEndLayout(e, module, isAtTop)
-    }
+const isDragging = ref(false)
+const dragStartY = ref(0)
+const dragStartSheetY = ref(0)
+const liveSheetY = ref(null)
+const skipNextHandleTap = ref(false)
 
-    // 模块切换
-    const switchModule = (module) => {
-      activeModule.value = module
-      overlayExpanded.value = false
-    }
-
-    // 事件处理与桥接（保持原 API）
-    const handleEventClick = (event) => {
-      uni.showModal({ title: event.title, content: `时间: ${event.time}\n地点: ${event.location || '无'}\n内容: ${event.content || '无'}`, showCancel: false })
-    }
-    const handleFavoriteItemClick = (item) => {
-      openFootprintDetail(item)
-    }
-    const handleSettingsClick = () => {
-      uni.navigateTo({
-        url: '/pages/my-settings/index',
-        fail: () => uni.showToast({ title: '设置页面暂不可用', icon: 'none' })
-      })
-    }
-    const handleMarkerTap = ({ location }) => {
-      if (!location) return
-      selectedFootprintId.value = String(location.footprintId || location.id || '')
-      socialViewStateApi.patchFootprint({ selectedPointId: selectedFootprintId.value })
-    }
-
-    const footprintTypeMark = (item) => {
-      const marks = { content: '文', place: '地', service: '服', event: '活', route: '线', track: '线', favorite: '藏' }
-      return marks[item?.category] || marks[item?.layer] || '文'
-    }
-    const openFootprintDetail = (payload) => {
-      const item = payload && payload.cardData ? payload.cardData : payload
-      if (!item) return
-      const detailType = item.detailType || (item.type === 'service' ? 'service' : 'normal')
-      const targetId = item.sourceId || item.id
-      selectedFootprintId.value = String(item._id || item.id || targetId)
-      socialViewStateApi.patchFootprint({
-        selectedPointId: selectedFootprintId.value,
-        area: activeOverlayAreaGroup.value,
-        category: activeCategory.value,
-        expanded: overlayExpanded.value
-      })
-      uni.navigateTo({
-        url: `/pages/detail/index?id=${encodeURIComponent(targetId)}&type=${encodeURIComponent(detailType)}&source=my-footprint&returnStateKey=footprint`
-      })
-    }
-    const focusFootprintOnMap = (payload) => {
-      const item = payload && payload.cardData ? payload.cardData : payload
-      if (!item?.hasLocation) {
-        uni.showToast({ title: '该内容未保存地图位置', icon: 'none' })
-        return
-      }
-      selectedFootprintId.value = String(item._id || item.id)
-      overlayExpanded.value = false
-      socialViewStateApi.patchFootprint({
-        selectedPointId: selectedFootprintId.value,
-        expanded: false
-      })
-      const target = userLocations.value.find(location => (
-        String(location.footprintId) === String(item._id || item.id) ||
-        String(location.id) === String(item.sourceId || item.id)
-      ))
-      if (target && locationModule.value?.focusLocation) locationModule.value.focusLocation(target)
-    }
-    const handleFootprintShare = () => {
-      const snapshot = footprintApi.shareSnapshot({
-        layer: activeCategory.value === 'all' ? undefined : activeCategory.value
-      })
-      if (!snapshot.length) {
-        uni.showToast({ title: '当前筛选没有可安全分享的公开足迹', icon: 'none' })
-        return
-      }
-      try { uni.setStorageSync('MY_FOOTPRINT_SHARE_SNAPSHOT', snapshot) } catch (e) {}
-      uni.navigateTo({ url: '/pages/map-share/index?source=my-footprint' })
-    }
-
-    // 覆盖层根容器点击：展开/收起（点击时若已展开则收起，若已收起则展开）
-    const handleOverlayTap = (e) => {
-      const next = !overlayExpanded.value
-      overlayExpanded.value = next
-      if (next) {
-        overlayDisplayMode.value = 'sections'
-        computeOverlayColumns()
-      }
-      socialViewStateApi.patchFootprint({ expanded: next })
-    }
-
-    // 滚动状态变更
-    const handleFavoriteScrollChange = (scrollState) => { favoriteScrollAtTop.value = !!(scrollState && scrollState.isAtTop) }
-    const handleDateScrollChange = (scrollState) => { dateScrollAtTop.value = !!(scrollState && scrollState.isAtTop) }
-
-    // 初始化
-    onMounted(() => {
-      initPage()
-      isPageReady.value = true
-      buildUserLocationsFromFootprints()
-    })
-
-    try {
-      if (uni && uni.$on) {
-        uni.$on('collapseExpandableBars', () => {
-          overlayExpanded.value = false
-          animateToPosition(positions.default)
-        })
-      }
-    } catch (e) {}
-
-    // 页面展示时同步底部 TabBar 高亮为“我的”
-    onShow(() => {
-      hydrateRepositories()
-      try {
-        const pages = getCurrentPages()
-        const page = pages[pages.length - 1]
-        if (page && typeof page.getTabBar === 'function' && page.getTabBar()) {
-          page.getTabBar().setData({ selected: 4 })
-        }
-      } catch (e) {}
-    })
-
-    onUnmounted(() => {
-      try { if (uni && uni.$off) uni.$off('collapseExpandableBars') } catch (e) {}
-    })
-
-    return {
-      // 页面状态
-      isPageReady,
-      // 数据
-      userInfo,
-      profileStats,
-      scheduleData,
-      favoriteData,
-      userLocations,
-      // 布局与交互
-      screenHeight,
-      safeTopOffset,
-      positions,
-      expandUpDistancePx,
-      contentTranslateY,
-      dateScrollAtTop,
-      favoriteScrollAtTop,
-      isDragging,
-      startY,
-      startTranslateY,
-      dragThreshold,
-      dragStartTime,
-      snapThreshold,
-      isFullyExpanded,
-      currentPosition,
-      mapOverlayStyle,
-      overlayExpandedHeight,
-      initPage,
-      handleDragStart,
-      handleDragMove,
-      handleDragEnd,
-      handleUpdateTranslateY,
-      animateToPosition,
-      handleQuickSwitch,
-      // 新增：滚动状态事件处理器（用于收藏/日期模块）
-      handleFavoriteScrollChange,
-      handleDateScrollChange,
-      // 模块
-      activeModule,
-      switchModule,
-      // 覆盖层
-      isOverlayExpanded: overlayExpanded,
-      overlayLevels,
-      activeOverlayLevel,
-      activeOverlayAreaGroup,
-      overlayDisplayMode,
-      overlayScrollIntoView,
-      overlayLeftColumnData,
-      overlayRightColumnData,
-      overlayTouchStartY,
-      overlayTouchLastY,
-      overlayTouchStartTime,
-      overlaySwipeThreshold,
-      overlaySwipeVelocityThreshold,
-      favoriteAllItems,
-      overlayFilteredCards,
-      groupedOverlaySections,
-      locationFilterGroups,
-      computeOverlayColumns,
-      getOverlayCardHeight,
-      expandMapFullScreen,
-      handleOverlayLevelChange,
-      selectAreaGroup,
-      viewSectionAll,
-      onOverlayTouchStart,
-      onOverlayTouchMove,
-      onOverlayTouchEnd,
-      onOverlayScroll,
-      // 新增：类别筛选（左侧竖列）
-      activeCategory,
-      categoryFilterGroups,
-      selectCategoryGroup,
-      // 右侧分段标题用：地区 · 类别
-      currentCategoryLabel,
-      currentAreaLabel,
-      // 事件
-      handleEventClick,
-      handleFavoriteItemClick,
-      handleSettingsClick,
-      handleMarkerTap,
-      handleOverlayTap,
-      handleFootprintShare,
-      openFootprintDetail,
-      focusFootprintOnMap,
-      footprintTypeMark,
-      footprintCards,
-      locationModule,
-      selectedFootprintId,
-      selectedFootprintCard
-    }
+const expandedSheetY = computed(() => Math.max(safeTop.value + 68, 88))
+const defaultSheetY = computed(() => Math.max(expandedSheetY.value + 188, Math.min(380, Math.round(windowHeight.value * 0.42))))
+const minimizedSheetY = computed(() => Math.max(defaultSheetY.value + 80, windowHeight.value - tabBarHeight.value - 104))
+const currentSheetY = computed(() => {
+  if (liveSheetY.value !== null && liveSheetY.value !== undefined) {
+    return Math.max(expandedSheetY.value, Math.min(minimizedSheetY.value, liveSheetY.value))
   }
+  return panelState.value === 'expanded' ? expandedSheetY.value : defaultSheetY.value
+})
+const isProfileCompact = computed(() => profileCollapsed.value)
+const isSheetMinimized = computed(() => isMinimumSheetPosition(currentSheetY.value, minimizedSheetY.value))
+const sheetStyle = computed(() => ({
+  transform: `translate3d(0, ${currentSheetY.value}px, 0)`,
+  height: `${Math.max(240, windowHeight.value - currentSheetY.value)}px`,
+  paddingBottom: `${tabBarHeight.value}px`,
+  '--tabbar-height': `${tabBarHeight.value}px`
+}))
+const profileStyle = computed(() => ({ paddingTop: `${safeTop.value + 12}px` }))
+
+const selectedDateObject = computed(() => new Date(`${selectedDate.value}T00:00:00`))
+const formattedSelectedDate = computed(() => {
+  const date = selectedDateObject.value
+  return `${date.getMonth() + 1}/${date.getDate()}`
+})
+const selectedWeekday = computed(() => ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][selectedDateObject.value.getDay()])
+
+const timelineDateKeys = computed(() => new Set(timelineEntries.value.map((item) => formatDateKey(new Date(item.createdAt)))))
+const weekDays = computed(() => {
+  const selected = selectedDateObject.value
+  const mondayOffset = (selected.getDay() + 6) % 7
+  const monday = new Date(selected)
+  monday.setDate(selected.getDate() - mondayOffset)
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(monday)
+    date.setDate(monday.getDate() + index)
+    const key = formatDateKey(date)
+    return { key, number: date.getDate(), weekday: weekdays[index], currentMonth: date.getMonth() === selected.getMonth(), hasRecords: timelineDateKeys.value.has(key) }
+  })
+})
+const calendarDays = computed(() => {
+  const selected = selectedDateObject.value
+  const first = new Date(selected.getFullYear(), selected.getMonth(), 1)
+  const offset = (first.getDay() + 6) % 7
+  const start = new Date(first)
+  start.setDate(first.getDate() - offset)
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(start)
+    date.setDate(start.getDate() + index)
+    const key = formatDateKey(date)
+    return {
+      key,
+      number: date.getDate(),
+      currentMonth: date.getMonth() === selected.getMonth(),
+      hasRecords: timelineDateKeys.value.has(key)
+    }
+  })
+})
+
+const typedEntries = (entries) => activeType.value === 'all'
+  ? entries
+  : entries.filter((item) => item.contentType === activeType.value)
+
+const modeEntries = computed(() => {
+  if (activeMode.value === 'favorite') return typedEntries(favoriteEntries.value)
+  if (activeMode.value === 'date') {
+    return typedEntries(timelineEntries.value.filter((item) => formatDateKey(new Date(item.createdAt)) === selectedDate.value))
+  }
+  // 位置模式始终是一张完整地图，不继承收藏/日期的内容筛选。
+  return footprintEntries.value.filter((item) => item.hasLocation)
+})
+const visibleGroups = computed(() => groupTimelineRecords(modeEntries.value))
+const recordCount = computed(() => modeEntries.value.length)
+const mapEntries = computed(() => {
+  if (activeMode.value === 'favorite') return modeEntries.value.filter((item) => item.hasLocation)
+  if (activeMode.value === 'date') return modeEntries.value.filter((item) => item.hasLocation)
+  return modeEntries.value
+})
+const mapLocations = computed(() => mapEntries.value.map((item) => ({
+  id: item.sourceId,
+  footprintId: item.footprintId,
+  title: item.title,
+  latitude: item.latitude,
+  longitude: item.longitude,
+  address: item.address,
+  cover: item.media[0] || '',
+  subtitle: item.author,
+  likes: item.likes,
+  type: item.contentType,
+  detailType: item.detailType,
+  layer: item.contentType
+})))
+
+const emptyState = computed(() => {
+  if (activeMode.value === 'favorite') return { title: '暂无这类收藏', description: '收藏的内容会按日期整理在这里，可切换其他类型继续查看。' }
+  if (activeMode.value === 'date') return { title: '这一天还没有记录', description: '切换日期，或发布一条带时间与位置的内容。' }
+  return { title: '暂无可定位足迹', description: '没有坐标的内容仍可在收藏或日期视图中查看。' }
+})
+
+const selectableFavoriteIds = computed(() => modeEntries.value.map((item) => item.favoriteId).filter(Boolean))
+const allFavoritesSelected = computed(() => selectableFavoriteIds.value.length > 0 && selectableFavoriteIds.value.every((id) => selectedFavoriteIds.value.includes(id)))
+
+function formatDateKey(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return ''
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
+
+function persistView(patch = {}) {
+  socialViewStateApi.patchFootprint({
+    mode: activeMode.value,
+    date: selectedDate.value,
+    category: activeType.value,
+    panelState: panelState.value,
+    dateLayout: dateLayout.value,
+    profileCollapsed: profileCollapsed.value,
+    expanded: panelState.value === 'expanded',
+    selectedPointId: selectedFootprintId.value,
+    sheetY: liveSheetY.value ?? currentSheetY.value,
+    ...patch
+  })
+}
+
+function switchMode(mode) {
+  if (!validModes.has(mode)) return
+  activeMode.value = mode
+  // The top switcher changes content only. Keep the sheet exactly where the
+  // user dragged it so position, favorite, and date feel like one workspace.
+  managingFavorites.value = false
+  selectedFavoriteIds.value = []
+  calendarExpanded.value = false
+  persistView()
+}
+
+function focusAdjacentMode(event, offset) {
+  const tabs = Array.from(event?.currentTarget?.parentElement?.querySelectorAll?.('[role="tab"]') || [])
+  const index = tabs.indexOf(event?.currentTarget)
+  if (index < 0 || !tabs.length) return
+  const next = tabs[(index + offset + tabs.length) % tabs.length]
+  next?.focus?.()
+  next?.click?.()
+}
+
+function selectType(type) {
+  if (!validTypes.has(type)) return
+  activeType.value = type
+  selectedFootprintId.value = ''
+  persistView()
+}
+
+function selectDate(dateKey) {
+  selectedDate.value = dateKey
+  persistView()
+}
+
+function selectCalendarDate(dateKey) {
+  selectedDate.value = dateKey
+  calendarExpanded.value = false
+  persistView()
+}
+
+function setDateLayout(layout) {
+  if (layout !== 'list' && layout !== 'masonry') return
+  dateLayout.value = layout
+  persistView()
+}
+
+function returnToday() {
+  selectDate(formatDateKey(new Date()))
+}
+
+function toggleProfile() {
+  profileCollapsed.value = !profileCollapsed.value
+  persistView()
+}
+
+function shiftDay(offset) {
+  const date = new Date(selectedDateObject.value)
+  date.setDate(date.getDate() + offset)
+  selectDate(formatDateKey(date))
+}
+
+function toggleCalendar() {
+  calendarExpanded.value = !calendarExpanded.value
+  persistView()
+}
+
+function touchY(event) {
+  const detail = event?.detail && typeof event.detail === 'object' ? event.detail : {}
+  // uni-app H5 and mp-weixin put touch data on different levels. Do not let an
+  // empty detail object hide the actual touch coordinates on the root event.
+  const touch = event?.touches?.[0]
+    || event?.changedTouches?.[0]
+    || detail?.touches?.[0]
+    || detail?.changedTouches?.[0]
+  const value = event?.startY ?? event?.currentY ?? event?.endY
+    ?? event?.y ?? detail?.startY ?? detail?.currentY ?? detail?.endY ?? detail?.y
+    ?? touch?.clientY ?? touch?.pageY ?? touch?.y ?? touch?.screenY
+  return Number.isFinite(Number(value)) ? Number(value) : null
+}
+
+function startSheetDrag(event) {
+  const startY = touchY(event)
+  if (startY === null) return
+  dragStartY.value = startY
+  dragStartSheetY.value = currentSheetY.value
+  skipNextHandleTap.value = false
+  isDragging.value = true
+}
+
+function moveSheetDrag(event) {
+  if (!isDragging.value) return
+  const currentY = touchY(event)
+  if (currentY === null) return
+  const delta = currentY - dragStartY.value
+  if (Math.abs(delta) > 6) skipNextHandleTap.value = true
+  const next = dragStartSheetY.value + delta
+  liveSheetY.value = Math.max(expandedSheetY.value, Math.min(minimizedSheetY.value, next))
+}
+
+function endSheetDrag() {
+  if (!isDragging.value) return
+  isDragging.value = false
+  const y = liveSheetY.value ?? currentSheetY.value
+  // Keep the exact resting position. The named state only describes the
+  // accessibility affordance; it must never force a drag snap.
+  panelState.value = y <= expandedSheetY.value + 2 ? 'expanded' : 'default'
+  persistView()
+}
+
+function togglePanelState() {
+  if (skipNextHandleTap.value) {
+    skipNextHandleTap.value = false
+    return
+  }
+  if (isDragging.value) return
+  const y = currentSheetY.value
+  const targetY = y <= expandedSheetY.value + 12 ? defaultSheetY.value : expandedSheetY.value
+  liveSheetY.value = targetY
+  panelState.value = targetY === expandedSheetY.value ? 'expanded' : 'default'
+  persistView()
+}
+
+function handleTimelineScroll({ isAtTop, scrollTop }) {
+  timelineScrollAtTop.value = isAtTop
+  persistView({ scrollTop })
+}
+
+function scrollToEntry(item) {
+  const id = `footprint-${String(item.footprintId || item.sourceId).replace(/[^a-zA-Z0-9_-]/g, '-')}`
+  scrollIntoView.value = ''
+  nextTick(() => { scrollIntoView.value = id })
+}
+
+function handleMarkerTap(payload) {
+  const location = payload?.location || payload
+  if (!location) return
+  const target = footprintEntries.value.find((item) => String(item.footprintId) === String(location.footprintId || location.id))
+  if (!target) return
+  selectedFootprintId.value = target.footprintId
+  scrollToEntry(target)
+  persistView()
+}
+
+function focusEntryOnMap(item) {
+  if (!item?.hasLocation) return
+  selectedFootprintId.value = item.footprintId
+  panelState.value = 'default'
+  liveSheetY.value = null
+  nextTick(() => locationModule.value?.focusLocation?.({ latitude: item.latitude, longitude: item.longitude }))
+  persistView()
+}
+
+function openEntry(item) {
+  if (!item) return
+  if (item.availableState !== 'available') {
+    uni.showToast({ title: '原内容已失效，可继续保留足迹', icon: 'none' })
+    return
+  }
+  if (!item.footprintId && item.contentType === 'event') {
+    uni.showModal({ title: item.title, content: `${formattedSelectedDate.value} ${item.duration || ''}`, showCancel: false })
+    return
+  }
+  selectedFootprintId.value = item.footprintId
+  persistView()
+  if (item.detailType === 'service') {
+    uni.navigateTo({ url: '/pages/service/detail/index' })
+    return
+  }
+  uni.navigateTo({
+    url: `/pages/detail/index?id=${encodeURIComponent(item.sourceId)}&type=${encodeURIComponent(item.detailType || 'normal')}&source=my-footprint&returnStateKey=footprint`
+  })
+}
+
+function toggleManage() {
+  managingFavorites.value = !managingFavorites.value
+  selectedFavoriteIds.value = []
+}
+
+function toggleFavoriteSelection(item) {
+  if (!item?.favoriteId) return
+  selectedFavoriteIds.value = selectedFavoriteIds.value.includes(item.favoriteId)
+    ? selectedFavoriteIds.value.filter((id) => id !== item.favoriteId)
+    : [...selectedFavoriteIds.value, item.favoriteId]
+}
+
+function toggleSelectAll() {
+  selectedFavoriteIds.value = allFavoritesSelected.value ? [] : selectableFavoriteIds.value.slice()
+}
+
+function moveSelectedFavorites() {
+  if (!selectedFavoriteIds.value.length) return
+  const folders = favoriteApi.folders()
+  uni.showActionSheet({
+    itemList: [...folders.map((folder) => folder.name), '新建收藏夹'],
+    success: ({ tapIndex }) => {
+      if (tapIndex === folders.length) {
+        uni.showModal({
+          title: '新建收藏夹', editable: true, placeholderText: '输入收藏夹名称',
+          success: ({ confirm, content }) => {
+            if (!confirm || !String(content || '').trim()) return
+            const folder = favoriteApi.createFolder(String(content).trim())
+            finishMoveFavorites(folder.id)
+          }
+        })
+      } else if (folders[tapIndex]) finishMoveFavorites(folders[tapIndex].id)
+    }
+  })
+}
+
+function finishMoveFavorites(folderId) {
+  const moved = favoriteApi.moveMany(selectedFavoriteIds.value, folderId)
+  refreshFavorites()
+  selectedFavoriteIds.value = []
+  uni.showToast({ title: `已移动 ${moved.length} 项`, icon: 'none' })
+}
+
+function removeSelectedFavorites() {
+  if (!selectedFavoriteIds.value.length) return
+  uni.showModal({
+    title: '取消收藏', content: `确定取消收藏选中的 ${selectedFavoriteIds.value.length} 项吗？`, confirmColor: '#dc2626',
+    success: ({ confirm }) => {
+      if (!confirm) return
+      undoRecords.value = favoriteApi.removeMany(selectedFavoriteIds.value)
+      refreshFavorites()
+      selectedFavoriteIds.value = []
+      managingFavorites.value = false
+      if (undoTimer) clearTimeout(undoTimer)
+      undoTimer = setTimeout(() => { undoRecords.value = [] }, 8000)
+    }
+  })
+}
+
+function undoRemoveFavorites() {
+  favoriteApi.restoreMany(undoRecords.value)
+  refreshFavorites()
+  undoRecords.value = []
+  if (undoTimer) clearTimeout(undoTimer)
+  uni.showToast({ title: '收藏已恢复', icon: 'none' })
+}
+
+function pauseUndoTimer() {
+  if (undoTimer) clearTimeout(undoTimer)
+  undoTimer = null
+}
+
+function resumeUndoTimer() {
+  if (!undoRecords.value.length) return
+  pauseUndoTimer()
+  undoTimer = setTimeout(() => { undoRecords.value = [] }, 8000)
+}
+
+function shareFootprints() {
+  const filters = activeType.value === 'all' ? {} : { layer: activeType.value }
+  const snapshot = footprintApi.shareSnapshot(filters)
+  if (!snapshot.length) {
+    uni.showToast({ title: '当前筛选没有可分享的公开足迹', icon: 'none' })
+    return
+  }
+  try { uni.setStorageSync('MY_FOOTPRINT_SHARE_SNAPSHOT', snapshot) } catch (error) {}
+  uni.navigateTo({ url: '/pages/map-share/index?source=my-footprint' })
+}
+
+function openSettings() { uni.navigateTo({ url: '/pages/my-settings/index' }) }
+function openYearReview() { uni.navigateTo({ url: `/pages/my-timeline/index?year=${selectedDateObject.value.getFullYear()}` }) }
+function calendarDayLabel(day) {
+  const states = []
+  if (day.key === selectedDate.value) states.push('已选择')
+  if (!day.currentMonth) states.push('非本月')
+  if (day.hasRecords) states.push('有足迹记录')
+  return `${day.key}${states.length ? `，${states.join('，')}` : ''}`
+}
+
+function initializeMetrics() {
+  try {
+    const info = typeof uni.getWindowInfo === 'function' ? uni.getWindowInfo() : uni.getSystemInfoSync()
+    windowHeight.value = Number(info.windowHeight || 812)
+    safeTop.value = Number(info.safeAreaInsets?.top || info.statusBarHeight || 20)
+    const tabMetrics = uni.getStorageSync('TABBAR_METRICS')
+    tabBarHeight.value = Number(tabMetrics?.placeholderHeightPx || 86)
+  } catch (error) {}
+}
+
+onMounted(initializeMetrics)
+onShow(() => {
+  const freshEntry = createMyEntryState()
+  activeMode.value = freshEntry.mode
+  activeType.value = freshEntry.category
+  panelState.value = freshEntry.panelState
+  selectedDate.value = freshEntry.date
+  selectedFootprintId.value = freshEntry.selectedPointId
+  dateLayout.value = freshEntry.dateLayout
+  profileCollapsed.value = freshEntry.profileCollapsed
+  calendarExpanded.value = false
+  liveSheetY.value = null
+  managingFavorites.value = false
+  selectedFavoriteIds.value = []
+  scrollIntoView.value = ''
+  hydrateRepositories()
+  try {
+    const pages = getCurrentPages()
+    const page = pages[pages.length - 1]
+    page?.getTabBar?.()?.setData({ selected: 4 })
+  } catch (error) {}
+})
+onUnmounted(() => { if (undoTimer) clearTimeout(undoTimer) })
 </script>
 
 <style scoped>
-.my-page {
-  width: 100%;
-  height: 100vh;
-  background: linear-gradient(180deg, #e8e8e8 0%, #d0d0d0 100%);
-  position: relative;
-  overflow: hidden;
+.my-page { position: fixed; inset: 0; overflow: hidden; color: var(--ink-900); background: var(--color-page); --brand: var(--color-explore); --brand-strong: var(--color-explore-strong); --brand-soft: var(--color-explore-soft); --ink-900: var(--color-text); --ink-700: var(--color-text-body); --ink-500: var(--color-text-muted); --ink-300: #c3cbc8; --line-soft: var(--color-divider); --ease-bouncy: cubic-bezier(.2,.8,.2,1); }
+.map-stage { position: absolute; inset: 0 0 0; z-index: 1; transition: filter 220ms var(--ease-standard); }
+.map-stage.muted { filter: saturate(.74) brightness(1.035) contrast(.96); }
+.map-stage :deep(.location-module), .map-stage :deep(.map-section) { height: 100%; }
+.map-wash { position: absolute; inset: 0; pointer-events: none; background: rgba(250,252,248,.12); }
+.profile-layer { position: absolute; top: 0; left: 0; right: 0; z-index: 8; min-height: 118rpx; padding: env(safe-area-inset-top) 24rpx 10rpx; background: linear-gradient(180deg, rgba(255,255,255,.88) 0%, rgba(255,255,255,.34) 72%, rgba(255,255,255,0) 100%); pointer-events: none; }
+.profile-topline { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; transition: transform 260ms var(--ease-bouncy); }
+.profile-identity { width: fit-content; min-width: 0; flex: 0 1 auto; display: flex; flex-direction: row; align-items: center; gap: 10rpx; padding: 6rpx 14rpx 6rpx 6rpx; pointer-events: auto; border: 1rpx solid rgba(255,255,255,.92); border-radius: 999rpx; box-shadow: 0 8rpx 22rpx rgba(0, 0, 0, 0.075); transition: transform 200ms var(--ease-bouncy);  background: var(--color-surface-glass); }
+.profile-identity:active { transform: scale(.97); }
+.avatar { width: 62rpx; height: 62rpx; border: 3rpx solid #fff; border-radius: 50%; background: #fff; box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.08); transition: transform 200ms var(--ease-bouncy); }
+.identity-copy { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4rpx; }
+.username { color: var(--ink-900); font-size: 25rpx; font-weight: 750; line-height: 1.2; }
+.description { max-width: 300rpx; overflow: hidden; color: var(--ink-500); font-size: 19rpx; white-space: nowrap; text-overflow: ellipsis; }
+.settings-button { position: relative; width: 88rpx; height: 72rpx; margin: 0; padding: 0; pointer-events: auto; border: 1rpx solid rgba(255,255,255,.9); border-radius: 999rpx; color: var(--brand-strong); box-shadow: 0 8rpx 22rpx rgba(0, 0, 0, 0.075); font-size: 20rpx; font-weight: 650; line-height: 72rpx;  background: var(--color-surface-glass); }
+.settings-button::after { border: 0; }
+.profile-stats { display: none; }
+.stat-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6rpx; }
+.stat-item + .stat-item { border-left: 1rpx solid var(--line-soft); }
+.stat-number { font-size: 30rpx; font-weight: 800; font-variant-numeric: tabular-nums; }
+.stat-label { color: var(--ink-500); font-size: 21rpx; }
+.profile-layer.compact { min-height: 112rpx; background: linear-gradient(180deg, rgba(255,255,255,.88), rgba(255,255,255,.30) 72%, transparent); }
+.profile-layer.compact .profile-topline { transform: translate3d(0,-4rpx,0); }
+.profile-layer.compact .profile-identity { flex-direction: row; align-items: center; }
+.profile-layer.compact .avatar { width: 62rpx; height: 62rpx; border-width: 3rpx; }
+.profile-layer.compact .identity-copy { align-items: flex-start; }
+.profile-layer.compact .username { font-size: 25rpx; }
+.profile-layer.compact .description { max-width: 280rpx; font-size: 19rpx; }
+.profile-layer.compact .profile-stats { opacity: 0; pointer-events: none; transform: translate3d(0,-24rpx,0); }
+.footprint-sheet { position: absolute; top: 0; left: 0; right: 0; z-index: 20; display: flex; flex-direction: column; overflow: hidden; border: 0; transition: transform 240ms ease; will-change: transform; box-shadow: var(--shadow-sheet); border-radius: 30px 30px 0 0; background: rgba(250,253,252,.92); backdrop-filter: blur(24px) saturate(125%); -webkit-backdrop-filter: blur(24px) saturate(125%); }
+.footprint-sheet.dragging { transition: none; }
+.footprint-sheet.location-mode { background: rgba(250,253,252,.92); }
+.footprint-sheet.minimized {  background: var(--color-surface-glass); }
+.sheet-grab-region { flex: 0 0 56rpx; display: flex; align-items: flex-start; justify-content: center; touch-action: none; cursor: ns-resize; height: 20px; flex-basis: 20px; margin-bottom: 0; padding-top: 8px; padding-bottom: 8px; }
+.sheet-grab-region:active .drag-handle { width: 96rpx; background: var(--color-text-muted); }
+.drag-handle { border-radius: 4rpx; transition: width 160ms ease, background 160ms ease; width: 32px; height: 4px; background: #c4ccc8; }
+.mode-tabs { display: flex; border: 0; margin: 0 14px 4px; padding: 0; gap: 4px; background: transparent; border-radius: 0; }
+.mode-tab { min-width: 0; margin: 0; padding: 0 12rpx; flex: 1; display: flex; align-items: center; justify-content: center; color: var(--color-text-muted); background: transparent; transition: color 180ms ease, background 180ms ease;  height: 44px;  line-height: 44px;  font-size: 13px;  font-weight: 500;  border-radius: 16px;  gap: 6px; }
+.mode-tab::after { border: 0; }
+.mode-tab.active { background: #e0f2ec; color: #286c5c; box-shadow: none; font-weight: 600; }
+.mode-symbol { position: relative; width: 24rpx; height: 24rpx; flex: 0 0 24rpx; color: currentColor; }
+.symbol-location { width: 20rpx; height: 20rpx; border: 4rpx solid currentColor; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); }
+.symbol-favorite::before { content: ''; position: absolute; left: 4rpx; top: 2rpx; width: 18rpx; height: 24rpx; border: 4rpx solid currentColor; border-radius: 4rpx 4rpx 10rpx 10rpx; }
+.symbol-date { border: 4rpx solid currentColor; border-radius: 5rpx; }
+.symbol-date::before { content: ''; position: absolute; left: -4rpx; right: -4rpx; top: 6rpx; border-top: 4rpx solid currentColor; }
+.mode-toolbar { min-height: 68rpx; padding: 0 22rpx; display: flex; align-items: center; gap: 10rpx; }
+.location-toolbar { min-height: 68rpx; padding: 0 22rpx; display: flex; align-items: center; gap: 10rpx; }
+.toolbar-copy { min-width: 0; flex: 1; display: flex; align-items: baseline; gap: 12rpx; }
+.toolbar-title { color: var(--ink-900); font-size: 14px; font-weight: 600; }
+.toolbar-count { font-weight: 650; font-size: 11px; color: var(--color-text-muted); }
+.toolbar-action { margin: 0; border: 0; color: var(--brand-strong); font-weight: 650; box-shadow: none; min-width: 44px; height: 36px; line-height: 36px; padding: 0 10px; font-size: 12px; background: transparent; border-radius: 12px; }
+.toolbar-action::after { border: 0; }
+.calendar-panel { border-radius: 22rpx; box-shadow: none; margin: 0 14px 8px; background: transparent; height: 216px; max-height: 22vh; flex-shrink: 0; padding: 4px 2px; }
+.date-timeline { border-bottom: 1rpx solid var(--line-soft); margin: 0 14px; padding: 0 2px 4px; background: transparent; border-radius: 0; }
+.date-timeline-header { display: flex; align-items: center; justify-content: space-between; gap: 10rpx; min-height: 40px; }
+.date-timeline-title { color: var(--ink-900); font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 600; }
+.date-timeline-actions { display: flex; align-items: center; gap: 8rpx; }
+.year-review-button, .today-button { margin: 0; height: 36px; line-height: 36px; padding: 0 8px; font-size: 11px; font-weight: 500; border-radius: 12px; }
+.year-review-button { color: var(--brand-strong); background: transparent; }
+.today-button { background: transparent; color: var(--color-text); box-shadow: none; }
+.year-review-button::after, .today-button::after { border: 0; }
+.week-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4rpx; }
+.week-day { position: relative; min-width: 0; margin: 0; padding: 3rpx 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--ink-500); background: transparent; line-height: 1; height: 44px; font-size: 11px; border-radius: 12px; gap: 4px; }
+.week-day text:last-child { color: var(--ink-700); font-size: 13px; font-weight: 600; }
+.week-day::after { border: 0; }
+.week-day.marked::before { content: ''; position: absolute; bottom: 6rpx; width: 6rpx; height: 6rpx; border-radius: 50%; background: var(--brand); }
+.week-day.selected { background: #e0f2ec; color: #286c5c; box-shadow: none; }
+.week-day.selected text:last-child { color: #286c5c; }
+.week-day.selected::before { background: #fff; }
+.calendar-toggle { padding: 0; display: flex; align-items: center; justify-content: center; width: 44px; height: 24px; margin: 2px auto 0; background: transparent; border-radius: 12px; }
+.calendar-toggle::after { border: 0; }
+.calendar-toggle view { border-right: 4rpx solid #fff; border-bottom: 4rpx solid #fff; transform: rotate(45deg) translate(-3rpx,-3rpx); border-color: var(--color-text-muted); width: 7px; height: 7px; border-width: 0 1.5px 1.5px 0; }
+.calendar-toggle.expanded view { transform: rotate(225deg) translate(-3rpx,-3rpx); }
+.calendar-weekdays, .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+.calendar-weekdays text { height: 44rpx; color: var(--ink-500); font-size: 22rpx; text-align: center; line-height: 44rpx; }
+.calendar-day { position: relative; margin: 0; padding: 0; color: var(--ink-700); background: transparent; height: 36px; min-height: 36px; line-height: 36px; font-size: 12px; border-radius: 12px; }
+.calendar-day::after { border: 0; }
+.calendar-day.muted { color: #d1d5db; }
+.calendar-day.selected { background: #e0f2ec; color: #286c5c; }
+.calendar-dot { position: absolute; left: 50%; bottom: 5rpx; width: 6rpx; height: 6rpx; border-radius: 50%; background: var(--brand); transform: translateX(-50%); }
+.calendar-day.selected .calendar-dot { background: #fff; }
+.type-filter { width: 100%; flex: 0 0 76rpx; white-space: nowrap; -webkit-mask-image: linear-gradient(90deg,#000 0%,#000 91%,transparent 100%); mask-image: linear-gradient(90deg,#000 0%,#000 91%,transparent 100%); flex-basis: 44px; border-bottom: 0; }
+.type-filter-inner { display: inline-flex; padding: 0 14px; gap: 2px; }
+.type-chip { margin: 0; border: 0; color: var(--ink-500); background: var(--color-page); transition: color 180ms ease, background 180ms ease, box-shadow 180ms ease; min-width: 40px; height: 40px; min-height: 40px; line-height: 40px; padding: 0 8px; font-size: 12px; font-weight: 500; border-radius: 12px; }
+.type-chip::after { border: 0; }
+.type-chip.active { background: #e0f2ec; color: #286c5c; font-weight: 600; box-shadow: none; }
+.sheet-body { min-height: 0; flex: 1; display: flex; flex-direction: column; }
+.sheet-content { min-height: 0; flex: 1; }
+.footprint-sheet.minimized .mode-tabs { margin-bottom: 0; }
+.location-dock-copy { margin: 8rpx 20rpx 20rpx; padding: 24rpx 28rpx; display: flex; flex-direction: column; gap: 8rpx; border: 1rpx dashed #d1d5db; border-radius: 24rpx; background: #fff; box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.04); }
+.dock-icon { position: relative; width: 44rpx; height: 44rpx; margin-bottom: 8rpx; }
+.dock-icon::before { content: ''; position: absolute; left: 6rpx; top: 4rpx; width: 30rpx; height: 30rpx; border: 6rpx solid var(--brand); border-radius: 50% 50% 50% 0; transform: rotate(-45deg); box-sizing: border-box; }
+.location-dock-copy text:first-child { color: var(--ink-700); font-size: 24rpx; font-weight: 700; }
+.location-dock-copy text:last-child { color: var(--ink-500); font-size: 21rpx; }
+.content-layout-switch { display: flex; align-items: center; height: 36px; padding: 0 14px; gap: 16px; border-top: 0; border-bottom: 0; }
+.content-layout-switch button { margin: 0; color: var(--ink-500); font-weight: 650; flex: 0 0 auto; height: 32px; line-height: 32px; font-size: 11px; padding: 0 2px; border-radius: 0; background: transparent; }
+.content-layout-switch button::after { border: 0; }
+.content-layout-switch button.active { background: transparent; color: #286c5c; box-shadow: inset 0 -2px 0 #286c5c; }
+.manage-bar { position: absolute; left: 20rpx; right: 20rpx; bottom: calc(var(--tabbar-height) + 14rpx); min-height: 104rpx; padding: 14rpx 18rpx; z-index: 4; display: flex; align-items: center; gap: 14rpx; border-radius: 28rpx; color: var(--ink-900); box-shadow: 0 14rpx 38rpx rgba(0, 0, 0, 0.1);  background: var(--color-surface-glass); }
+.manage-bar > text { flex: 1; color: var(--ink-500); font-size: 21rpx; }
+.manage-bar button { min-height: 88rpx; margin: 0; padding: 0 18rpx; border-radius: 22rpx; color: var(--ink-500); background: var(--color-surface-raised); font-size: 23rpx; line-height: 88rpx; }
+.manage-bar button::after { border: 0; }
+.manage-bar .manage-select { padding: 0 10rpx; background: transparent; color: var(--brand-strong); }
+.manage-actions { display: flex; gap: 8rpx; }
+.manage-bar button.danger { color: var(--color-danger); background: var(--color-danger-soft); }
+.manage-bar button[disabled] { opacity: .42; }
+.undo-toast { position: fixed; left: 50%; bottom: calc(126rpx + env(safe-area-inset-bottom)); z-index: 80; width: min(620rpx, calc(100% - 48rpx)); min-height: 84rpx; padding: 12rpx 16rpx 12rpx 24rpx; display: flex; align-items: center; gap: 16rpx; border-radius: 24rpx; color: #fff; background: var(--color-text); box-shadow: 0 16rpx 38rpx rgba(0, 0, 0, 0.1); transform: translateX(-50%); }
+.undo-toast text { flex: 1; font-size: 24rpx; }
+.undo-toast button { width: 108rpx; height: 88rpx; margin: 0; padding: 0; border-radius: 20rpx; color: #ffb483; background: rgba(255,255,255,.1); font-size: 23rpx; font-weight: 750; line-height: 88rpx; }
+.undo-toast button::after { border: 0; }
+
+/* My page: the map stays open; date browsing uses one compact control stack. */
+.profile-layer { min-height: 104rpx; padding: env(safe-area-inset-top) 20rpx 8rpx; background: linear-gradient(180deg, rgba(255,255,255,.82), rgba(255,255,255,0) 100%); }
+.profile-identity { gap: 8rpx; padding: 5rpx 12rpx 5rpx 5rpx; box-shadow: 0 4rpx 12rpx rgba(0,0,0,.05);  background: var(--color-surface-glass); }
+.avatar { width: 56rpx; height: 56rpx; border-width: 2rpx; box-shadow: none; }
+.username { font-size: 23rpx; }
+.description { font-size: 18rpx; }
+.settings-button { width: 72rpx; height: 60rpx; border-radius: 14rpx; box-shadow: 0 4rpx 12rpx rgba(0,0,0,.05); font-size: 19rpx; line-height: 60rpx;  background: var(--color-surface-glass); }
+.footprint-sheet { box-shadow: var(--shadow-sheet); border-radius: 30px 30px 0 0; background: rgba(250,253,252,.92); backdrop-filter: blur(24px) saturate(125%); -webkit-backdrop-filter: blur(24px) saturate(125%); }
+.sheet-grab-region { height: 20px; flex-basis: 20px; margin-bottom: 0; padding-top: 8px; padding-bottom: 8px; }
+.drag-handle { width: 32px; height: 4px; background: #c4ccc8; }
+.mode-tabs { margin: 0 14px 4px; padding: 0; gap: 4px; background: transparent; border-radius: 0; }
+.mode-tab { padding: 0 8rpx;  height: 44px;  line-height: 44px;  font-size: 13px;  font-weight: 500;  border-radius: 16px;  gap: 6px; }
+.mode-tab.active { background: #e0f2ec; color: #286c5c; box-shadow: none; font-weight: 600; }
+.mode-symbol { width: 20rpx; height: 20rpx; flex-basis: 20rpx; }
+.symbol-location { width: 17rpx; height: 17rpx; border-width: 3rpx; }
+.symbol-favorite::before { left: 3rpx; top: 2rpx; width: 15rpx; height: 20rpx; border-width: 3rpx; }
+.symbol-date { border-width: 3rpx; }
+.symbol-date::before { left: -3rpx; right: -3rpx; top: 5rpx; border-top-width: 3rpx; }
+.date-timeline { margin: 0 14px; padding: 0 2px 4px; background: transparent; border-radius: 0; }
+.date-timeline-header { min-height: 40px; }
+.date-timeline-title { font-size: 13px; font-weight: 600; }
+.date-timeline-actions { gap: 6rpx; }
+.year-review-button,.today-button { height: 46rpx; padding: 0 10rpx; border-radius: 9rpx; font-size: 18rpx; line-height: 46rpx; }
+.today-button { background: transparent; color: var(--color-text); box-shadow: none; }
+.week-strip { gap: 2rpx; }
+.week-day { height: 44px; font-size: 11px; border-radius: 12px; gap: 4px; }
+.week-day text:last-child { font-size: 13px; font-weight: 600; }
+.week-day.marked::before { bottom: 4rpx; width: 5rpx; height: 5rpx; }
+.week-day.selected { background: #e0f2ec; color: #286c5c; box-shadow: none; }
+.calendar-toggle { margin-bottom: -9rpx; width: 44px; height: 24px; margin: 2px auto 0; background: transparent; border-radius: 12px; }
+.type-filter { flex-basis: 44px; border-bottom: 0; }
+.type-filter-inner { padding: 0 14px; gap: 2px; }
+.type-chip { min-width: 40px; height: 40px; min-height: 40px; line-height: 40px; padding: 0 8px; font-size: 12px; font-weight: 500; border-radius: 12px; }
+.type-chip.active { background: #e0f2ec; color: #286c5c; font-weight: 600; box-shadow: none; }
+.content-layout-switch { height: 36px; padding: 0 14px; gap: 16px; border-top: 0; border-bottom: 0; }
+.content-layout-switch button { flex: 0 0 auto; height: 32px; line-height: 32px; font-size: 11px; padding: 0 2px; border-radius: 0; background: transparent; }
+
+/* Reuse the home sheet vocabulary: a clear work surface, compact filters, and one strong selection. */
+.footprint-sheet { box-shadow: var(--shadow-sheet); border-radius: 30px 30px 0 0; background: rgba(250,253,252,.92); backdrop-filter: blur(24px) saturate(125%); -webkit-backdrop-filter: blur(24px) saturate(125%); }
+
+.sheet-grab-region {
+  height: 20px;
+  flex-basis: 20px;
+  margin-bottom: 0;
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
 
-/* 地图信息覆盖层样式 */
-.map-info-overlay {
-  position: fixed !important;
-  bottom: 2px;
-  left: 2px; /* 整体向左移一些，保证右侧内容不被裁切 */
-  right: 2px; /* 右侧与未展开时左侧保持一致留白 */
-  background: rgba(255, 255, 255, 0.9);
+.drag-handle {
+  width: 32px;
+  height: 4px;
+  background: #c4ccc8;
+}
+
+.mode-tabs { margin: 0 14px 4px; padding: 0; gap: 4px; background: transparent; border-radius: 0; }
+
+.mode-tab {
+  padding: 0 10rpx;
+  color: var(--color-text-muted);
+  background: transparent;  height: 44px;  line-height: 44px;  font-size: 13px;  font-weight: 500;  border-radius: 16px;  gap: 6px; }
+
+.mode-tab.active { background: #e0f2ec; color: #286c5c; box-shadow: none; font-weight: 600; }
+
+.mode-toolbar,
+.location-toolbar {
+  min-height: 40px;
+  padding: 0 16px;
+}
+
+.toolbar-action {
+  color: var(--color-text);
+  min-width: 44px;
+  height: 36px;
+  line-height: 36px;
+  padding: 0 10px;
+  font-size: 12px;
+  background: transparent;
   border-radius: 12px;
-  padding: 12px 12px 12px 10px;
-  z-index: 9999 !important;
-  transform: none !important;
-  isolation: isolate !important;
-  transform-style: flat !important;
-  box-sizing: border-box;
-  backface-visibility: hidden !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  transition: all 0.25s ease;
 }
 
-.map-info-overlay.dragging {
-  transition: none !important;
-  will-change: top;
+.date-timeline {
+  border: 0;
+  margin: 0 14px;
+  padding: 0 2px 4px;
+  background: transparent;
+  border-radius: 0;
 }
 
-/* 展开时保持配色与透明度不变，仅改变占位尺寸（靠内联样式的 top/bottom 控制高度）*/
-.map-info-overlay.expanded {
-  border-radius: 12px;
-}
-/* 展开态：恢复原始视觉宽度（关闭卡片缩放） */
-.map-info-overlay.expanded .overlay-cards-grid {
-  --overlay-card-scale: 1;
+.date-timeline-header { min-height: 40px;
 }
 
-/* 顶部位置分组筛选 chips 样式 */
-.overlay-area-filter { margin: 6px 0 8px 0; width: 100%; }
-.overlay-area-filter-inner { display: flex; gap: 8px; padding: 4px 2px; }
-.filter-chip { padding: 6px 10px; border-radius: 14px; background: rgba(0,0,0,0.06); color: #333; font-size: 12px; }
-.filter-chip.active { background: #4CAF50; color: #fff; }
-/* 顶部类别分组筛选（与收藏页一致的横向 chips） */
-.overlay-category-filter { margin: 4px 0 8px 0; width: 100%; }
-.overlay-category-filter-inner { display: flex; gap: 8px; padding: 4px 2px; }
-.map-title {
-  color: #000000;
-  font-size: 16px;
-  font-weight: 600;
-  display: block;
-  margin-bottom: 4px;
+.week-day { height: 44px; font-size: 11px; border-radius: 12px; gap: 4px;
 }
 
-.map-desc {
-  color: rgba(0, 0, 0, 0.9); /* 稍微提高透明度 */
-  font-size: 14px;
-  display: block;
-}
-/* 展开内容布局样式 */
-.overlay-expanded-content {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 8px;
-  height: calc(100% - 48px);
-  overflow-y: hidden; /* 保持纵向不溢出 */
-  overflow-x: visible; /* 横向允许内容完整显示 */
-}
-
-.overlay-levels {
-  flex: 0 0 72px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.overlay-level-item {
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: rgba(240, 240, 240, 0.9);
-  color: #333;
-  text-align: center;
-}
-
-.overlay-level-item.active {
-  background: rgba(0, 128, 0, 0.15);
-  color: #0a7c0a;
-  font-weight: 600;
-}
-
-.overlay-cards-container {
-  flex: 1 1 auto;
-  height: 100%;
-  padding: 0 8px 0 6px; /* 适当缩小内边距，释放网格宽度，避免第三列被裁切 */
-  box-sizing: border-box;
-}
-
-.overlay-cards-grid {
-  display: grid;
-  --overlay-card-scale: 1; /* 默认不缩放，展开时保持与之前一致 */
-  width: 100%;
-  box-sizing: border-box;
-  min-width: 0; /* 防止子项撑破容器导致水平裁切 */
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 6px; /* 再缩小间距，进一步释放宽度 */
-  align-items: stretch;
-  justify-items: stretch;
-}
-
-/* 折叠态（非 expanded）下，为保证小尺寸不裁切，可做轻微缩放 */
-.map-info-overlay:not(.expanded) .overlay-cards-grid {
-  --overlay-card-scale: 0.96;
-}
-
-/* 网格单元容器，确保组件充满单元且不溢出 */
-.grid-cell {
-  width: 100%;
-  min-width: 0; /* 防止内部内容撑破布局 */
-  display: flex;
-  align-items: stretch;
-  justify-content: stretch;
-}
-
-/* 缩放后的卡片容器：让卡片在单元内居中显示并不溢出 */
-.grid-cell > .card-item,
-.grid-cell > .service-card-item {
-  width: 100%;
-  box-sizing: border-box;
-  transform: scale(var(--overlay-card-scale));
-  transform-origin: center top;
-}
-
-/* 避免瀑布流旧样式干扰：隐藏旧的左右列容器（保留以免影响其他模式） */
-.overlay-cards-column { display: none; }
-.overlay-left-right { display: flex; flex-direction: row; gap: 8px; flex: 1 1 auto; height: 100%; }
-.overlay-left-nav { width: 92px; height: 100%; }
-.left-nav-item { padding: 10px 8px; font-size: 12px; color: #333; border-left: 3px solid transparent; }
-.left-nav-item.active { color: #0a7c0a; font-weight: 600; border-left-color: #4CAF50; background: rgba(76, 175, 80, 0.08); }
-.overlay-right-sections {
-  flex: 1;
-  height: 100%; /* 改为充满父容器高度 */
-  padding: 0 12px 0 8px; /* 向左微移，保持右侧内边距不变 */
-  box-sizing: border-box;
-}
-.overlay-section { margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px dashed rgba(0,0,0,0.08); }
-.section-header { display: flex; align-items: center; justify-content: space-between; padding: 0 2px; }
-.section-title { font-size: 14px; color: #333; }
-.section-more { font-size: 12px; color: #888; }
-.section-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.overlay-cards-grid .card-item, .overlay-cards-grid .service-card-item {
-  /* 统一卡片规格：图片+名称+作者，固定高度（按缩放系数等比例缩小视觉高度） */
-  height: calc(220px * var(--overlay-card-scale));
-}
-
-/* 渐进式足迹内容层：保留地图语境，同时避免地图文字穿透内容。 */
-.map-info-overlay {
-  left: 12rpx;
-  right: 12rpx;
-  bottom: calc(116rpx + env(safe-area-inset-bottom));
-  padding: 20rpx;
-  border: 1rpx solid rgba(148, 163, 184, 0.22);
-  border-radius: 28rpx;
-  background: #f8fafc;
-  box-shadow: 0 14rpx 40rpx rgba(15, 23, 42, 0.16);
-}
-
-.map-info-overlay.expanded {
-  border-radius: 28rpx 28rpx 20rpx 20rpx;
-  background: #f8fafc;
-}
-
-.overlay-header,
-.overlay-title-row,
-.overlay-header-actions,
-.selected-footprint-preview {
-  display: flex;
-  align-items: center;
-}
-
-.overlay-header {
-  min-height: 88rpx;
-  justify-content: space-between;
-  gap: 16rpx;
-}
-
-.overlay-title-copy {
-  flex: 1;
-  min-width: 0;
-}
-
-.overlay-title-row {
-  gap: 12rpx;
-}
-
-.map-title {
-  margin: 0;
-  color: #172033;
-  font-size: 34rpx;
-  font-weight: 700;
-}
-
-.result-count {
-  padding: 4rpx 12rpx;
-  border-radius: 999rpx;
-  color: #3d8bff;
-  background: #eaf3ff;
-  font-size: 22rpx;
-  font-weight: 600;
-}
-
-.map-desc {
-  margin-top: 6rpx;
-  color: #64748b;
-  font-size: 24rpx;
-}
-
-.overlay-header-actions {
-  gap: 10rpx;
-}
-
-.overlay-share,
-.overlay-toggle {
-  min-width: 88rpx;
-  height: 72rpx;
-  border-radius: 20rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.overlay-share {
-  color: #3d8bff;
-  background: #eaf3ff;
-  font-size: 24rpx;
-  font-weight: 600;
-}
-
-.overlay-toggle {
-  min-width: 72rpx;
-  background: #ffffff;
-  border: 1rpx solid #e2e8f0;
-}
-
-.toggle-chevron {
-  width: 18rpx;
-  height: 18rpx;
-  border-left: 4rpx solid #64748b;
-  border-top: 4rpx solid #64748b;
-  transform: rotate(45deg) translateY(5rpx);
-  transition: transform 180ms ease;
-}
-
-.overlay-toggle.expanded .toggle-chevron {
-  transform: rotate(225deg) translateY(5rpx);
-}
-
-.selected-footprint-preview {
-  min-height: 92rpx;
-  margin-top: 12rpx;
-  padding: 12rpx 16rpx;
-  gap: 14rpx;
-  border-radius: 20rpx;
-  background: #ffffff;
-  border: 1rpx solid #e2e8f0;
-}
-
-.preview-mark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  background: #3d8bff;
-  font-weight: 700;
-}
-
-.preview-mark {
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: 16rpx;
-}
-
-.preview-copy {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.preview-title {
-  color: #172033;
-  font-size: 26rpx;
-  font-weight: 650;
-}
-
-.preview-desc {
-  margin-top: 4rpx;
-  color: #94a3b8;
-  font-size: 22rpx;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.preview-detail {
-  min-width: 88rpx;
-  height: 64rpx;
-  border-radius: 18rpx;
-  color: #ff6b35;
-  background: #fff1eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24rpx;
-  font-weight: 600;
-}
-
-.overlay-area-filter-inner {
-  gap: 12rpx;
-  padding: 8rpx 2rpx 14rpx;
-}
-
-.filter-chip {
-  min-height: 72rpx;
-  box-sizing: border-box;
-  padding: 12rpx 22rpx;
-  border-radius: 20rpx;
-  background: rgba(255, 255, 255, 0.88);
-  border: 1rpx solid #e2e8f0;
-  color: #475569;
-  font-size: 24rpx;
-}
-
-.filter-chip.active {
-  color: #ffffff;
-  background: #3d8bff;
-  border-color: #3d8bff;
-}
-
-.overlay-left-right {
-  gap: 12rpx;
-  overflow: hidden;
-  background: #f8fafc;
-}
-
-.overlay-left-nav {
-  width: 108rpx;
-  padding: 6rpx;
-  box-sizing: border-box;
-  border-radius: 20rpx;
-  background: #f1f5f9;
-}
-
-.left-nav-item {
-  min-height: 78rpx;
-  box-sizing: border-box;
-  padding: 14rpx 10rpx;
-  border-left: 0;
-  border-radius: 16rpx;
-  color: #64748b;
-  font-size: 23rpx;
-}
-
-.left-nav-item.active {
-  color: #ff6b35;
-  background: #ffffff;
-  border-left: 0;
-  box-shadow: 0 6rpx 18rpx rgba(15, 23, 42, 0.08);
-}
-
-.overlay-right-sections {
-  padding: 0 8rpx 24rpx 0;
-  background: #f8fafc;
-}
-
-.overlay-section {
-  margin-bottom: 24rpx;
-  padding: 0 0 12rpx;
+.type-filter {
+  border-top: 0;
+  flex-basis: 44px;
   border-bottom: 0;
-  background: #f8fafc;
 }
 
-.section-header {
-  min-height: 64rpx;
+.type-filter-inner { padding: 0 14px; gap: 2px;
 }
 
-.section-title {
-  color: #172033;
-  font-size: 27rpx;
-  font-weight: 700;
+.type-chip {
+  color: var(--color-text-body);
+  background: transparent;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  line-height: 40px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 12px;
 }
 
-.section-more {
-  min-width: 88rpx;
-  min-height: 64rpx;
-  color: #3d8bff;
-  font-size: 23rpx;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
+.type-chip.active {
+  background: #e0f2ec;
+  color: #286c5c;
+  font-weight: 600;
+  box-shadow: none;
 }
 
-.section-grid,
-.overlay-cards-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20rpx 16rpx;
-  align-items: start;
+.content-layout-switch {
+  height: 36px;
+  padding: 0 14px;
+  gap: 16px;
+  border-top: 0;
+  border-bottom: 0;
 }
 
-/* 统一卡片规格：与收藏页 (CardItem / ServiceCardItem) 保持一致 */
-.grid-cell {
-  min-width: 0;
-  border-radius: 24rpx;
-  overflow: hidden;
-  background: #ffffff;
-  border: 1rpx solid #e2e8f0;
-  box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.06);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+.content-layout-switch button {
+  flex: 0 0 auto;
+  height: 32px;
+  line-height: 32px;
+  font-size: 11px;
+  padding: 0 2px;
+  border-radius: 0;
+  background: transparent;
 }
-
-.grid-cell.selected {
-  border: 1rpx solid rgba(61, 139, 255, 0.7);
-  box-shadow: 0 8rpx 24rpx rgba(61, 139, 255, 0.14);
+@media (orientation: landscape) {
+  .profile-layer { right: 52%; min-height: 100%; padding-left: calc(32rpx + env(safe-area-inset-left)); background: linear-gradient(90deg, rgba(255,255,255,.97), rgba(255,255,255,.85) 78%, transparent); }
+  .footprint-sheet { left: 46%; right: env(safe-area-inset-right); top: calc(12rpx + env(safe-area-inset-top)); bottom: 0; height: auto !important; transform: translate3d(0, 0, 0) !important;  background: var(--color-surface-glass); border-radius: 32px 32px 0 0; box-shadow: var(--shadow-sheet); backdrop-filter: blur(24px) saturate(135%); -webkit-backdrop-filter: blur(24px) saturate(135%); }
+  .profile-layer.compact .profile-stats { opacity: 1; transform: none; }
 }
-
-.grid-cell > .card-item,
-.grid-cell > .service-card-item {
-  width: 100%;
-  height: auto;
-  box-sizing: border-box;
-  transform: none;
-  transform-origin: center top;
-}
-
-.section-empty {
-  min-height: 180rpx;
-  border-radius: 20rpx;
-  color: #94a3b8;
-  background: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24rpx;
-}
-
-.preview-mark.place {
-  background: #22c55e;
-}
-
-.preview-mark.service {
-  background: #0f9f95;
-}
-
-.preview-mark.route {
-  background: #ff6b35;
+@media (prefers-reduced-motion: reduce) {
+  .map-stage, .profile-topline, .profile-identity, .avatar, .profile-stats, .footprint-sheet, .mode-tab, .type-chip { transition-duration: .01ms; }
 }
 </style>

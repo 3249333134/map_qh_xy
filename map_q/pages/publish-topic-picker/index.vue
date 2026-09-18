@@ -91,7 +91,7 @@ const onAdd = (r) => {
 <style scoped>
 .page {
   min-height: 100vh;
-  background: #f7f7f8;
+  background: var(--color-page);
 }
 
 .status-spacer {
@@ -105,7 +105,7 @@ const onAdd = (r) => {
   height: 88rpx;
   padding: 0 24rpx;
   background: #fff;
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .nav-back {
@@ -115,8 +115,8 @@ const onAdd = (r) => {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #f0f1f3;
-  color: #222;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
   font-size: 44rpx;
   line-height: 44rpx;
 }
@@ -124,7 +124,7 @@ const onAdd = (r) => {
 .nav-title {
   font-size: 32rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .nav-right {
@@ -140,7 +140,7 @@ const onAdd = (r) => {
   padding: 0 28rpx;
   height: 56rpx;
   border-radius: 999rpx;
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
   color: #fff;
   font-size: 26rpx;
   font-weight: 700;
@@ -157,12 +157,12 @@ const onAdd = (r) => {
   height: 72rpx;
   padding: 0 24rpx;
   border-radius: 999rpx;
-  background: #f0f1f3;
+  background: var(--color-surface-muted);
 }
 
 .search-icon {
   margin-right: 12rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
   font-size: 28rpx;
   font-weight: 700;
 }
@@ -170,7 +170,7 @@ const onAdd = (r) => {
 .search-field {
   flex: 1;
   font-size: 28rpx;
-  color: #222;
+  color: var(--color-text);
 }
 
 .content {
@@ -182,7 +182,7 @@ const onAdd = (r) => {
   margin: 24rpx 8rpx 16rpx;
   font-size: 28rpx;
   font-weight: 700;
-  color: #222;
+  color: var(--color-text);
 }
 
 .chips {
@@ -195,9 +195,9 @@ const onAdd = (r) => {
   padding: 14rpx 28rpx;
   border-radius: 999rpx;
   background: #fff;
-  color: #5f646d;
+  color: var(--color-text-body);
   font-size: 26rpx;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
 }
 
 .chip.active {
@@ -208,7 +208,7 @@ const onAdd = (r) => {
 .result-list {
   background: #fff;
   border-radius: 14rpx;
-  box-shadow: 0 1px 8px rgba(18, 24, 38, 0.06);
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
   padding: 0 24rpx;
 }
 
@@ -216,7 +216,7 @@ const onAdd = (r) => {
   display: flex;
   align-items: center;
   padding: 24rpx 0;
-  border-bottom: 1rpx solid #f1f5f9;
+  border-bottom: 1rpx solid var(--color-surface-muted);
 }
 
 .result-row.last {
@@ -243,27 +243,27 @@ const onAdd = (r) => {
   display: block;
   font-size: 28rpx;
   font-weight: 600;
-  color: #222;
+  color: var(--color-text);
 }
 
 .result-sub {
   display: block;
   margin-top: 8rpx;
   font-size: 24rpx;
-  color: #8a8f98;
+  color: var(--color-text-muted);
 }
 
 .result-action {
   padding: 12rpx 28rpx;
   border-radius: 999rpx;
-  background: linear-gradient(135deg, #ff8a4a 0%, #ff5b35 100%);
+  background: var(--color-primary);
   color: #fff;
   font-size: 26rpx;
   font-weight: 600;
 }
 
 .result-action.added {
-  background: #f0f1f3;
-  color: #8a8f98;
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
 }
 </style>

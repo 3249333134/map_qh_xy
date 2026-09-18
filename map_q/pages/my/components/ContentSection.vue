@@ -380,7 +380,7 @@ export default {
   justify-content: flex-start;
   padding: 4px 10px; /* 修改：减少上下内边距(6px→4px)，调整左右内边距(8px→10px) */
   border-radius: 12px;
-  background: #f8f9fa;
+  background: var(--color-page);
   transition: all 0.3s ease;
   min-width: 70px; /* 修改：稍微增加最小宽度(65px→70px) */
   flex: 1;
@@ -398,14 +398,14 @@ export default {
 .drag-indicator {
   width: 40px;
   height: 4px;
-  background: linear-gradient(90deg, #ddd 0%, #bbb 50%, #ddd 100%);
+  background: #ddd;
   border-radius: 2px;
   margin: 0 auto 4px; /* 减小底部间距，顶栏更紧凑 */
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .top-actions:active .drag-indicator {
-  background: linear-gradient(90deg, #999 0%, #666 50%, #999 100%);
+  background: var(--color-text-muted);
   transform: scaleX(1.2); /* 水平拉伸效果 */
 }
 
@@ -423,7 +423,7 @@ export default {
   justify-content: flex-start;
   padding: 6px 8px;
   border-radius: 12px;
-  background: #e9ecef; /* 修改：从 #f8f9fa 改为更深的 #e9ecef */
+  background: var(--color-border); /* 修改：从 #f8f9fa 改为更深的 #e9ecef */
   transition: all 0.3s ease;
   min-width: 65px;
   flex: 1;
@@ -433,9 +433,9 @@ export default {
 
 
 .action-btn.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--color-primary);
   color: white;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .action-btn:active {
@@ -443,9 +443,9 @@ export default {
 }
 
 .action-btn.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--color-primary);
   color: white;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .btn-icon {
@@ -457,7 +457,7 @@ export default {
 .btn-text {
   font-size: 11px;
   font-weight: 500;
-  color: #666;
+  color: var(--color-text-body);
   display: block;
   line-height: 1;
 }
@@ -473,7 +473,7 @@ export default {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #f8f9fa;
+  background: var(--color-page);
   transition: all 0.3s ease;
   cursor: pointer;
   margin-left: 6px;
@@ -482,12 +482,12 @@ export default {
 
 .settings-btn:active {
   transform: scale(0.95);
-  background: #e9ecef;
+  background: var(--color-border);
 }
 
 .settings-icon {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-body);
 }
 
 /* 毛玻璃效果层 */
@@ -502,8 +502,8 @@ export default {
   
   /* 毛玻璃效果 */
   background: rgba(255, 255, 255, 0.5);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   
   /* 渐变遮罩效果 */
   background: linear-gradient(
@@ -520,8 +520,7 @@ export default {
   
   /* 阴影效果 */
   box-shadow: 
-    0 4px 20px rgba(121, 119, 119, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    none;
   
   /* 平滑过渡 */
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -559,12 +558,12 @@ export default {
 
 /* Quiet segmented controls matching the clean card system. */
 .content-section {
-  box-shadow: 0 -8px 28px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.08);
 }
 
 .top-actions {
   background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 1px 0 rgba(226, 232, 240, 0.9);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
 }
 
 .top-actions:active {
@@ -580,20 +579,20 @@ export default {
 .action-btn {
   min-height: 34px;
   border-radius: 11px;
-  color: #64748b;
-  background: #f8f9fa;
+  color: var(--color-text-body);
+  background: var(--color-page);
   box-shadow: none;
 }
 
 .action-btn.active {
   color: #fff;
-  background: linear-gradient(135deg,#667eea,#764ba2);
-  box-shadow: inset 0 0 0 1px rgba(234, 88, 12, 0.16);
+  background: var(--color-primary);
+  box-shadow: none;
 }
 
 .btn-text,
 .settings-icon {
-  color: #64748b;
+  color: var(--color-text-body);
 }
 
 .action-btn.active .btn-text {
@@ -601,7 +600,7 @@ export default {
 }
 
 .settings-btn {
-  background: #f8f9fa;
+  background: var(--color-page);
 }
 
 .frosted-glass-overlay {

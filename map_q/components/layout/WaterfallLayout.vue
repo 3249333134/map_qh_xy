@@ -120,7 +120,7 @@ export default {
 .loading-done {
   text-align: center;
   padding: 40rpx;
-  color: #999;
+  color: var(--color-text-muted);
   font-size: 28rpx;
 }
 </style>
