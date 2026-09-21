@@ -16,8 +16,8 @@ export function radarTouchPoint(point) {
   return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null
 }
 
-export function createRadarMotion({ onChange, now = Date.now, schedule = fn => setTimeout(fn, 32), cancel = clearTimeout, reducedMotion = () => false, sensitivity = () => 0.009 }) {
-  let orientation = rotateOrientation(identityRotation(), 0.28, -0.12)
+export function createRadarMotion({ onChange, now = Date.now, schedule = fn => setTimeout(fn, 16), cancel = clearTimeout, reducedMotion = () => false, sensitivity = () => 0.009 }) {
+  let orientation = identityRotation()
   let frame = null, touch = null, velocity = [0, 0], queued = [0, 0], lastFrame = 0, released = 0
   const flush = () => {
     if (queued[0] || queued[1]) {
@@ -48,11 +48,12 @@ export function createRadarMotion({ onChange, now = Date.now, schedule = fn => s
       if (!touch) return false
       if (!touch.moved && Math.hypot(point.x - touch.origin.x, point.y - touch.origin.y) < 6) return false
       const time = now(), dt = Math.max(8, time - touch.time), scale = sensitivity()
-      const dx = (point.x - touch.x) * scale, dy = -(point.y - touch.y) * scale
+      const dx = (point.x - touch.x) * scale, dy = (point.y - touch.y) * scale
       velocity = [dx / dt, dy / dt].map(value => Math.max(-0.012, Math.min(0.012, value)))
       queued[0] += dx; queued[1] += dy
       touch = { ...touch, ...point, time, moved: true }
-      if (frame === null) { lastFrame = time; frame = schedule(tick) }
+      // Touch input updates immediately; only release inertia uses a timer.
+      flush()
       return true
     },
     end() {
@@ -68,8 +69,10 @@ export function createRadarMotion({ onChange, now = Date.now, schedule = fn => s
   }
 }
 
+export const radarSphereRadius = (width, height) => Math.max(20, Math.min(width - 80, height - 54) / 2)
+
 export function projectRadarSphere(points, orientation, width = 320, height = 320) {
-  const count = Math.max(1, points.length), radius = Math.max(20, Math.min(width - 80, height - 54) / 2)
+  const count = Math.max(1, points.length), radius = radarSphereRadius(width, height)
   const placed = []
   return points.map((point, index) => {
     const y = 1 - 2 * ((index + 0.5) / count), ring = Math.sqrt(1 - y * y)

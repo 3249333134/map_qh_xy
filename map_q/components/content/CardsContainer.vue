@@ -44,7 +44,7 @@
 
     <view v-else class="cards-grid">
       <view class="cards-column">
-        <template v-for="(item, index) in leftColumnData" :key="'left-base-' + (item._id || '') + '-' + index">
+        <view class="card-cell" :data-card-id="String(item._id || item.id || '')" :data-feed-index="index * 2 + 0" v-for="(item, index) in leftColumnData" :key="'left-base-' + (item._id || '') + '-' + index">
             <track-card
               v-if="item.type === 'track'"
               :index="index"
@@ -126,10 +126,10 @@
               @media-tap="$emit('media-tap', $event)"
               @content-tap="$emit('content-tap', $event)"
             />
-          </template>
+          </view>
       </view>
       <view class="cards-column">
-        <template v-for="(item, index) in rightColumnData" :key="'right-base-' + (item._id || '') + '-' + index">
+        <view class="card-cell" :data-card-id="String(item._id || item.id || '')" :data-feed-index="index * 2 + 1" v-for="(item, index) in rightColumnData" :key="'right-base-' + (item._id || '') + '-' + index">
             <track-card
               v-if="item.type === 'track'"
               :index="leftColumnData.length + index"
@@ -211,7 +211,7 @@
               @media-tap="$emit('media-tap', $event)"
               @content-tap="$emit('content-tap', $event)"
             />
-          </template>
+          </view>
       </view>
     </view>
     <view class="loading-more" v-if="isLoading && totalCount > 0">
@@ -250,41 +250,40 @@ export default {
     emptyDesc: { type: String, default: '去发布第一条动态吧' },
     showEmptyAction: { type: Boolean, default: true }
   },
-  emits: ['load-more','scroll','media-tap','content-tap','reserve'],
+  emits: ['load-more','scroll','media-tap','content-tap','reserve','scroll-to-card'],
+  data() { return { currentScrollTop: 0 } },
   computed: {
     totalCount() {
       return this.leftColumnData.length + this.rightColumnData.length
     }
   },
   methods: {
-    onScroll(e) { this.$emit('scroll', e) },
+    onScroll(e) { this.currentScrollTop = Number(e.detail.scrollTop || 0); this.$emit('scroll', e) },
     goPublish() {
       uni.switchTab({ url: '/pages/plus/index' })
     },
     isHighlighted(cardId) {
       return cardId && this.highlightedCardId && String(cardId) === String(this.highlightedCardId)
     },
-    scrollToCard(cardId) {
-      let targetIndex = -1
-      this.leftColumnData.forEach((item, index) => {
-        if (String(item._id) === String(cardId)) {
-          targetIndex = index
-        }
+    measureCards(callback) {
+      const query = uni.createSelectorQuery().in(this)
+      query.select('.cards-container').boundingClientRect()
+      query.selectAll('.card-cell').fields({ rect: true, size: true, dataset: true })
+      query.exec(results => {
+        if (results?.[0] && results?.[1]) callback(results[0], results[1])
       })
-      if (targetIndex === -1) {
-        this.rightColumnData.forEach((item, index) => {
-          if (String(item._id) === String(cardId)) {
-            targetIndex = index
-          }
-        })
-      }
-      if (targetIndex !== -1) {
-        let scrollTop = 0
-        for (let i = 0; i < targetIndex; i++) {
-          scrollTop += this.getColumnItemHeight('left', i) + 20
-        }
-        this.$emit('scroll-to-card', { cardId, scrollTop })
-      }
+    },
+    measureVisibleCards(callback) {
+      this.measureCards((viewport, cards) => {
+        callback(cards.filter(card => card.bottom > viewport.top && card.top < viewport.bottom)
+          .map(card => Number(card.dataset.feedIndex)))
+      })
+    },
+    scrollToCard(cardId) {
+      this.measureCards((viewport, cards) => {
+        const card = cards.find(item => String(item.dataset.cardId) === String(cardId))
+        if (card) this.$emit('scroll-to-card', { cardId, scrollTop: Math.max(0, this.currentScrollTop + card.top - viewport.top) })
+      })
     }
   }
 }

@@ -19,15 +19,39 @@ describe('radar sphere gestures', () => {
     for (let row = 0; row < 3; row++) expect(Math.hypot(...matrix.slice(row * 3, row * 3 + 3))).toBeCloseTo(1, 9)
     expect(matrix).not.toEqual(identityRotation())
   })
-  it('coalesces drag updates, continues with inertia and stops in bounded time', () => {
+  it('updates each drag immediately, continues with inertia and stops in bounded time', () => {
     const h = harness()
     h.motion.begin({ x: 100, y: 100 }); h.advance()
     h.motion.move({ x: 130, y: 120 }); h.motion.move({ x: 160, y: 140 })
-    expect(h.frames.size).toBe(1)
+    expect(h.frames.size).toBe(0)
+    expect(h.values).toHaveLength(2)
     expect(h.motion.end()).toBe(true)
     const released = h.values.length
     h.advance(); expect(h.values.length).toBeGreaterThan(released)
     for (let i = 0; i < 50; i++) h.advance()
+    expect(h.frames.size).toBe(0)
+  })
+  it.each([[20, 0], [-20, 0], [0, 20], [0, -20], [20, 20]])(
+    'moves the front of the sphere with the finger (%s, %s) without a first-touch jump', (dx, dy) => {
+      const h = harness(true)
+      h.motion.begin({ x: 100, y: 100 })
+      h.motion.move({ x: 100 + dx, y: 100 + dy })
+      expect(h.values).toHaveLength(1)
+      // Project the front-center vector [0, 0, 1] into screen coordinates.
+      const matrix = h.values[0]
+      const screenX = matrix[2], screenY = -matrix[5]
+      expect(Math.sign(screenX)).toBe(Math.sign(dx))
+      expect(screenY === 0 ? 0 : Math.sign(screenY)).toBe(Math.sign(dy))
+      expect(matrix).toEqual(rotateOrientation(identityRotation(), dx * 0.009, dy * 0.009))
+    }
+  )
+  it('reverses immediately while the finger remains down', () => {
+    const h = harness(true)
+    h.motion.begin({ x: 100, y: 100 })
+    h.motion.move({ x: 100, y: 130 })
+    h.motion.move({ x: 100, y: 100 })
+    expect(h.values).toHaveLength(2)
+    h.values[1].forEach((value, i) => expect(value).toBeCloseTo(identityRotation()[i], 12))
     expect(h.frames.size).toBe(0)
   })
   it('pressing again interrupts inertia; cancelling removes pending updates', () => {

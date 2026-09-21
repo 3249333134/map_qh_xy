@@ -659,3 +659,9 @@ export default {
 }
 .service-hero { position: absolute; z-index: 25; left: 16px; right: 16px; top: calc(env(safe-area-inset-top) + 16px); display: flex; align-items: flex-start; justify-content: space-between; pointer-events: none; }.service-hero>view:first-child text { display: block; text-shadow: 0 2px 12px rgba(255,255,255,.9); }.service-hero>view:first-child text:first-child { font-size: 24px; font-weight: 850; }.service-hero>view:first-child text:last-child { margin-top: 3px; color: var(--color-text-body); font-size: 11px; }.hero-ticket { pointer-events: auto; padding: 8px 10px; border-radius: 15px; display: flex; align-items: center; gap: 8px; color: #fff; background: rgba(23,28,31,.88); box-shadow: var(--shadow-float); }.hero-ticket>text { width: 28px; height: 28px; border-radius: 9px; display: flex; align-items: center; justify-content: center; background: var(--color-primary); font-weight: 850; }.hero-ticket view text { display: block; }.hero-ticket view text:first-child { font-size: 11px; font-weight: 750; }.hero-ticket view text:last-child { margin-top: 2px; color: #c8cfcd; font-size: 9px; }
 </style>
+
+<style scoped>
+.service-hero .hero-ticket { color: #286c5c; background: #f3f8f5; border: 1px solid #dcebe4; box-shadow: 0 3px 12px rgba(40,108,92,.06); }
+.service-hero .hero-ticket>text { color: #286c5c; background: #e0f2ec; }
+.service-hero .hero-ticket view text:last-child { color: #627a70; }
+</style>

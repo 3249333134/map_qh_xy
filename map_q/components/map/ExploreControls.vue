@@ -7,10 +7,10 @@
     <view
       v-if="compact"
       class="compact-trigger"
-      :class="{ open: quickPanelOpen, social: compact }"
+      :class="{ open: socialMode, social: compact }"
       role="button"
-      :aria-expanded="quickPanelOpen"
-      :aria-label="quickPanelOpen ? '收起地图社交场景' : '打开地图社交场景'"
+      :aria-expanded="socialMode"
+      :aria-label="socialMode ? '收起地图社交场景' : '打开地图社交场景'"
       @tap="toggleQuickPanel"
     >
       <view class="filter-glyph" aria-hidden="true">
@@ -22,12 +22,14 @@
     </view>
 
     <scroll-view
-      v-if="compact && quickPanelOpen"
+      v-if="compact"
+      v-show="socialMode"
       class="social-scene-scroll"
       scroll-x
       enhanced
+      :scroll-with-animation="false"
       :show-scrollbar="false"
-      :scroll-into-view="`social-${socialScene}`"
+      :scroll-into-view="sceneScrollTarget"
       aria-label="地图社交场景，可左右滑动"
     >
       <view class="social-scene-list">
@@ -38,7 +40,7 @@
           class="social-scene-chip"
           :class="[{ selected: socialScene === scene.id }, scene.id]"
           role="button"
-          :aria-label="`进入${scene.name}`"
+          :aria-label="`切换到${scene.name}`"
           :aria-pressed="socialScene === scene.id"
           @tap.stop="selectSocialScene(scene.id)"
         >
@@ -147,13 +149,14 @@ export default {
     isRefreshing: { type: Boolean, default: false },
     error: { type: Object, default: null }
     ,
-    socialScene: { type: String, default: 'people' }
+    socialScene: { type: String, default: '' },
+    socialMode: { type: Boolean, default: false }
   },
-  emits: ['city-select', 'time-change', 'space-change', 'layer-tap', 'share-tap', 'request-location', 'retry', 'sheet-state', 'social-scene-change'],
+  emits: ['city-select', 'time-change', 'space-change', 'layer-tap', 'share-tap', 'request-location', 'retry', 'sheet-state', 'social-scene-change', 'social-mode-change'],
   data() {
     return {
       sheetType: '',
-      quickPanelOpen: false,
+      sceneScrollTarget: '',
       topOffset: 12,
       cities: CITY_OPTIONS,
       timeOptions: [
@@ -189,6 +192,14 @@ export default {
     }
   },
   watch: {
+    socialMode(open) {
+      this.sceneScrollTarget = ''
+      if (open) {
+        this.$nextTick(() => {
+          if (this.socialMode) this.sceneScrollTarget = this.socialScene ? `social-${this.socialScene}` : ''
+        })
+      }
+    },
     sheetType(value) {
       this.$emit('sheet-state', !!value)
     }
@@ -206,14 +217,12 @@ export default {
     }
   },
   methods: {
-    toggleQuickPanel() { this.quickPanelOpen = !this.quickPanelOpen },
+    toggleQuickPanel() { this.$emit('social-mode-change', !this.socialMode) },
     selectSocialScene(scene) {
-      try { uni.setStorageSync('MAP_SOCIAL_SCENE_ENTRY_V1', scene) } catch (error) {}
-      try { if (typeof uni.vibrateShort === 'function') uni.vibrateShort({ type: 'light' }) } catch (error) {}
       this.$emit('social-scene-change', scene)
     },
     openSheet(type) {
-      this.quickPanelOpen = false
+      this.$emit('social-mode-change', false)
       this.sheetType = type
     },
     closeSheet() { this.sheetType = '' },
@@ -251,12 +260,12 @@ export default {
       this.closeSheet()
     },
     openLayers() {
-      if (!this.compact) this.quickPanelOpen = false
+      if (!this.compact) this.$emit('social-mode-change', false)
       this.closeSheet()
       this.$emit('layer-tap')
     },
     shareMap() {
-      if (!this.compact) this.quickPanelOpen = false
+      if (!this.compact) this.$emit('social-mode-change', false)
       this.closeSheet()
       this.$emit('share-tap')
     }
@@ -293,10 +302,9 @@ export default {
   justify-content: center;
   pointer-events: auto;
   touch-action: manipulation;
-  transition: transform 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  transition: background-color 160ms ease;
 }
 .compact-trigger:active {
-  transform: scale(.96);
   background: var(--color-surface-muted);
   box-shadow: none;
 }
@@ -361,13 +369,11 @@ export default {
   border-radius: 18px;
   background: rgba(255,255,255,.96);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.1);
-  transform-origin: right center;
-  animation: compactPanelIn 180ms cubic-bezier(.2,.8,.2,1);
   pointer-events: auto;
 }
 .social-scene-list { display: inline-flex; min-width: 100%; height: 52px; padding: 4px; gap: 6px; box-sizing: border-box; }
-.social-scene-chip { min-width: 112px; height: 44px; padding: 0 13px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(34,52,47,.07); border-radius: 15px; color: #26332f; background: #fff; box-sizing: border-box; font-size: 13px; font-weight: 750; transition: color 160ms ease, background-color 160ms ease, transform 160ms ease; }
-.social-scene-chip:active { transform: scale(.97); }
+.social-scene-chip { min-width: 112px; height: 44px; padding: 0 13px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(34,52,47,.07); border-radius: 15px; color: #26332f; background: #fff; box-sizing: border-box; font-size: 13px; font-weight: 750; transition: color 160ms ease, background-color 160ms ease; }
+.social-scene-chip:active { opacity: .85; }
 .social-scene-chip.selected { color: #fff; border-color: var(--color-text); background: var(--color-text); }
 .social-scene-icon { position: relative; width: 24px; height: 24px; flex: 0 0 24px; border-radius: 8px; color: var(--color-primary); background: var(--color-surface-muted); }
 .social-scene-chip.selected .social-scene-icon { color: #fff; background: var(--color-primary); }
@@ -425,7 +431,6 @@ export default {
 .more-desc { margin-top: 3px; color: var(--color-text-body); font-size: 12px; }
 .more-arrow { color: var(--color-text-muted); font-size: 24px; }
 @keyframes spin { to { transform: rotate(360deg); } }
-@keyframes compactPanelIn { from { opacity: 0; transform: translateX(10px) scaleX(.96); } to { opacity: 1; transform: translateX(0) scaleX(1); } }
 @keyframes sheetIn { from { opacity: .7; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) { .spinner,.social-scene-scroll,.filter-sheet { animation: none; }.social-scene-chip { transition: none; } }
 </style>

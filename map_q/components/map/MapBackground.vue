@@ -19,7 +19,7 @@
       @longtap="onMapLongPress"
     ></map>
     <!-- 添加位置刷新按钮 -->
-    <view class="location-btn" role="button" aria-label="Center on my location" @tap="refreshLocation">
+    <view v-if="showLocationControl" class="location-btn" role="button" aria-label="Center on my location" @tap="refreshLocation">
       <view class="location-icon" aria-hidden="true"><view class="location-core"></view></view>
     </view>
 
@@ -33,6 +33,7 @@ import { debounce } from '@/utils/debounce.js'
 export default {
   name: 'MapBackground',
   props: {
+    showLocationControl: { type: Boolean, default: true },
     height: {
       type: Number,
       required: true

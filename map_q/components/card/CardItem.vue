@@ -1,6 +1,6 @@
 <template>
   <view
-    class="card map-card app-card content-card"
+    class="card map-card app-card content-card refined-card"
     :style="{ '--card-height': height + 'rpx' }">
     <!-- 卡片上半部分：点击进入详情页并定位 -->
     <view

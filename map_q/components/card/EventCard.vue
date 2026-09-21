@@ -1,6 +1,6 @@
 <template>
   <view
-    class="card event-card app-card content-card"
+    class="card event-card app-card content-card refined-card"
     :style="{ '--card-height': height + 'rpx' }">
     <!-- 上半部分：活动封面 -->
     <view
@@ -31,19 +31,18 @@
       @tap="handleContentTap"
       @click="handleContentTap">
       <view class="card-title">{{ cardTitle }}</view>
+      <view v-if="locationText" class="event-location">{{ locationText }}</view>
       <view class="card-info">
         <text class="info-text">{{ participantText }}</text>
-        <view class="dot"></view>
-        <text class="info-text location">{{ locationText }}</text>
+        <view class="status-tag" :class="statusClass">{{ statusText }}</view>
       </view>
       <view v-if="maxParticipants > 0" class="registration-progress">
         <view class="progress-bar">
           <view class="progress-fill" :style="{ width: progressPercent + '%' }"></view>
         </view>
-        <text class="progress-text">报名进度 {{ progressPercent }}%</text>
+
       </view>
       <view class="card-footer">
-        <view class="status-tag" :class="statusClass">{{ statusText }}</view>
         <view class="card-actions" @tap.stop="preventBubble" @click.stop="preventBubble">
           <view class="action-btn" :class="{ active: isLiked }" @tap.stop="handleLike" @click.stop="handleLike">
             <text class="action-icon">{{ isLiked ? '♥' : '♡' }}</text>
@@ -54,8 +53,8 @@
             <text class="action-text">{{ favoritesCount }}</text>
           </view>
         </view>
-        <view v-if="canRegister" class="register-btn" @tap.stop="handleRegister" @click.stop="handleRegister">
-          {{ isRegistered ? '已报名' : '报名' }}
+        <view v-if="canRegister" class="register-btn card-cta" :class="{ registered: isRegistered }" @tap.stop="handleRegister" @click.stop="handleRegister">
+          <text class="cta-face">{{ isRegistered ? '已报名' : '报名' }}</text>
         </view>
       </view>
     </view>

@@ -1,6 +1,6 @@
 <template>
   <view
-    class="card article-card app-card content-card"
+    class="card article-card app-card content-card refined-card"
     :style="{ '--card-height': height + 'rpx' }">
     <!-- 上半部分：文章封面（横向长图） -->
     <view
@@ -32,7 +32,7 @@
       @tap="handleContentTap"
       @click="handleContentTap">
       <view class="card-title">{{ cardTitle }}</view>
-      <view class="card-excerpt">{{ excerptText }}</view>
+      <view v-if="excerptText" class="card-excerpt">{{ excerptText }}</view>
       <view class="card-footer">
         <view class="card-author">
           <text class="author-name">{{ cardAuthor }}</text>
@@ -100,7 +100,7 @@ export default {
     },
     excerptText() {
       const text = this.cardData && (this.cardData.description || this.cardData.excerpt || this.cardData.summary)
-      return text ? String(text).substring(0, 60) + '...' : '点击查看全文'
+      return text ? String(text) : ''
     },
     coverImage() {
       if (this.coverLoadFailed) return ''

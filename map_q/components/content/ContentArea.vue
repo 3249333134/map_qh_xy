@@ -1,13 +1,14 @@
 <template>
   <view 
     class="content-area" 
-    :class="{ collapsed: isCollapsed, 'has-overlay': !!selectedPoint, 'is-dragging': isDragging, 'has-filter-sheet': filterSheetOpen }"
+    :class="{ collapsed: isCollapsed, 'social-mode': socialMode, 'has-overlay': !!selectedPoint, 'is-dragging': isDragging, 'has-filter-sheet': filterSheetOpen }"
     :style="{ height: contentAreaHeight + 'px', bottom: (bottomOffset || 0) + 'px' }"
   >
     <!-- 白色背景容器 -->
     <view class="content-inner">
       <!-- 拖动区域（包含拖动条和搜索框） -->
       <drag-search-bar
+        :class="{ 'scene-search-placeholder': socialMode }"
         :is-collapsed="isCollapsed"
         :collapsed-search-style="collapsedSearchStyle"
         :category-action-expanded="categoryActionExpanded"
@@ -41,6 +42,7 @@
           :is-refreshing="isRefreshing"
           :error="dataError"
           :social-scene="socialScene"
+          :social-mode="socialMode"
           @city-select="$emit('city-select', $event)"
           @time-change="$emit('time-change', $event)"
           @space-change="$emit('space-change', $event)"
@@ -50,6 +52,7 @@
           @retry="$emit('retry')"
           @sheet-state="filterSheetOpen = $event"
           @social-scene-change="$emit('social-scene-change', $event)"
+          @social-mode-change="$emit('social-mode-change', $event)"
         />
       </view>
       
@@ -212,7 +215,8 @@ export default {
     layers: { type: Array, default: () => [] },
     exploreSnapshot: { type: Object, default: () => ({}) }
     ,
-    socialScene: { type: String, default: 'people' }
+    socialScene: { type: String, default: '' },
+    socialMode: { type: Boolean, default: false }
   },
   // 在 data 中初始化为 false
   data() {
@@ -381,6 +385,13 @@ export default {
         this.updateTabsHeightApprox()
         this.updateTopAreaHeight()
       })
+    },
+    socialScene(value) {
+      if (value) {
+        this.searchFocused = false
+        this.searchText = ''
+        this.categoryActionExpanded = false
+      }
     },
     exploreToolMode(value) {
       if (value) {
@@ -741,48 +752,10 @@ export default {
     },
     
     // 检测可视区域内的卡片
-    checkVisibleCards(scrollTop) {
-      // 获取可视区域的高度
-      const visibleHeight = this.height - this.searchBoxHeight - 50; // 减去搜索框和分类选项卡的高度
-      const visibleBottom = scrollTop + visibleHeight;
-      
-      // 创建一个数组来存储可视区域内的卡片索引
-      const visibleCardIndices = [];
-      
-      // 检查左列卡片
-      let currentTop = 0;
-      this.leftColumnData.forEach((item, index) => {
-        const cardHeight = this.getColumnItemHeight('left', index);
-        const cardBottom = currentTop + cardHeight;
-        
-        // 如果卡片在可视区域内
-        if ((currentTop >= scrollTop && currentTop <= visibleBottom) || 
-            (cardBottom >= scrollTop && cardBottom <= visibleBottom) ||
-            (currentTop <= scrollTop && cardBottom >= visibleBottom)) {
-          visibleCardIndices.push(index * 2); // 左列卡片在原始数据中的索引是 index * 2
-        }
-        
-        currentTop += cardHeight + 20; // 加上卡片间距
-      });
-      
-      // 检查右列卡片
-      currentTop = 0;
-      this.rightColumnData.forEach((item, index) => {
-        const cardHeight = this.getColumnItemHeight('right', index);
-        const cardBottom = currentTop + cardHeight;
-        
-        // 如果卡片在可视区域内
-        if ((currentTop >= scrollTop && currentTop <= visibleBottom) || 
-            (cardBottom >= scrollTop && cardBottom <= visibleBottom) ||
-            (currentTop <= scrollTop && cardBottom >= visibleBottom)) {
-          visibleCardIndices.push(index * 2 + 1); // 右列卡片在原始数据中的索引是 index * 2 + 1
-        }
-        
-        currentTop += cardHeight + 20; // 加上卡片间距
-      });
-      
-      // 触发事件，通知父组件更新地图标记点
-      this.$emit('visible-cards-change', visibleCardIndices);
+    checkVisibleCards() {
+      this.$refs.cardsContainerRef?.measureVisibleCards(indices => {
+        this.$emit('visible-cards-change', indices)
+      })
     },
   },
   computed: {
@@ -870,7 +843,8 @@ export default {
 }
 
 /* 拖动时高度必须紧跟手指，避免外层动画滞后于内部滚动区而露出白色块。 */
-.content-area.is-dragging {
+.content-area.is-dragging,
+.content-area.social-mode {
   transition: none;
 }
 
@@ -909,7 +883,10 @@ export default {
 
 .content-area::before { display: none; }
 
-.content-area.collapsed { height: auto !important; overflow: visible; }
+/* Search row: 8px top + 44px control + 6px bottom, plus 16px above navigation.
+   Keep a numeric height so collapsing does not switch between pixels and auto. */
+.content-area.collapsed { height: 74px !important; overflow: visible; transition: none; }
+.scene-search-placeholder :deep(.search-input-wrapper) { visibility: hidden; pointer-events: none; }
 .content-area.collapsed::before { display: none; }
 .content-area.collapsed .content-inner {
   overflow: visible;

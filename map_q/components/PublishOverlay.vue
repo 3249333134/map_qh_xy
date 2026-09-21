@@ -205,7 +205,7 @@
 <script setup>
 import { computed, getCurrentInstance, nextTick, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { onHide } from '@dcloudio/uni-app'
-import { createRadarMotion, identityRotation, projectRadarSphere, radarTouchPoint } from '../utils/radarSphere.js'
+import { createRadarMotion, identityRotation, projectRadarSphere, radarSphereRadius, radarTouchPoint } from '../utils/radarSphere.js'
 import { creationApi, CREATION_STATUS, moderationApi } from '../utils/api/creation.js'
 import { mediaUploadApi, MEDIA_STATUS } from '../utils/api/mediaUpload.js'
 import { interestRadarApi } from '../utils/api/interestRadar.js'
@@ -243,7 +243,7 @@ const workspaceStyle = ref({})
 let ignoreSphereTap = false
 const motion = createRadarMotion({
   onChange: value => { sphereOrientation.value = value },
-  sensitivity: () => Math.PI / Math.max(220, Math.min(sphereSize.width, sphereSize.height)),
+  sensitivity: () => 1 / radarSphereRadius(sphereSize.width, sphereSize.height),
   reducedMotion: () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
 })
 let lastSphereDragAt = 0

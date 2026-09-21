@@ -1,6 +1,6 @@
 <template>
   <view
-    class="card place-card app-card content-card"
+    class="card place-card app-card content-card refined-card"
     :style="{ '--card-height': height + 'rpx' }">
     <view
       class="card-media"
@@ -36,16 +36,6 @@
         </view>
       </view>
       <view class="card-footer">
-        <view class="quick-actions">
-          <view class="quick-btn nav-btn" @tap.stop="handleNavigate">
-            <text class="quick-icon">🧭</text>
-            <text class="quick-text">导航</text>
-          </view>
-          <view class="quick-btn reserve-btn" @tap.stop="handleReserve">
-            <text class="quick-icon">📅</text>
-            <text class="quick-text">预约</text>
-          </view>
-        </view>
         <view class="card-actions" @tap.stop="preventBubble" @click.stop="preventBubble">
           <view class="action-btn" :class="{ active: isLiked }" @tap.stop="handleLike" @click.stop="handleLike">
             <text class="action-icon">{{ isLiked ? '♥' : '♡' }}</text>
@@ -54,6 +44,14 @@
           <view class="action-btn" :class="{ active: isFavorited }" @tap.stop="handleFavorite" @click.stop="handleFavorite">
             <text class="action-icon">{{ isFavorited ? '★' : '☆' }}</text>
             <text class="action-text">{{ favoritesCount }}</text>
+          </view>
+        </view>
+        <view class="quick-actions">
+          <view class="quick-btn nav-btn card-cta" @tap.stop="handleNavigate">
+            <text class="quick-text cta-face">导航</text>
+          </view>
+          <view class="quick-btn reserve-btn card-cta" @tap.stop="handleReserve">
+            <text class="quick-text cta-face">预约</text>
           </view>
         </view>
       </view>

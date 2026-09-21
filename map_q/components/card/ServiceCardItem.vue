@@ -1,6 +1,6 @@
 <template>
   <view
-    class="card service-map-card app-card content-card"
+    class="card service-map-card app-card content-card refined-card"
     :style="{ '--card-height': height + 'rpx' }">
     <!-- 上半：媒体位（点击进入详情并定位） -->
     <view
@@ -16,17 +16,16 @@
     <view
       class="card-content"
       @tap="handleContentTap">
-      <view v-if="priceLabel" class="service-price-label">{{ priceLabel }}</view>
       <view class="card-title">{{ cardTitle }}</view>
       <view class="card-info">
         <view class="business-status" :class="businessStatusClass">
           <text class="status-dot"></text>
           <text class="status-text">{{ businessStatusText }}</text>
         </view>
-        <view class="card-distance">{{ distanceText }}</view>
+        <view v-if="distanceText" class="card-distance">{{ distanceText }}</view>
       </view>
+      <view v-if="locationText" class="card-location">{{ locationText }}</view>
       <view class="card-footer">
-        <view class="card-location">{{ locationText }}</view>
         <view class="card-actions" @tap.stop="preventBubble">
           <view class="action-btn" :class="{ active: isLiked }" @tap.stop="handleLike">
             <text class="action-icon">{{ isLiked ? '♥' : '♡' }}</text>
@@ -37,7 +36,10 @@
             <text class="action-text">{{ favoritesCount }}</text>
           </view>
         </view>
-        <view class="reserve-big" @tap.stop="onReserve">预约</view>
+        <view class="purchase-row">
+          <view v-if="priceLabel" class="service-price-label">{{ priceLabel }}</view>
+          <view class="reserve-big card-cta" @tap.stop="onReserve"><text class="cta-face">预约</text></view>
+        </view>
       </view>
     </view>
   </view>
@@ -87,7 +89,7 @@ export default {
         const [lng, lat] = this.cardData.location.coordinates
         return `${lat.toFixed(2)}, ${lng.toFixed(2)}`
       }
-      return '未知位置'
+      return ''
     },
     ratingValue() {
       const raw = this.cardData?.rating ?? this.cardData?.score

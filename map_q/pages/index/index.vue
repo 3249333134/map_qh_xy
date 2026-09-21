@@ -6,6 +6,7 @@
       ref="mapBackground"
       :config="mapConfig"
       :height="mapHeight"
+      :show-location-control="!socialMode && contentHeight > minContentHeight + 1"
       @region-changed="onMapRegionChanged"
       @map-error="handleMapError"
       @move-to-location="handleMoveToLocation"
@@ -19,9 +20,8 @@
     <inline-map-social
       v-if="socialMode"
       :scene="socialScene"
+      :bottom-offset="safeBottomOffset"
       :selected="socialSelected"
-      @close="closeMapSocial"
-      @scene-change="changeSocialScene"
       @locate="locateSocial"
       @zoom="zoomSocialMap"
       @layers="openSocialLayers"
@@ -30,7 +30,6 @@
     />
 
     <content-area
-      v-show="!socialMode"
       :height="contentHeight"
       :search-box-height="searchBoxHeight"
       :min-content-height="minContentHeight"
@@ -53,7 +52,8 @@
       :explore-tool-mode="exploreToolMode"
       :layers="exploreState.layers"
       :explore-snapshot="exploreState"
-      :social-scene="socialScene"
+      :social-scene="socialMode ? socialScene : ''"
+      :social-mode="socialMode"
       show-explore-controls
       storage-key-prefix="indexContentArea"
       @drag-start="handleDragStart"
@@ -69,6 +69,7 @@
       @layer-tap="openLayers"
       @share-tap="openShare"
       @social-scene-change="openMapSocial"
+      @social-mode-change="setSocialMode"
       @close-explore-tool="closeExploreTool"
       @layers-change="handleLayersChange"
       @request-location="requestCurrentLocation"
@@ -130,7 +131,8 @@ export default {
     const socialScene = ref('people')
     const socialMode = ref(false)
     const socialSelected = ref(null)
-    let regularMarkers = []
+    let contentHeightBeforeSocial = 0
+    let regularPolyline = []
 
     const {
       mapPoints,
@@ -204,7 +206,8 @@ export default {
 
     const refreshData = async ({ force = false } = {}) => {
       await fetchMapData(activeCategory.value, mapConfig, { filters: filters(), force })
-      updateMapMarkers(mapPoints.value)
+      if (socialMode.value) applySocialMarkers()
+      else updateMapMarkers(mapPoints.value)
     }
 
     const requestCurrentLocation = async () => {
@@ -262,6 +265,7 @@ export default {
     }
 
     const openLayers = () => {
+      if (socialMode.value) closeMapSocial()
       selectedPoint.value = null
       selectPoint('')
       updateMapMarkers(mapPoints.value)
@@ -270,6 +274,7 @@ export default {
       setContentMode('max')
     }
     const openShare = () => {
+      if (socialMode.value) closeMapSocial()
       saveMapState()
       selectedPoint.value = null
       selectPoint('')
@@ -294,11 +299,12 @@ export default {
     }
 
     const loadMoreItems = () => loadMore(activeCategory.value, mapConfig, filters()).then(() => {
-      updateMapMarkers(mapPoints.value)
+      if (!socialMode.value) updateMapMarkers(mapPoints.value)
     })
 
     const onSearchInput = () => {}
     const onSearchTap = () => {
+      if (socialMode.value) closeMapSocial()
       exploreToolMode.value = ''
       setContentMode('max')
     }
@@ -408,6 +414,7 @@ export default {
     const onVisibleCardsChange = indices => {
       clearTimeout(visibleTimer)
       visibleTimer = setTimeout(() => {
+        if (socialMode.value) return
         mapMgrVisibleCardsChange(indices)
         updateMapMarkers(mapPoints.value)
       }, 120)
@@ -562,23 +569,32 @@ export default {
       mapConfig.polyline = []
     }
     const openMapSocial = scene => {
-      const nextScene = socialScenes.includes(scene) ? scene : socialScene.value
-      if (!socialMode.value) regularMarkers = [...(mapConfig.markers || [])]
+      const nextScene = socialScenes.includes(scene) ? scene : socialScenes.includes(socialScene.value) ? socialScene.value : 'people'
+      if (socialMode.value && nextScene === socialScene.value) {
+        return
+      }
+      if (!socialMode.value) {
+        contentHeightBeforeSocial = contentHeight.value
+        regularPolyline = [...(mapConfig.polyline || [])]
+      }
+      selectedPoint.value = null
+      exploreToolMode.value = ''
+      setContentMode('min')
       socialScene.value = nextScene
       socialMode.value = true
       try { uni.setStorageSync('MAP_SOCIAL_SCENE_ENTRY_V1', nextScene) } catch (error) {}
       applySocialMarkers()
     }
-    const changeSocialScene = scene => {
-      if (!socialScenes.includes(scene)) return
-      socialScene.value = scene
-      try { uni.setStorageSync('MAP_SOCIAL_SCENE_ENTRY_V1', scene) } catch (error) {}
-      applySocialMarkers()
+    const setSocialMode = enabled => {
+      if (enabled) openMapSocial(socialScene.value)
+      else closeMapSocial()
     }
     const closeMapSocial = () => {
+      if (!socialMode.value) return
       socialMode.value = false
       socialSelected.value = null
-      mapConfig.markers = regularMarkers.length ? [...regularMarkers] : []
+      mapConfig.polyline = regularPolyline
+      if (contentHeightBeforeSocial > 0) contentHeight.value = contentHeightBeforeSocial
       updateMapMarkers(mapPoints.value)
     }
     const zoomSocialMap = delta => { mapConfig.scale = Math.max(11, Math.min(18, Number(mapConfig.scale || 14) + Number(delta || 0))) }
@@ -613,6 +629,11 @@ export default {
 
     const onPanelDragEnd = event => {
       handleDragEnd(event)
+      if (socialMode.value && currentMode.value !== 'min') {
+        const expandedHeight = contentHeight.value
+        closeMapSocial()
+        contentHeight.value = expandedHeight
+      }
       exploreState.panelMode = currentMode.value
       saveMapState()
     }
@@ -770,7 +791,7 @@ export default {
       socialMode,
       socialSelected,
       closeMapSocial,
-      changeSocialScene,
+      setSocialMode,
       zoomSocialMap,
       locateSocial,
       openSocialLayers,
