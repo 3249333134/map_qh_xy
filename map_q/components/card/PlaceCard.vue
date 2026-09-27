@@ -9,6 +9,9 @@
       <image v-if="coverImage" class="card-cover" :src="coverImage" mode="aspectFill" @error="failedCover = coverImage" />
       <view v-else class="place-map-bg">
         <view class="map-grid"></view>
+        <view class="place-placeholder-text">
+          <text class="placeholder-label">地点</text>
+        </view>
       </view>
       <view v-if="!coverImage" class="center-marker">
         <view class="marker-dot"></view>
@@ -25,17 +28,11 @@
       @tap="handleContentTap"
       @click="handleContentTap">
       <view class="card-title">{{ cardTitle }}</view>
-      <view class="card-address">{{ addressText }}</view>
-      <view class="card-meta">
-        <view class="card-tags">
-          <text v-for="(tag, idx) in displayTags" :key="idx" class="tag-item">{{ tag }}</text>
-        </view>
-        <view class="card-stats">
-          <text class="stat-icon">★</text>
-          <text class="stat-text">{{ ratingText }}</text>
-        </view>
-      </view>
       <view class="card-footer">
+        <view class="card-author">
+          <text v-for="(tag, idx) in displayTags" :key="idx" class="tag-item">{{ tag }}</text>
+          <text class="footer-text">★ {{ ratingText }}</text>
+        </view>
         <view class="card-actions" @tap.stop="preventBubble" @click.stop="preventBubble">
           <view class="action-btn" :class="{ active: isLiked }" @tap.stop="handleLike" @click.stop="handleLike">
             <text class="action-icon">{{ isLiked ? '♥' : '♡' }}</text>
@@ -43,10 +40,7 @@
           </view>
           <view class="action-btn" :class="{ active: isFavorited }" @tap.stop="handleFavorite" @click.stop="handleFavorite">
             <text class="action-icon">{{ isFavorited ? '★' : '☆' }}</text>
-            <text class="action-text">{{ favoritesCount }}</text>
           </view>
-        </view>
-        <view class="quick-actions">
           <view class="quick-btn nav-btn card-cta" @tap.stop="handleNavigate">
             <text class="quick-text cta-face">导航</text>
           </view>
@@ -123,7 +117,9 @@ export default {
     },
     likesCount() {
       const likes = Number(this.cardData && this.cardData.likes)
-      return Number.isFinite(likes) && likes > 0 ? likes : ''
+      if (!Number.isFinite(likes) || likes <= 0) return ''
+      if (likes >= 10000) return (likes / 10000).toFixed(1) + '万'
+      return String(likes)
     },
     favoritesCount() {
       const favorites = Number(this.cardData && this.cardData.favorites) || Number(this.cardData && this.cardData.collects)
@@ -203,12 +199,14 @@ export default {
 <style>
 .place-card {
   margin-bottom: 12rpx;
-  border-radius: 12rpx;
-  background-color: #fff;
+  border-radius: 0;
+  background-color: transparent;
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
   --card-media-height: 144px;
+  border: none;
+  box-shadow: none;
 }
 
 .place-card .card-media {
@@ -218,6 +216,7 @@ export default {
   cursor: pointer;
   overflow: hidden;
   background: var(--color-page);
+  border-radius: 8px;
 }
 
 .place-map-bg {
@@ -226,15 +225,33 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
+  background: linear-gradient(135deg, #e0f2ec 0%, #f3f8f5 100%);
 }
 
 .map-grid {
   width: 100%;
   height: 100%;
   background-image:
-    linear-gradient(90deg, rgba(150, 150, 150, 0.08) 1rpx, transparent 1rpx),
-    linear-gradient(rgba(150, 150, 150, 0.06) 1rpx, transparent 1rpx);
+    linear-gradient(90deg, rgba(42, 108, 92, 0.07) 1rpx, transparent 1rpx),
+    linear-gradient(rgba(42, 108, 92, 0.05) 1rpx, transparent 1rpx);
   background-size: 24rpx 24rpx, 24rpx 24rpx;
+}
+
+.place-placeholder-text {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.placeholder-label {
+  font-size: 22px;
+  font-weight: 700;
+  color: rgba(40, 108, 92, 0.12);
+  letter-spacing: 4px;
 }
 
 .center-marker {
@@ -307,7 +324,7 @@ export default {
 }
 
 .place-card .card-content {
-  padding: 10rpx;
+  padding: 6px 8px;
   width: 100%;
   box-sizing: border-box;
   cursor: pointer;
@@ -315,93 +332,80 @@ export default {
 
 .place-card .card-title {
   width: 100%;
-  color: #000;
-  font-size: 26rpx;
-  font-weight: 400;
-  line-height: 32rpx;
-  margin-bottom: 4rpx;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  margin: 0;
   display: -webkit-box;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.place-card .card-address {
-  width: 100%;
-  color: var(--color-text-muted);
-  font-size: 20rpx;
-  line-height: 26rpx;
-  margin-bottom: 6rpx;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.place-card .card-meta {
+.place-card .card-author {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 8rpx;
-}
-
-.place-card .card-tags {
-  display: flex;
-  gap: 6rpx;
   flex: 1;
   min-width: 0;
+  gap: 4px;
   overflow: hidden;
+}
+
+.place-card .card-author::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e0f2ec;
+  margin-right: 4px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.place-card .footer-text {
+  color: #999;
+  font-size: 11px;
+  line-height: 14px;
+  flex-shrink: 0;
 }
 
 .tag-item {
-  padding: 2px 5px;
+  padding: 1px 5px;
   border-radius: 4px;
-  background: var(--color-surface-muted);
-  color: var(--color-text-body);
+  background: #e0f2ec;
+  color: #286c5c;
   font-size: 10px;
   flex-shrink: 0;
-}
-
-.place-card .card-stats {
-  display: flex;
-  align-items: center;
-  gap: 2rpx;
-  flex-shrink: 0;
-}
-
-.stat-icon {
-  color: #ffb700;
-  font-size: 20rpx;
-}
-
-.stat-text {
-  color: var(--color-text-muted);
-  font-size: 11px;
+  margin-right: 2px;
 }
 
 .place-card .card-footer {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   width: 100%;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 4px;
+  overflow: hidden;
 }
 
 .quick-actions {
   display: flex;
-  width: 100%;
-  gap: 6px;
+  gap: 4px;
+  flex: 0 0 auto;
+  margin: 0;
 }
 
 .quick-btn {
   display: flex;
   align-items: center;
-  gap: 4rpx;
-  padding: 0 6px;
+  gap: 2px;
+  padding: 0;
   transition: all 0.2s;
-  min-height: 40px;
-  border-radius: 14px;
-  flex: 1;
+  min-height: 32px;
+  border-radius: 0;
+  flex: 0 0 auto;
   justify-content: center;
 }
 
@@ -410,7 +414,7 @@ export default {
 }
 
 .nav-btn {
-  background: #e0f2ec;
+  background: transparent;
   color: #286c5c;
 }
 
@@ -419,13 +423,14 @@ export default {
 }
 
 .nav-btn .quick-text {
-  font-size: 11px;
-  color: var(--color-primary);
+  font-size: 12px;
+  color: #286c5c;
+  font-weight: 500;
 }
 
 .reserve-btn {
-  background: #263d32;
-  color: #fff;
+  background: transparent;
+  color: #286c5c;
 }
 
 .reserve-btn .quick-icon {
@@ -433,17 +438,16 @@ export default {
 }
 
 .reserve-btn .quick-text {
-  font-size: 11px;
-  color: var(--color-text);
+  font-size: 12px;
+  color: #286c5c;
+  font-weight: 500;
 }
 
 .place-card .card-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-  width: 100%;
-  justify-content: flex-end;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
 .place-card .action-btn {
@@ -451,6 +455,9 @@ export default {
   align-items: center;
   gap: 4rpx;
   transition: all 0.2s;
+  min-width: 32px;
+  min-height: 32px;
+  justify-content: center;
 }
 
 .place-card .action-btn:active {
@@ -458,22 +465,22 @@ export default {
 }
 
 .place-card .action-icon {
-  font-size: 15px;
-  color: var(--color-text-muted);
+  font-size: 14px;
+  color: #999;
   line-height: 1;
 }
 
 .place-card .action-text {
   font-size: 11px;
-  color: var(--color-text-muted);
+  color: #999;
 }
 
 .place-card .action-btn.active .action-icon {
-  color: var(--color-primary);
+  color: #286c5c;
 }
 
 .place-card .action-btn.active .action-text {
-  color: var(--color-primary);
+  color: #286c5c;
 }
 
 .place-card .action-btn.active {

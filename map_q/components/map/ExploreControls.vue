@@ -372,7 +372,7 @@ export default {
   pointer-events: auto;
 }
 .social-scene-list { display: inline-flex; min-width: 100%; height: 52px; padding: 4px; gap: 6px; box-sizing: border-box; }
-.social-scene-chip { min-width: 112px; height: 44px; padding: 0 13px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(34,52,47,.07); border-radius: 15px; color: #26332f; background: #fff; box-sizing: border-box; font-size: 13px; font-weight: 750; transition: color 160ms ease, background-color 160ms ease; }
+.social-scene-chip { flex: 0 0 auto; white-space: nowrap; min-width: 112px; height: 44px; padding: 0 13px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid rgba(34,52,47,.07); border-radius: 15px; color: #26332f; background: #fff; box-sizing: border-box; font-size: 13px; font-weight: 750; transition: color 160ms ease, background-color 160ms ease; }
 .social-scene-chip:active { opacity: .85; }
 .social-scene-chip.selected { color: #fff; border-color: var(--color-text); background: var(--color-text); }
 .social-scene-icon { position: relative; width: 24px; height: 24px; flex: 0 0 24px; border-radius: 8px; color: var(--color-primary); background: var(--color-surface-muted); }

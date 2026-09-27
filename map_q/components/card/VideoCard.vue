@@ -1,5 +1,5 @@
 <template>
-  <view class="video-card app-card content-card" :class="{ 'is-placeholder': !coverImage && !isPlaying }" role="button" :aria-label="`播放视频：${cardTitle}`" :style="{ '--card-height': Math.max(height, 300) + 'rpx' }" @tap="openDetail">
+  <view class="video-card app-card content-card refined-card" :class="{ 'is-placeholder': !coverImage && !isPlaying }" role="button" :aria-label="`播放视频：${cardTitle}`" :style="{ '--card-height': Math.max(height, 300) + 'rpx' }" @tap="openDetail">
     <view class="media-shell">
       <image v-if="coverImage && !isPlaying" class="cover" :src="coverImage" mode="aspectFill" @error="mediaFailed = true" />
       <video v-else-if="isPlaying && videoUrl" class="player" :src="videoUrl" autoplay controls object-fit="cover" @ended="isPlaying = false" />
@@ -7,15 +7,30 @@
       <view class="shade"></view>
       <view v-if="!isPlaying" class="play" role="button" aria-label="播放视频" @tap.stop="play"><view></view></view>
       <text v-if="durationText && !isPlaying" class="duration">{{ durationText }}</text>
-      <view class="caption">
-        <text class="title">{{ cardTitle }}</text>
-        <view class="meta"><text>{{ authorName }}</text><text v-if="likesText">{{ likesText }} 人喜欢</text></view>
+    </view>
+    <view class="card-content">
+      <view class="card-title">{{ cardTitle }}</view>
+      <view class="card-footer">
+        <view class="card-author">
+          <text class="author-name">{{ authorName }}</text>
+        </view>
+        <view class="card-actions" @tap.stop="preventBubble" @click.stop="preventBubble">
+          <view class="action-btn" :class="{ active: isLiked }" @tap.stop="handleLike" @click.stop="handleLike">
+            <text class="action-icon">{{ isLiked ? '♥' : '♡' }}</text>
+            <text class="action-text">{{ likesCount }}</text>
+          </view>
+          <view class="action-btn" :class="{ active: isFavorited }" @tap.stop="handleFavorite" @click.stop="handleFavorite">
+            <text class="action-icon">{{ isFavorited ? '★' : '☆' }}</text>
+          </view>
+        </view>
       </view>
     </view>
   </view>
 </template>
 
 <script>
+import { useInteraction } from '../../utils/interaction.js'
+
 export default {
   name: 'VideoCard',
   props: {
@@ -24,10 +39,11 @@ export default {
     index: { type: Number, required: true },
     cardData: { type: Object, default: () => ({}) }
   },
-  data() { return { isPlaying: false, mediaFailed: false } },
+  data() { return { isPlaying: false, mediaFailed: false, isLiked: false, isFavorited: false } },
   computed: {
     cardTitle() { return this.cardData?.title || this.cardData?.name || '城市影像' },
     authorName() { const a = this.cardData?.author; return typeof a === 'string' ? a : a?.name || '地图创作者' },
+    cardId() { return this.cardData?._id || this.cardData?.id || this.index },
     coverImage() {
       const d = this.cardData || {}; const media = Array.isArray(d.media) ? d.media[0] : null
       return [d.cover, d.coverUrl, d.thumbnail, d.poster, ...(Array.isArray(d.images) ? d.images : []), typeof media === 'string' ? media : media?.cover || media?.url].find(v => typeof v === 'string' && v.trim() && !/static\/logo\.png/i.test(v)) || ''
@@ -37,9 +53,31 @@ export default {
       return [d.videoUrl, d.video, d.src, typeof media === 'string' ? media : media?.url].find(v => typeof v === 'string' && v.trim()) || ''
     },
     durationText() { const d = this.cardData?.duration; if (!d) return ''; if (typeof d !== 'number') return String(d); return `${Math.floor(d / 60)}:${String(d % 60).padStart(2, '0')}` },
-    likesText() { const n = Number(this.cardData?.likes || 0); return n > 999 ? `${(n / 1000).toFixed(1)}k` : n ? String(n) : '' }
+    likesCount() {
+      const likes = Number(this.cardData && this.cardData.likes)
+      if (!Number.isFinite(likes) || likes <= 0) return ''
+      if (likes >= 10000) return (likes / 10000).toFixed(1) + '万'
+      return String(likes)
+    }
+  },
+  created() {
+    this.checkInteractionStatus()
   },
   methods: {
+    checkInteractionStatus() {
+      const interaction = useInteraction()
+      this.isLiked = interaction.isLiked(this.cardId)
+      this.isFavorited = interaction.isFavorited(this.cardId)
+    },
+    handleLike() {
+      const interaction = useInteraction()
+      this.isLiked = interaction.toggleLike(this.cardId, this.cardData)
+    },
+    handleFavorite() {
+      const interaction = useInteraction()
+      this.isFavorited = interaction.toggleFavorite(this.cardId, this.cardData)
+    },
+    preventBubble() {},
     play() { this.openDetail() },
     openDetail() { this.$emit('media-tap', { cardData: this.cardData, index: this.index }) }
   }
@@ -47,22 +85,29 @@ export default {
 </script>
 
 <style scoped>
-.video-card{width:100%;margin-bottom:24rpx;overflow:hidden;border-radius:30rpx;background:#111318;box-shadow:0 14rpx 34rpx rgba(0, 0, 0, 0.1)}
-.media-shell{position:relative;width:100%;overflow:hidden;background:#15191f;height:230px;min-height:230px}
+.video-card{width:100%;margin-bottom:12rpx;overflow:hidden;border-radius:0;background:transparent;box-shadow:none;border:none}
+.media-shell{position:relative;width:100%;overflow:hidden;background:#15191f;height:180px;min-height:180px;border-radius:8px}
 .cover,.player{display:block;width:100%;height:100%}.shade{position:absolute;inset:36% 0 0;background:linear-gradient(180deg,transparent,rgba(5,7,9,.8));pointer-events:none}
 .fallback{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14rpx;color:#9ba2ad;font-size:11px;background:#262b33;padding:36px 12px 18px;text-align:center}
 .fallback-mark{width:52rpx;height:38rpx;border:3rpx solid currentColor;border-radius:10rpx;position:relative;display:none}.fallback-mark:after{content:'';position:absolute;left:14rpx;top:9rpx;width:0;height:0;border-top:8rpx solid transparent;border-bottom:8rpx solid transparent;border-left:13rpx solid currentColor}
 .play{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,.06);width:48px;height:48px;background:rgba(255,255,255,.9)}
 .play:active{transform:translate(-50%,-50%) scale(.94)}.play view{margin-left:3px;width:0;height:0;border-top:9px solid transparent;border-bottom:9px solid transparent;border-left:14px solid #202020}
 .duration{position:absolute;right:8px;top:8px;padding:3px 6px;border-radius:5px;background:rgba(12,15,18,.7);color:#fff;font-size:10px;font-variant-numeric:tabular-nums}
-.caption{position:absolute;color:#fff;border-radius:14px;padding:10px;left:8px;right:8px;bottom:8px;background:rgba(18,27,24,.5);backdrop-filter:blur(12px)}.title{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:14px;font-weight:600;line-height:1.4}.meta{margin-top:6px;display:flex;align-items:center;justify-content:space-between;color:rgba(255,255,255,.72);font-size:11px;gap:8px;flex-wrap:wrap}
 @media (prefers-reduced-motion:reduce){.play:active{transform:translate(-50%,-50%)}}
 .play{transition:transform var(--motion-fast) var(--ease-standard),box-shadow var(--motion-fast) ease;top:42%;box-shadow:0 2px 8px rgba(0,0,0,.06);width:48px;height:48px;background:rgba(255,255,255,.9)}.play:active{transform:translate(-50%,-50%) scale(.92);box-shadow:0 5rpx 14rpx rgba(0, 0, 0, 0.1)}
 .is-placeholder .media-shell,.is-placeholder .fallback { background: var(--color-surface-muted); }
 .is-placeholder .fallback { color: var(--color-text-muted); }
 .is-placeholder .shade { background: linear-gradient(180deg,transparent,#fff 80%); }
-.is-placeholder .caption { color: var(--color-text); background:rgba(255,255,255,.86); }
-.is-placeholder .meta { color: var(--color-text-body); }
-.meta text:first-child { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.meta text,.fallback text { font-size: 11px; line-height: 1.4; }
+.video-card .card-content { padding: 6px 4px; display: flex; flex-direction: column; gap: 4px; background: transparent; }
+.video-card .card-title { color: #333; font-size: 14px; font-weight: 500; line-height: 20px; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.video-card .card-footer { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 0; border: 0; margin: 0; flex-wrap: nowrap; overflow: hidden; }
+.video-card .card-author { display: flex; align-items: center; flex: 1; min-width: 0; gap: 4px; overflow: hidden; }
+.video-card .card-author::before { content: ''; width: 20px; height: 20px; border-radius: 50%; background: #e0f2ec; margin-right: 4px; flex-shrink: 0; display: inline-block; }
+.video-card .author-name { color: #999; font-size: 11px; line-height: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+.video-card .card-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
+.video-card .action-btn { display: flex; align-items: center; gap: 4rpx; min-width: 32px; min-height: 32px; justify-content: center; }
+.video-card .action-icon { font-size: 14px; color: #999; line-height: 1; }
+.video-card .action-text { font-size: 11px; color: #999; line-height: 14px; }
+.video-card .action-btn.active .action-icon { color: #286c5c; }
+.video-card .action-btn.active .action-text { color: #286c5c; }
 </style>

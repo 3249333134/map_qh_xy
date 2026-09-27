@@ -24,14 +24,11 @@
       @tap="handleContentTap"
       @click="handleContentTap">
       <view class="card-title">{{ cardTitle }}</view>
-      <view class="card-author">{{ cardAuthor }}</view>
-      <view v-if="descriptionText" class="card-description">{{ descriptionText }}</view>
       <view class="card-footer">
-        <view class="card-location">
-          <text class="footer-label">距</text>
-          <text class="footer-text">{{ locationText }}</text>
+        <view class="card-author">
+          <text class="author-name">{{ cardAuthor }}</text>
+          <text v-if="distanceText" class="card-location">{{ distanceText }}</text>
         </view>
-        <!-- 交互按钮区域 -->
         <view class="card-actions" @tap.stop="preventBubble" @click.stop="preventBubble">
           <view class="action-btn" :class="{ active: isLiked }" @tap.stop="handleLike" @click.stop="handleLike">
             <text class="action-icon">{{ isLiked ? '♥' : '♡' }}</text>
@@ -39,7 +36,6 @@
           </view>
           <view class="action-btn" :class="{ active: isFavorited }" @tap.stop="handleFavorite" @click.stop="handleFavorite">
             <text class="action-icon">{{ isFavorited ? '★' : '☆' }}</text>
-            <text class="action-text">{{ favoritesCount }}</text>
           </view>
         </view>
       </view>
@@ -91,6 +87,14 @@ export default {
       }
       return this.cardData && this.cardData.address ? this.cardData.address : '未知位置'
     },
+    distanceText() {
+      const raw = this.cardData && this.cardData.distance
+      const distance = Number(raw)
+      if (raw !== null && raw !== undefined && raw !== '' && Number.isFinite(distance) && distance >= 0) {
+        return distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`
+      }
+      return ''
+    },
     coverImage() {
       const data = this.cardData || {}
       const candidates = [
@@ -128,7 +132,9 @@ export default {
     },
     likesCount() {
       const likes = Number(this.cardData && this.cardData.likes)
-      return Number.isFinite(likes) && likes > 0 ? likes : ''
+      if (!Number.isFinite(likes) || likes <= 0) return ''
+      if (likes >= 10000) return (likes / 10000).toFixed(1) + '万'
+      return String(likes)
     },
     favoritesCount() {
       const favorites = Number(this.cardData && this.cardData.favorites) || Number(this.cardData && this.cardData.collects)
@@ -178,15 +184,15 @@ export default {
 
 <style>
 .card.map-card {
-  margin-bottom: 16rpx;
-  border-radius: 18rpx;
-  background-color: #ffffff;
+  margin-bottom: 12rpx;
+  border-radius: 0;
+  background-color: transparent;
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
   position: relative;
-  border: 1rpx solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 4rpx 18rpx rgba(0, 0, 0, 0.04);
+  border: none;
+  box-shadow: none;
 }
 
 .card.map-card .card-media {
@@ -196,6 +202,7 @@ export default {
   cursor: pointer;
   overflow: hidden;
   background: var(--color-surface-raised);
+  border-radius: 8px;
 }
 
 .card-cover {
@@ -237,7 +244,7 @@ export default {
 }
 
 .card.map-card .card-content {
-  padding: 20rpx 20rpx 18rpx;
+  padding: 6px 8px;
   width: 100%;
   box-sizing: border-box;
   cursor: pointer;
@@ -245,38 +252,70 @@ export default {
 
 .card.map-card .card-title {
   width: 100%;
-  color: var(--color-text);
-  font-size: 28rpx;
-  font-weight: 600;
-  line-height: 40rpx;
-  margin-bottom: 8rpx;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  letter-spacing: 0.5rpx;
+}
+
+.card.map-card .card-info {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  overflow: hidden;
 }
 
 .card.map-card .card-author {
   display: flex;
   align-items: center;
-  color: var(--color-text-muted);
+  color: #999;
   font-size: 11px;
-  line-height: 28rpx;
-  margin-bottom: 12rpx;
+  line-height: 14px;
+  flex: 1;
+  min-width: 0;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.card.map-card .card-author::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e0f2ec;
+  margin-right: 4px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.card.map-card .author-name {
+  color: #999;
+  font-size: 11px;
+  line-height: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 
-.card-author::before {
-  content: '';
-  width: 28rpx;
-  height: 28rpx;
-  border-radius: 50%;
-  background: var(--color-surface-muted);
-  margin-right: 8rpx;
+.card.map-card .card-location {
   flex-shrink: 0;
+  font-size: 11px;
+  line-height: 14px;
+  color: #999;
+}
+
+.card.map-card .footer-text {
+  font-size: 11px;
+  line-height: 14px;
+  color: #999;
 }
 
 .card-description {
@@ -288,28 +327,25 @@ export default {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding-top: 10rpx;
-  border-top: 1rpx solid var(--color-surface-muted);
-}
-
-.card.map-card .card-location {
-  display: none;
+  flex-wrap: nowrap;
+  gap: 4px;
+  overflow: hidden;
 }
 
 .card-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
 .action-btn {
   display: flex;
   align-items: center;
-  gap: 5rpx;
+  gap: 4rpx;
   transition: opacity 0.15s ease;
-  min-width: 44rpx;
-  min-height: 44rpx;
+  min-width: 32px;
+  min-height: 32px;
   justify-content: center;
 }
 
@@ -318,23 +354,23 @@ export default {
 }
 
 .action-icon {
-  font-size: 15px;
-  color: var(--color-text-muted);
+  font-size: 14px;
+  color: #999;
   line-height: 1;
 }
 
 .action-btn.active .action-icon {
-  color: var(--color-text);
+  color: #286c5c;
 }
 
 .action-text {
   font-size: 11px;
-  color: var(--color-text-muted);
+  color: #999;
   font-variant-numeric: tabular-nums;
 }
 
 .action-btn.active .action-text {
-  color: var(--color-text);
+  color: #286c5c;
 }
 
 .action-btn.active {

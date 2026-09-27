@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs'
 import vm from 'node:vm'
 import { describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { buildNearbyMarkers, filterNearbyPeople } from '../utils/nearbyPeople.js'
 
 // Execute the page's real setup with map/platform boundaries stubbed.
 function createPage() {
@@ -10,7 +11,7 @@ function createPage() {
   const mapConfig = { latitude: 30.6, longitude: 104.1, scale: 14, markers: [], polyline: [{ id: 'route' }] }
   const updateMapMarkers = vi.fn(() => { mapConfig.markers = [{ id: 'ordinary' }] })
   const context = {
-    ref, console, setTimeout, clearTimeout,
+    ref, computed, buildNearbyMarkers, filterNearbyPeople, console, setTimeout, clearTimeout,
     onMounted() {}, onLoad() {}, onHide() {}, onShow() {}, onShareAppMessage() {},
     MapBackground: {}, InlineMapSocial: {}, ContentArea: {}, GlobalOverlayHost: {},
     uni: { setStorageSync: vi.fn() },
@@ -36,6 +37,19 @@ function createPage() {
 }
 
 describe('home map scene switching', () => {
+  it('shows person details only after tapping an avatar and clears them on close', () => {
+    const { page } = createPage()
+    page.setSocialMode(true)
+    expect(page.socialSelected.value).toBeNull()
+    const marker = page.mapConfig.markers[0]
+    page.onMarkerTap({ markerId: marker.id })
+    expect(page.socialSelected.value.customData.id).toBe(marker.customData.id)
+    expect(page.mapConfig.markers[0].iconPath).toContain('-selected.png')
+    page.dismissSocialSelected()
+    expect(page.socialSelected.value).toBeNull()
+    expect(page.mapConfig.markers[0].iconPath).not.toContain('-selected.png')
+    expect(page.socialMode.value).toBe(true)
+  })
   it('switches all five scenes in place and restores the previous panel and route when the side control closes', () => {
     const { page } = createPage()
     for (const scene of ['people', 'checkin', 'mate', 'couple', 'board']) {

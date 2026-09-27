@@ -31,18 +31,13 @@
       @tap="handleContentTap"
       @click="handleContentTap">
       <view class="card-title">{{ cardTitle }}</view>
-      <view v-if="locationText" class="event-location">{{ locationText }}</view>
-      <view class="card-info">
-        <text class="info-text">{{ participantText }}</text>
-        <view class="status-tag" :class="statusClass">{{ statusText }}</view>
-      </view>
-      <view v-if="maxParticipants > 0" class="registration-progress">
-        <view class="progress-bar">
-          <view class="progress-fill" :style="{ width: progressPercent + '%' }"></view>
-        </view>
-
-      </view>
       <view class="card-footer">
+        <view class="card-author">
+          <view class="status-tag" :class="statusClass">{{ statusText }}</view>
+          <text v-if="locationText" class="footer-text">{{ locationText }}</text>
+          <text v-if="locationText" class="info-dot">·</text>
+          <text class="footer-text">{{ participantText }}</text>
+        </view>
         <view class="card-actions" @tap.stop="preventBubble" @click.stop="preventBubble">
           <view class="action-btn" :class="{ active: isLiked }" @tap.stop="handleLike" @click.stop="handleLike">
             <text class="action-icon">{{ isLiked ? '♥' : '♡' }}</text>
@@ -50,11 +45,10 @@
           </view>
           <view class="action-btn" :class="{ active: isFavorited }" @tap.stop="handleFavorite" @click.stop="handleFavorite">
             <text class="action-icon">{{ isFavorited ? '★' : '☆' }}</text>
-            <text class="action-text">{{ favoritesCount }}</text>
           </view>
-        </view>
-        <view v-if="canRegister" class="register-btn card-cta" :class="{ registered: isRegistered }" @tap.stop="handleRegister" @click.stop="handleRegister">
-          <text class="cta-face">{{ isRegistered ? '已报名' : '报名' }}</text>
+          <view v-if="canRegister" class="register-btn card-cta" :class="{ registered: isRegistered }" @tap.stop="handleRegister" @click.stop="handleRegister">
+            <text class="cta-face">{{ isRegistered ? '已报名' : '报名' }}</text>
+          </view>
         </view>
       </view>
     </view>
@@ -186,7 +180,9 @@ export default {
     },
     likesCount() {
       const likes = Number(this.cardData && this.cardData.likes)
-      return Number.isFinite(likes) && likes > 0 ? likes : ''
+      if (!Number.isFinite(likes) || likes <= 0) return ''
+      if (likes >= 10000) return (likes / 10000).toFixed(1) + '万'
+      return String(likes)
     },
     favoritesCount() {
       const favorites = Number(this.cardData && this.cardData.favorites) || Number(this.cardData && this.cardData.collects)
@@ -270,12 +266,14 @@ export default {
 <style>
 .event-card {
   margin-bottom: 12rpx;
-  border-radius: 12rpx;
-  background-color: #fff;
+  border-radius: 0;
+  background-color: transparent;
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
   --card-media-height: 144px;
+  border: none;
+  box-shadow: none;
 }
 
 .event-card .card-media {
@@ -285,6 +283,7 @@ export default {
   cursor: pointer;
   overflow: hidden;
   background: var(--color-page);
+  border-radius: 8px;
 }
 
 .event-card .card-cover {
@@ -367,7 +366,7 @@ export default {
 }
 
 .event-card .card-content {
-  padding: 10rpx;
+  padding: 6px 8px;
   width: 100%;
   box-sizing: border-box;
   cursor: pointer;
@@ -375,51 +374,66 @@ export default {
 
 .event-card .card-title {
   width: 100%;
-  color: #000;
-  font-size: 26rpx;
-  font-weight: 400;
-  line-height: 32rpx;
-  margin-bottom: 6rpx;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  margin: 0;
   display: -webkit-box;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-.event-card .card-info {
+.event-card .card-author {
   display: flex;
   align-items: center;
-  width: 100%;
-  margin-bottom: 8rpx;
-  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
   gap: 4px;
+  overflow: hidden;
 }
 
-.info-text {
-  color: var(--color-text-muted);
-  font-size: 20rpx;
+.event-card .card-author::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e0f2ec;
+  margin-right: 4px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.event-card .footer-text {
+  color: #999;
+  font-size: 11px;
+  line-height: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.info-text.location {
-  flex: 1;
-  min-width: 0;
-}
-
-.dot {
-  width: 4rpx;
-  height: 4rpx;
-  border-radius: 2rpx;
-  background: #ccc;
-  margin: 0 8rpx;
   flex-shrink: 0;
 }
 
+.event-card .event-location {
+  font-size: 11px;
+  line-height: 14px;
+  color: #999;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+  max-width: 40%;
+}
+
+.event-card .info-dot {
+  flex-shrink: 0;
+  color: #ccc;
+  font-size: 11px;
+}
+
 .registration-progress {
-  margin-top: 8px;
-  margin-bottom: 8px;
+  display: none;
 }
 
 .progress-bar {
@@ -437,23 +451,26 @@ export default {
 }
 
 .progress-text {
-  font-size: 18rpx;
+  font-size: 11px;
   color: var(--color-text-muted);
 }
 
 .event-card .card-footer {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   width: 100%;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-wrap: nowrap;
+  gap: 4px;
+  overflow: hidden;
 }
 
 .status-tag {
-  padding: 2rpx 8rpx;
-  border-radius: 6rpx;
-  font-size: 18rpx;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
   flex-shrink: 0;
+  margin-right: 4px;
 }
 
 .status-tag.status-upcoming {
@@ -475,7 +492,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-shrink: 0;
+  flex: 0 0 auto;
 }
 
 .event-card .action-btn {
@@ -483,6 +500,9 @@ export default {
   align-items: center;
   gap: 4rpx;
   transition: all 0.2s;
+  min-width: 32px;
+  min-height: 32px;
+  justify-content: center;
 }
 
 .event-card .action-btn:active {
@@ -490,22 +510,22 @@ export default {
 }
 
 .event-card .action-icon {
-  font-size: 15px;
-  color: var(--color-text-muted);
+  font-size: 14px;
+  color: #999;
   line-height: 1;
 }
 
 .event-card .action-text {
   font-size: 11px;
-  color: var(--color-text-muted);
+  color: #999;
 }
 
 .event-card .action-btn.active .action-icon {
-  color: var(--color-primary);
+  color: #286c5c;
 }
 
 .event-card .action-btn.active .action-text {
-  color: var(--color-primary);
+  color: #286c5c;
 }
 
 .event-card .action-btn.active {
@@ -520,23 +540,21 @@ export default {
 
 .register-btn {
   flex: 0 0 auto;
-  height: 36px;
-  padding: 0 12px;
+  min-height: 32px;
+  padding: 0;
   font-weight: 500;
-  line-height: 36px;
-  min-height: 40px;
-  width: 100%;
-  border-radius: 14px;
-  background: #263d32;
-  color: #fff;
+  border-radius: 0;
+  background: transparent;
+  color: var(--card-action-text);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  font-size: 12px;
+  margin: 0;
 }
 
 .register-btn.registered {
-  background: var(--color-border);
-  color: var(--color-text-muted);
+  background: transparent;
+  color: inherit;
 }
 </style>

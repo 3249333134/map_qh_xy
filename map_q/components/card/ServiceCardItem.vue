@@ -17,15 +17,15 @@
       class="card-content"
       @tap="handleContentTap">
       <view class="card-title">{{ cardTitle }}</view>
-      <view class="card-info">
-        <view class="business-status" :class="businessStatusClass">
-          <text class="status-dot"></text>
-          <text class="status-text">{{ businessStatusText }}</text>
-        </view>
-        <view v-if="distanceText" class="card-distance">{{ distanceText }}</view>
-      </view>
-      <view v-if="locationText" class="card-location">{{ locationText }}</view>
       <view class="card-footer">
+        <view class="card-author">
+          <view class="business-status" :class="businessStatusClass">
+            <text class="status-dot"></text>
+            <text class="status-text">{{ businessStatusText }}</text>
+          </view>
+          <text v-if="distanceText" class="footer-text">{{ distanceText }}</text>
+          <text v-if="locationText" class="footer-text">· {{ locationText }}</text>
+        </view>
         <view class="card-actions" @tap.stop="preventBubble">
           <view class="action-btn" :class="{ active: isLiked }" @tap.stop="handleLike">
             <text class="action-icon">{{ isLiked ? '♥' : '♡' }}</text>
@@ -33,10 +33,7 @@
           </view>
           <view class="action-btn" :class="{ active: isFavorited }" @tap.stop="handleFavorite">
             <text class="action-icon">{{ isFavorited ? '★' : '☆' }}</text>
-            <text class="action-text">{{ favoritesCount }}</text>
           </view>
-        </view>
-        <view class="purchase-row">
           <view v-if="priceLabel" class="service-price-label">{{ priceLabel }}</view>
           <view class="reserve-big card-cta" @tap.stop="onReserve"><text class="cta-face">预约</text></view>
         </view>
@@ -123,7 +120,9 @@ export default {
     },
     likesCount() {
       const likes = Number(this.cardData && this.cardData.likes)
-      return Number.isFinite(likes) && likes > 0 ? likes : ''
+      if (!Number.isFinite(likes) || likes <= 0) return ''
+      if (likes >= 10000) return (likes / 10000).toFixed(1) + '万'
+      return String(likes)
     },
     favoritesCount() {
       const favorites = Number(this.cardData && this.cardData.favorites) || Number(this.cardData && this.cardData.collects)
@@ -166,14 +165,14 @@ export default {
 
 <style>
 .service-map-card {
-  margin-bottom: 16rpx;
-  border-radius: 18rpx;
-  background-color: #ffffff;
+  margin-bottom: 12rpx;
+  border-radius: 0;
+  background-color: transparent;
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
-  border: 1rpx solid rgba(0, 0, 0, 0.05);
-  box-shadow: 0 4rpx 18rpx rgba(0, 0, 0, 0.04);
+  border: none;
+  box-shadow: none;
   --card-media-height: 144px;
 }
 
@@ -184,6 +183,7 @@ export default {
   position: relative;
   overflow: hidden;
   background: #e6efea;
+  border-radius: 8px;
 }
 
 .service-badge,
@@ -218,49 +218,81 @@ export default {
 }
 
 .service-map-card .card-content {
-  padding: 20rpx 20rpx 18rpx;
+  padding: 6px 8px;
   width: 100%;
   box-sizing: border-box;
   cursor: pointer;
 }
 
 .service-map-card .card-title {
-  color: var(--color-text);
-  font-size: 28rpx;
-  line-height: 40rpx;
-  font-weight: 600;
-  margin-bottom: 10rpx;
+  color: #333;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 500;
+  margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  letter-spacing: 0.5rpx;
+}
+
+.service-map-card .card-author {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.service-map-card .card-author::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #e0f2ec;
+  margin-right: 4px;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.service-map-card .footer-text {
+  color: #999;
+  font-size: 11px;
+  line-height: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .service-map-card .card-info {
   display: flex;
   align-items: center;
-  gap: 12rpx;
-  margin-bottom: 14rpx;
+  gap: 4px;
+  margin: 0;
+  overflow: hidden;
 }
 
 .business-status {
   display: flex;
   align-items: center;
-  gap: 5rpx;
-  padding: 3rpx 10rpx;
-  border-radius: 8rpx;
+  gap: 2px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .business-status .status-dot {
-  width: 6rpx;
-  height: 6rpx;
-  border-radius: 3rpx;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
 }
 
 .business-status .status-text {
-  font-size: 19rpx;
+  font-size: 10px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .status-open .status-dot { background: #111827; }
@@ -281,41 +313,40 @@ export default {
 
 .card-distance {
   color: var(--color-text-muted);
-  font-size: 20rpx;
+  font-size: 11px;
+  line-height: 14px;
   font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
-.service-map-card .card-author {
-  display: none;
+.service-map-card .card-location {
+  flex: 1;
+  min-width: 0;
+  color: #999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  line-height: 14px;
+  margin: 0;
 }
 
 .service-map-card .card-footer {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   width: 100%;
-  padding-top: 12rpx;
-  border-top: 1rpx solid var(--color-surface-muted);
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.service-map-card .card-location {
-  min-width: 0;
-  flex: 1;
-  color: var(--color-text-muted);
+  flex-wrap: nowrap;
+  gap: 4px;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  width: 100%;
-  flex-basis: 100%;
-  font-size: 11px;
 }
 
 .service-map-card .card-actions {
   display: flex;
   align-items: center;
-  gap: 18rpx;
-  flex-shrink: 0;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
 .service-map-card .action-btn {
@@ -323,6 +354,9 @@ export default {
   align-items: center;
   gap: 4rpx;
   transition: opacity 0.15s ease;
+  min-width: 32px;
+  min-height: 32px;
+  justify-content: center;
 }
 
 .service-map-card .action-btn:active {
@@ -330,23 +364,23 @@ export default {
 }
 
 .service-map-card .action-icon {
-  font-size: 24rpx;
-  color: var(--color-text-muted);
+  font-size: 14px;
+  color: #999;
   line-height: 1;
 }
 
 .service-map-card .action-text {
-  font-size: 20rpx;
-  color: var(--color-text-muted);
+  font-size: 11px;
+  color: #999;
   font-variant-numeric: tabular-nums;
 }
 
 .service-map-card .action-btn.active .action-icon {
-  color: var(--color-text);
+  color: #286c5c;
 }
 
 .service-map-card .action-btn.active .action-text {
-  color: var(--color-text);
+  color: #286c5c;
 }
 
 .service-map-card .action-btn.active {
@@ -361,21 +395,17 @@ export default {
 
 .reserve-big {
   flex: 0 0 auto;
-  padding: 0 20rpx;
+  padding: 0;
   font-weight: 500;
-  line-height: 44rpx;
-  letter-spacing: 1rpx;
-  height: 40px;
-  min-height: 40px;
-  width: 100%;
+  min-height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 14px;
-  background: #263d32;
-  color: #fff;
-  font-size: 13px;
+  background: transparent;
+  color: var(--card-action-text);
+  font-size: 12px;
   box-shadow: none;
+  margin: 0;
 }
 
 .service-map-card .card-cover {
@@ -387,16 +417,15 @@ export default {
 .service-cover-empty {
   height: 100%;
   display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  padding: 18px;
-  gap: 6px;
-  color: #456356;
+  color: #bcc6c0;
+  font-size: 11px;
 }
 
 .service-cover-empty text:first-child {
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 400;
 }
 
 .service-cover-empty text:last-child {
@@ -404,9 +433,10 @@ export default {
 }
 
 .service-price-label {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--color-text);
-  margin-bottom: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--card-action-text);
+  margin: 0;
+  white-space: nowrap;
 }
 </style>

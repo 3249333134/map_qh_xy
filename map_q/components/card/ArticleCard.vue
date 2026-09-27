@@ -32,15 +32,11 @@
       @tap="handleContentTap"
       @click="handleContentTap">
       <view class="card-title">{{ cardTitle }}</view>
-      <view v-if="excerptText" class="card-excerpt">{{ excerptText }}</view>
       <view class="card-footer">
         <view class="card-author">
           <text class="author-name">{{ cardAuthor }}</text>
+          <text v-if="readCountText" class="footer-text">· {{ readCountText }}</text>
         </view>
-        <view class="card-stats">
-          <text class="stat-text">{{ readCountText }}</text>
-        </view>
-        <!-- 交互按钮 -->
         <view class="card-actions" @tap.stop="preventBubble" @click.stop="preventBubble">
           <view class="action-btn" :class="{ active: isLiked }" @tap.stop="handleLike" @click.stop="handleLike">
             <text class="action-icon">{{ isLiked ? '♥' : '♡' }}</text>
@@ -48,7 +44,6 @@
           </view>
           <view class="action-btn" :class="{ active: isFavorited }" @tap.stop="handleFavorite" @click.stop="handleFavorite">
             <text class="action-icon">{{ isFavorited ? '★' : '☆' }}</text>
-            <text class="action-text">{{ favoritesCount }}</text>
           </view>
         </view>
       </view>
@@ -125,7 +120,9 @@ export default {
     },
     likesCount() {
       const likes = Number(this.cardData && this.cardData.likes)
-      return Number.isFinite(likes) && likes > 0 ? likes : ''
+      if (!Number.isFinite(likes) || likes <= 0) return ''
+      if (likes >= 10000) return (likes / 10000).toFixed(1) + '万'
+      return String(likes)
     },
     favoritesCount() {
       const favorites = Number(this.cardData && this.cardData.favorites) || Number(this.cardData && this.cardData.collects)
@@ -196,12 +193,14 @@ export default {
 <style>
 .article-card {
   margin-bottom: 12rpx;
-  border-radius: 12rpx;
-  background-color: #fff;
+  border-radius: 0;
+  background-color: transparent;
   overflow: hidden;
   width: 100%;
   box-sizing: border-box;
   --card-media-height: 104px;
+  border: none;
+  box-shadow: none;
 }
 
 .article-card .card-media {
@@ -211,6 +210,7 @@ export default {
   cursor: pointer;
   overflow: hidden;
   background: var(--color-page);
+  border-radius: 8px;
 }
 
 .article-card .card-cover {
@@ -273,7 +273,7 @@ export default {
 }
 
 .article-card .card-content {
-  padding: 10rpx;
+  padding: 6px 8px;
   width: 100%;
   box-sizing: border-box;
   cursor: pointer;
@@ -281,11 +281,11 @@ export default {
 
 .article-card .card-title {
   width: 100%;
-  color: #000;
-  font-size: 26rpx;
-  font-weight: 400;
-  line-height: 32rpx;
-  margin-bottom: 6rpx;
+  color: #333;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  margin: 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -294,19 +294,16 @@ export default {
 
 .article-card .card-excerpt {
   display: none;
-  font-size: 12px;
-  line-height: 1.65;
-  color: var(--color-text-body);
-  -webkit-line-clamp: 3;
-  margin-bottom: 10px;
 }
 
 .article-card .card-footer {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   width: 100%;
-  flex-wrap: wrap;
-  gap: 4px 8px;
+  flex-wrap: nowrap;
+  gap: 4px;
+  overflow: hidden;
 }
 
 .article-card .card-author {
@@ -314,24 +311,36 @@ export default {
   align-items: center;
   flex: 1;
   min-width: 0;
+  gap: 4px;
 }
 
 .article-card .card-author::before {
   content: '';
-  width: 32rpx;
-  height: 32rpx;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: var(--color-border);
-  margin-right: 6rpx;
+  background: #e0f2ec;
+  margin-right: 4px;
   flex-shrink: 0;
+  display: inline-block;
 }
 
 .author-name {
-  color: var(--color-text-muted);
+  color: #999;
   font-size: 11px;
+  line-height: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.footer-text {
+  color: #999;
+  font-size: 11px;
+  line-height: 14px;
+  flex-shrink: 0;
 }
 
 .article-card .card-stats {
@@ -340,19 +349,15 @@ export default {
 
 .stat-text {
   font-size: 11px;
-  color: var(--color-text-muted);
+  line-height: 14px;
+  color: #999;
 }
 
 .article-card .card-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
-  width: 100%;
-  justify-content: flex-end;
-  border-top: 1px solid var(--color-divider);
-  margin-top: 4px;
-  padding-top: 2px;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
 .article-card .action-btn {
@@ -360,6 +365,9 @@ export default {
   align-items: center;
   gap: 4rpx;
   transition: all 0.2s;
+  min-width: 32px;
+  min-height: 32px;
+  justify-content: center;
 }
 
 .article-card .action-btn:active {
@@ -367,22 +375,22 @@ export default {
 }
 
 .article-card .action-icon {
-  font-size: 15px;
-  color: var(--color-text-muted);
+  font-size: 14px;
+  color: #999;
   line-height: 1;
 }
 
 .article-card .action-text {
   font-size: 11px;
-  color: var(--color-text-muted);
+  color: #999;
 }
 
 .article-card .action-btn.active .action-icon {
-  color: var(--color-primary);
+  color: #286c5c;
 }
 
 .article-card .action-btn.active .action-text {
-  color: var(--color-primary);
+  color: #286c5c;
 }
 
 .article-card .action-btn.active {

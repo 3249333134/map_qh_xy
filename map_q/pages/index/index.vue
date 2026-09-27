@@ -22,11 +22,13 @@
       :scene="socialScene"
       :bottom-offset="safeBottomOffset"
       :selected="socialSelected"
+      @dismiss-selected="dismissSocialSelected"
       @locate="locateSocial"
       @zoom="zoomSocialMap"
       @layers="openSocialLayers"
       @create-board="createSocialBoard"
       @open-selected="openSocialSelected"
+      @follow-user="followSocialUser"
     />
 
     <content-area
@@ -93,6 +95,7 @@
 
 <script>
 import { onMounted, ref } from 'vue'
+import { buildNearbyMarkers } from '../../utils/nearbyPeople.js'
 import { onHide, onLoad, onShareAppMessage, onShow } from '@dcloudio/uni-app'
 import MapBackground from '../../components/map/MapBackground.vue'
 import InlineMapSocial from '../../components/map/InlineMapSocial.vue'
@@ -131,6 +134,7 @@ export default {
     const socialScene = ref('people')
     const socialMode = ref(false)
     const socialSelected = ref(null)
+    let peopleOrigin = null
     let contentHeightBeforeSocial = 0
     let regularPolyline = []
 
@@ -426,6 +430,7 @@ export default {
       if (!marker) return
       if (socialMode.value) {
         socialSelected.value = marker
+        if (socialScene.value === 'people') applySocialMarkers()
         return
       }
       const custom = marker.customData || {}
@@ -530,13 +535,17 @@ export default {
     }
     const socialScenes = ['people', 'checkin', 'mate', 'couple', 'board']
     const socialDemo = {
-      people: [['阿蓝', '300m · 现在在线'], ['林野', '1.2km · 城市漫步'], ['小北', '860m · 看展中']],
+      people: [['阿蓝', '300m · 现在在线'], ['林野', '1.2km · 城市漫步'], ['小北', '860m · 看展中'], ['青禾', '1.5km · 咖啡时间'], ['知白', '2.1km · 通勤路上'], ['南风', '450m · 寻找搭子']],
       checkin: [['太古里夜景', '23人刚刚打卡'], ['望平街咖啡', '12条新动态'], ['江滩日落', '今日热度上升']],
       mate: [['周末 Livehouse', '还缺 2 位同行者'], ['城市骑行', '周六 09:00 集合'], ['公园飞盘', '还可加入 4 人']],
       couple: [['亲密共享', '对方已授权 · 48m']]
     }
-    const socialOffsets = [[.004, -.004], [-.006, .006], [.009, .003], [-.003, -.009]]
+    const socialOffsets = [[.004, -.004], [-.006, .006], [.009, .003], [-.003, -.009], [.002, .008], [-.008, -.002]]
     const buildSocialMarkers = scene => {
+      if (scene === 'people') {
+        if (!peopleOrigin) peopleOrigin = { latitude: mapConfig.latitude, longitude: mapConfig.longitude }
+        return buildNearbyMarkers(peopleOrigin, 'all', socialSelected.value?.customData?.id)
+      }
       if (scene === 'board') {
         try {
           const boards = messageBoardApi.list()
@@ -564,7 +573,7 @@ export default {
       }))
     }
     const applySocialMarkers = () => {
-      socialSelected.value = null
+      if (socialScene.value !== 'people') socialSelected.value = null
       mapConfig.markers = buildSocialMarkers(socialScene.value)
       mapConfig.polyline = []
     }
@@ -580,6 +589,7 @@ export default {
       selectedPoint.value = null
       exploreToolMode.value = ''
       setContentMode('min')
+      socialSelected.value = null
       socialScene.value = nextScene
       socialMode.value = true
       try { uni.setStorageSync('MAP_SOCIAL_SCENE_ENTRY_V1', nextScene) } catch (error) {}
@@ -616,6 +626,10 @@ export default {
         return
       }
       uni.showModal({ title: marker?.customData?.title || '地图社交', content: marker?.customData?.subtitle || '', showCancel: false })
+    }
+    const dismissSocialSelected = () => { socialSelected.value = null; applySocialMarkers() }
+    const followSocialUser = marker => {
+      uni.showToast({ title: `已关注 ${marker?.customData?.title || ''}`, icon: 'success' })
     }
 
     const lastContentHeightBeforeExpand = ref(0)
@@ -790,6 +804,7 @@ export default {
       socialScene,
       socialMode,
       socialSelected,
+      dismissSocialSelected,
       closeMapSocial,
       setSocialMode,
       zoomSocialMap,
@@ -797,6 +812,7 @@ export default {
       openSocialLayers,
       createSocialBoard,
       openSocialSelected,
+      followSocialUser,
       showError,
       errorMessage,
       handleMapError,
